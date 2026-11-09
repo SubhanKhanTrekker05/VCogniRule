@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VCogniRule — Report</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+    <div class="report-page">
+
+        <!-- Header -->
+        <div class="report-header">
+            <h1>Screening Report</h1>
+            <span class="severity-banner"
+                  th:text="${#strings.toUpperCase(report.overallSeverity)}"
+                  th:class="'severity-banner severity-' + ${report.overallSeverity}">
+                MODERATE
+            </span>
+        </div>
+
+        <!-- Crisis alert — calm amber, NOT red -->
+        <div th:if="${report.hasCrisis}" class="crisis-alert">
+            <h3>We've identified a concern that needs attention</h3>
+            <p>You are not alone. Help is available right now.</p>
+            <ul>
+                <li>Pakistan: 1166 (Umang Helpline) | 042-35761999</li>
+                <li>International: findahelpline.com</li>
+            </ul>
+            <p style="font-size: 0.85rem; margin-top: 0.5rem;">Please reach out to one of these resources. Speaking with someone can make a difference.</p>
+        </div>
+
+        <!-- Findings -->
+        <div class="findings-section">
+            <h2 th:text="${report.findings.size() + ' findings'}">Findings</h2>
+
+            <div th:each="finding : ${report.findings}"
+                 class="finding"
+                 th:classappend="${finding.priority >= 90 ? 'finding-crisis' : (finding.priority >= 25 ? 'finding-fired' : '')}">
+
+                <div class="finding-header">
+                    <span class="finding-icon" th:text="${finding.priority >= 90 ? '⚠' : '✓'}">✓</span>
+                    <span class="finding-name" th:text="${finding.name}">Finding name</span>
+                    <span class="finding-rule-id" th:text="'(' + finding.ruleId + ')'">(RULE)</span>
+                    <span class="finding-level-badge" th:text="'L' + ${finding.level}">L1</span>
+                </div>
+
+                <!-- Trace (collapsible) -->
+                <div class="trace" th:if="${!finding.trace.isEmpty()}">
+                    <details>
+                        <summary>Matched conditions</summary>
+                        <ul>
+                            <li th:each="t : ${finding.trace}">
+                                <span th:text="${report.fieldLabels[t.fieldKey]}">field</span>:
+                                <strong th:text="${t.actualValue}">actual</strong>
+                                <span class="required" th:text="'(required: ' + ${t.requiredValue} + ')'">(required)</span>
+                            </li>
+                        </ul>
+                    </details>
+                </div>
+
+                <p class="finding-explanation" th:text="${finding.explanation}">Explanation</p>
+                <p class="finding-source" th:if="${finding.sourceRef}" th:text="'Source: ' + ${finding.sourceRef}">Source</p>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="report-actions no-print">
+            <button class="btn btn-outline" onclick="window.print()">Save as PDF</button>
+            <a href="/screening" class="btn btn-outline">Retake Screening</a>
+            <a href="/" class="btn btn-outline">Exit</a>
+        </div>
+    </div>
+
+    <footer class="footer no-print">
+        <p>&copy; VCogniRule 2026</p>
+    </footer>
+</body>
+</html>

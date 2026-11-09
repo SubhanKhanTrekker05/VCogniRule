@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VCogniRule — Condition</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+    <div class="admin-page">
+        <div class="admin-header">
+            <h1 th:text="${isNew ? 'Add Condition' : 'Edit Condition'}">Condition</h1>
+            <a th:href="@{'/admin/rule/' + ${ruleId}}" class="btn btn-outline btn-sm">← Back to Rule</a>
+        </div>
+
+        <form th:method="post"
+              th:action="${isNew ? '/admin/rule/' + ruleId + '/condition/new' : '/admin/rule/' + ruleId + '/condition/' + conditionId + '/edit'}"
+              class="admin-form">
+
+            <div class="form-row">
+                <label>Field Key</label>
+                <select name="fieldKey">
+                    <option th:each="q : ${availableFields}" th:value="${q.fieldKey}" th:text="${q.fieldKey + ' — ' + q.text}">field</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label>Operator</label>
+                <select name="operator">
+                    <option value="EQ">EQ (equals)</option>
+                    <option value="NE">NE (not equals)</option>
+                    <option value="GT">GT (greater than)</option>
+                    <option value="GTE">GTE (greater than or equal)</option>
+                    <option value="LT">LT (less than)</option>
+                    <option value="LTE">LTE (less than or equal)</option>
+                    <option value="BETWEEN">BETWEEN (min to max)</option>
+                    <option value="IN">IN (comma-separated values)</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label>Value (for EQ, NE, GT, GTE, LT, LTE)</label>
+                <input type="number" name="valueInt" />
+            </div>
+
+            <div class="form-row">
+                <label>Min (for BETWEEN)</label>
+                <input type="number" name="valueMin" />
+            </div>
+
+            <div class="form-row">
+                <label>Max (for BETWEEN)</label>
+                <input type="number" name="valueMax" />
+            </div>
+
+            <div class="form-row">
+                <label>Values (for IN, comma-separated)</label>
+                <input type="text" name="valueText" placeholder="e.g., 1,2,3" />
+            </div>
+
+            <button type="submit" class="btn btn-primary" th:text="${isNew ? 'Add Condition' : 'Save Changes'}">Save</button>
+        </form>
+    </div>
+    <footer class="footer"><p>&copy; VCogniRule 2026</p></footer>
+</body>
+</html>

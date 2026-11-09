@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VCogniRule — Rule Detail</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+    <div class="admin-page">
+        <div class="admin-header">
+            <h1><span th:text="${rule.ruleId}">RULE</span></h1>
+            <div class="admin-actions">
+                <a href="/admin/dashboard" class="btn btn-outline btn-sm">← Back</a>
+            </div>
+        </div>
+
+        <form th:method="post" th:action="@{'/admin/rule/' + ${rule.id}}" class="admin-form">
+            <input type="hidden" name="ruleId" th:value="${rule.ruleId}" />
+            <div class="form-row">
+                <label>Name</label>
+                <input type="text" name="name" th:value="${rule.name}" required />
+            </div>
+            <div class="form-row">
+                <label>Level (1-4)</label>
+                <select name="level">
+                    <option value="1" th:selected="${rule.level == 1}">1 — Base</option>
+                    <option value="2" th:selected="${rule.level == 2}">2 — Composite</option>
+                    <option value="3" th:selected="${rule.level == 3}">3 — Higher-order</option>
+                    <option value="4" th:selected="${rule.level == 4}">4 — Synthesis</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Category</label>
+                <select name="category">
+                    <option th:each="c : ${T(com.ooad.mhs.util.Category).values()}" th:value="${c}" th:text="${c}"
+                            th:selected="${rule.category == c}">MOOD</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Priority (0-100)</label>
+                <input type="number" name="priority" th:value="${rule.priority}" min="0" max="100" />
+            </div>
+            <div class="form-row">
+                <label>Action Type</label>
+                <select name="actionType">
+                    <option th:each="a : ${T(com.ooad.mhs.util.ActionType).values()}" th:value="${a}" th:text="${a}"
+                            th:selected="${rule.actionType == a}">DISPLAY_INFO</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Explanation</label>
+                <textarea name="explanation" rows="3" th:text="${rule.explanation}"></textarea>
+            </div>
+            <div class="form-row">
+                <label>Source Reference</label>
+                <input type="text" name="sourceRef" th:value="${rule.sourceRef}" />
+            </div>
+            <div class="form-row">
+                <label>Conclusion Key</label>
+                <input type="text" name="conclusionKey" th:value="${rule.conclusionKey}" />
+            </div>
+            <div class="form-row">
+                <label>Conclusion Value</label>
+                <input type="text" name="conclusionValue" th:value="${rule.conclusionValue}" />
+            </div>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </form>
+
+        <div class="conditions-section">
+            <h2>Conditions</h2>
+            <div th:each="group : ${rule.groups}">
+                <p class="group-label">Group <span th:text="${group.id}"></span> (AND logic)</p>
+                <table class="rule-table">
+                    <thead><tr><th>Field</th><th>Operator</th><th>Value</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        <tr th:each="cond : ${group.conditions}">
+                            <td th:text="${cond.fieldKey}">field</td>
+                            <td th:text="${cond.operator}">EQ</td>
+                            <td>
+                                <span th:if="${cond.valueInt != null}" th:text="${cond.valueInt}"></span>
+                                <span th:if="${cond.valueMin != null}" th:text="${cond.valueMin + '-' + cond.valueMax}"></span>
+                                <span th:if="${cond.valueText != null}" th:text="${cond.valueText}"></span>
+                            </td>
+                            <td>
+                                <a th:href="@{'/admin/rule/' + ${rule.id} + '/condition/' + ${cond.id} + '/edit'}" class="btn btn-outline btn-sm">Edit</a>
+                                <form th:method="post" th:action="@{'/admin/rule/' + ${rule.id} + '/condition/' + ${cond.id} + '/delete'}" style="display:inline">
+                                    <button type="submit" class="btn btn-outline btn-sm" onclick="return confirm('Delete this condition?')">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <a th:href="@{'/admin/rule/' + ${rule.id} + '/condition/new'}" class="btn btn-primary btn-sm">+ Add Condition</a>
+        </div>
+
+        <div class="danger-zone">
+            <form th:method="post" th:action="@{'/admin/rule/' + ${rule.id} + '/delete'}">
+                <button type="submit" class="btn btn-outline btn-sm" onclick="return confirm('Delete this entire rule? This cannot be undone.')">Delete Rule</button>
+            </form>
+        </div>
+    </div>
+    <footer class="footer"><p>&copy; VCogniRule 2026</p></footer>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VCogniRule — New Rule</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+    <div class="admin-page">
+        <div class="admin-header">
+            <h1>Create New Rule</h1>
+            <a href="/admin/dashboard" class="btn btn-outline btn-sm">← Back</a>
+        </div>
+
+        <form method="post" action="/admin/rule/new" class="admin-form">
+            <div class="form-row">
+                <label>Rule ID</label>
+                <input type="text" name="ruleId" placeholder="e.g., CUSTOM-001" required />
+            </div>
+            <div class="form-row">
+                <label>Name</label>
+                <input type="text" name="name" required />
+            </div>
+            <div class="form-row">
+                <label>Level (1-4)</label>
+                <select name="level">
+                    <option value="1">1 — Base</option>
+                    <option value="2">2 — Composite</option>
+                    <option value="3">3 — Higher-order</option>
+                    <option value="4">4 — Synthesis</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Category</label>
+                <select name="category">
+                    <option value="MOOD">MOOD</option>
+                    <option value="ANHEDONIA">ANHEDONIA</option>
+                    <option value="SLEEP">SLEEP</option>
+                    <option value="ANXIETY">ANXIETY</option>
+                    <option value="COGNITION">COGNITION</option>
+                    <option value="FUNCTIONING">FUNCTIONING</option>
+                    <option value="RISK">RISK</option>
+                    <option value="CROSS_CUTTING">CROSS_CUTTING</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Priority (0-100)</label>
+                <input type="number" name="priority" value="50" min="0" max="100" />
+            </div>
+            <div class="form-row">
+                <label>Action Type</label>
+                <select name="actionType">
+                    <option value="DISPLAY_INFO">DISPLAY_INFO</option>
+                    <option value="MONITOR">MONITOR</option>
+                    <option value="SUGGEST_PROFESSIONAL">SUGGEST_PROFESSIONAL</option>
+                    <option value="RECOMMEND_ASSESSMENT">RECOMMEND_ASSESSMENT</option>
+                    <option value="URGENT_ASSESSMENT">URGENT_ASSESSMENT</option>
+                    <option value="CRISIS_PROTOCOL">CRISIS_PROTOCOL</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Explanation</label>
+                <textarea name="explanation" rows="3"></textarea>
+            </div>
+            <div class="form-row">
+                <label>Source Reference</label>
+                <input type="text" name="sourceRef" />
+            </div>
+            <div class="form-row">
+                <label>Conclusion Key</label>
+                <input type="text" name="conclusionKey" />
+            </div>
+            <div class="form-row">
+                <label>Conclusion Value</label>
+                <input type="text" name="conclusionValue" value="1" />
+            </div>
+            <button type="submit" class="btn btn-primary">Create Rule</button>
+        </form>
+    </div>
+    <footer class="footer"><p>&copy; VCogniRule 2026</p></footer>
+</body>
+</html>

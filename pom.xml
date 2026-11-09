@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ============================================================
+         Spring Boot parent POM
+         Version 4.1.2 = current stable release as of October 2026.
+         Released Oct 23, 2026 with 126 bug fixes.
+         Note: Spring Boot does not use "LTS" labeling like Java;
+         the latest two minor versions (currently 4.0.x and 4.1.x)
+         receive OSS support.
+         ============================================================ -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.2</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.ooad.mhs</groupId>
+    <artifactId>vcognirule</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <name>VCogniRule</name>
+    <description>Rule-Based Early Mental Health Screening System </description>
+
+    <properties>
+        <!-- Java 21 LTS — sealed classes, records, pattern matching -->
+        <java.version>21</java.version>
+
+        <!-- sqlite-jdbc is NOT managed by Spring Boot's BOM (only H2,
+             PostgreSQL, MySQL, etc. are), so we pin the latest version.
+             3.54.1.0 = released Oct 29, 2026 on Maven Central. -->
+        <sqlite-jdbc.version>3.54.1.0</sqlite-jdbc.version>
+    </properties>
+
+    <dependencies>
+
+        <!-- 1. Spring MVC + embedded Tomcat web server
+             NOTE: In Spring Boot 4, spring-boot-starter-web is DEPRECATED.
+             Use spring-boot-starter-webmvc instead (renamed to distinguish
+             from the WebFlux starter spring-boot-starter-webflux).
+             Provides @Controller, @RequestMapping, view resolution. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
+        </dependency>
+
+        <!-- 2. Thymeleaf template engine
+             Server-rendered HTML with ${variable} syntax.
+             Templates live in src/main/resources/templates/*.html -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+
+        <!-- 3. JDBC support — CRITICAL
+             Provides JdbcTemplate auto-configuration + transaction management.
+             Without this, @Autowired JdbcTemplate fails at startup with
+             "NoSuchBeanDefinitionException: JdbcTemplate". -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+
+        <!-- 4. Jakarta Bean Validation (not javax.validation — Spring Boot
+             3+ moved to the jakarta.* namespace)
+             Enables @Valid, @NotNull, @Min, @Max, @Size on DTOs.
+             Imports: jakarta.validation.Valid, jakarta.validation.constraints.* -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- 5. SQLite JDBC driver
+             Provides the org.sqlite.JDBC driver class.
+             NOTE: This ONLY registers the driver. You MUST still set
+             spring.datasource.url in application.properties.
+
+             IMPORTANT: The parent directory of the .db file must exist
+             BEFORE Spring initializes the DataSource. @PostConstruct runs
+             AFTER DataSource auto-configuration, so it's too late.
+             Solution: commit an empty 'database/' folder to git (with a
+             .gitkeep file) so the directory always exists. SQLite then
+             creates the .db file inside it on first connection. -->
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>${sqlite-jdbc.version}</version>
+        </dependency>
+
+        <!-- 6. Testing — JUnit 5, Mockito, Spring Test, AssertJ
+             NOTE: Spring Boot 4 removed @MockBean and @SpyBean in favor
+             of @MockitoBean and @MockitoSpyBean from Spring Test.
+             Provides @SpringBootTest, @WebMvcTest, @DataJdbcTest, MockMvc. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- BCrypt password hashing for admin authentication -->
+    <dependency>
+        <groupId>org.mindrot</groupId>
+        <artifactId>jbcrypt</artifactId>
+        <version>0.4</version>
+    </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Spring Boot Maven plugin
+                 Enables: mvn spring-boot:run (dev mode)
+                          mvn package (builds executable .jar) -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VCogniRule — About</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+    <div class="about-page">
+        <a href="/" class="back-link">← Back to Home</a>
+
+        <div class="about-content">
+            <img src="/logo.png" alt="VCogniRule" class="about-logo-img" />
+            <h1>VCogniRule</h1>
+            <p class="tagline">Rule-Based Early Mental Health Screening System</p>
+
+            <h2>What is VCogniRule?</h2>
+            <p>VCogniRule is a rule-based expert system designed for early mental health screening. It evaluates user responses across 10 validated clinical instruments using a 4-level forward-chaining inference engine with 150 rules, producing a screening report with traceable findings, comorbid pattern detection, and treatment recommendations based on NICE NG222 clinical guidelines.</p>
+
+            <h2>Who is it for?</h2>
+            <p>VCogniRule is designed for anyone who may be experiencing mental health concerns and wants a confidential, anonymous screening. It is particularly suited for university students and young adults who may be hesitant to seek in-person help initially. The system does not require login, accounts, or personal information — screenings are completely anonymous.</p>
+
+            <h2>What does it screen for?</h2>
+            <p>The system screens across 7 clinical domains using 10 validated instruments:</p>
+            <ul>
+                <li><strong>Depression</strong> — PHQ-9 (Patient Health Questionnaire-9)</li>
+                <li><strong>Anxiety</strong> — GAD-7 (Generalized Anxiety Disorder-7)</li>
+                <li><strong>Suicide Risk</strong> — C-SSRS (Columbia Suicide Severity Rating Scale)</li>
+                <li><strong>Sleep Quality</strong> — PSQI (Pittsburgh Sleep Quality Index)</li>
+                <li><strong>Mental Well-being</strong> — WHO-5 Well-Being Index</li>
+                <li><strong>Perceived Stress</strong> — PSS-10 (Perceived Stress Scale)</li>
+                <li><strong>Somatic Symptoms</strong> — PHQ-15</li>
+                <li><strong>Functional Impairment</strong> — WSAS (Work and Social Adjustment Scale)</li>
+                <li><strong>ADHD Symptoms</strong> — ASRS (Adult ADHD Self-Report Scale)</li>
+                <li><strong>PTSD Symptoms</strong> — PC-PTSD (Primary Care PTSD Screen)</li>
+            </ul>
+
+            <h2>How does it work?</h2>
+            <p>The system follows the classic expert-system architecture with 5 components:</p>
+            <ul>
+                <li><strong>Knowledge Base</strong> — 150 rules stored in a SQLite database, editable without recompiling</li>
+                <li><strong>Inference Engine</strong> — Multi-pass forward-chaining DAG with 4 levels of reasoning</li>
+                <li><strong>User Interface</strong> — Web-based screening form and report</li>
+                <li><strong>Knowledge Acquisition Module</strong> — Admin panel for adding, editing, and managing rules</li>
+                <li><strong>Explanation Facility</strong> — Trace showing which rules fired and why</li>
+            </ul>
+
+            <h2>Is it a diagnosis?</h2>
+            <p><strong>No.</strong> VCogniRule is a screening tool, not a diagnostic system. It identifies possible warning signs and recommends professional support. It does not diagnose mental health conditions. The results should be discussed with a qualified mental health professional.</p>
+
+            <h2>Privacy</h2>
+            <p>The system stores zero user data. No responses, no findings, no session information is persisted. The engine evaluates responses in memory and discards them when the report is displayed. Only the knowledge base (rules and questions) and admin accounts are stored in the database.</p>
+
+            <h2>Technology</h2>
+            <p>Built with Java 21, Spring Boot 4.1.2, Thymeleaf, SQLite, and JdbcTemplate. The inference engine is framework-independent plain Java, fully unit-testable in isolation.</p>
+
+            <h2>Credits</h2>
+            <p>All screening instruments are validated, peer-reviewed tools used freely for non-commercial educational purposes:</p>
+            <ul>
+                <li>PHQ-9, GAD-7, PHQ-15 — Public domain (Pfizer Inc.)</li>
+                <li>C-SSRS — Free for non-commercial use (Columbia University)</li>
+                <li>PSQI — Free for non-commercial research (University of Pittsburgh)</li>
+                <li>WHO-5 — CC BY-NC-SA 3.0 IGO (World Health Organization)</li>
+                <li>PSS-10 — Public domain</li>
+                <li>WSAS — Freely available</li>
+                <li>ASRS — Free (developed with WHO)</li>
+                <li>PC-PTSD — Public domain (US Department of Veterans Affairs)</li>
+            </ul>
+            <p>Clinical recommendations sourced from <strong>NICE NG222</strong> — Depression in adults: treatment and management (2022).</p>
+
+        </div>
+
+        <footer class="footer">
+            <p>&copy; VCogniRule 2026</p>
+        </footer>
+    </div>
+</body>
+</html>

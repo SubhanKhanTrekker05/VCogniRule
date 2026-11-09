@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VCogniRule — Admin Dashboard</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+    <div class="admin-page">
+        <div class="admin-header">
+            <h1>Rule Management</h1>
+            <div class="admin-actions">
+                <a href="/admin/rule/new" class="btn btn-primary btn-sm">+ New Rule</a>
+                <form th:action="@{/admin/reset}" method="post"
+                      onsubmit="return confirm('⚠ This will undo ALL changes you made to rules and restore the original 150-rule knowledge base. Proceed?');"
+                      style="display:inline-flex">
+                    <button type="submit" class="btn btn-warn btn-sm">↺ Reset KB</button>
+                </form>
+                <a href="/admin/logout" class="btn btn-outline btn-sm">Logout</a>
+            </div>
+                </div>
+
+        <div th:if="${toast != null}" class="toast" th:text="${toast}">
+            Reset successful.
+        </div>
+
+        <div class="search-bar">
+                        <input type="text" id="ruleSearch" placeholder="Search by rule ID or name..." autocomplete="off" />
+            <span class="search-count" id="searchCount"></span>
+        </div>
+
+        <table class="rule-table">
+            <thead>
+                <tr>
+                    <th class="sortable" data-sort="numeric" data-column="0">ID <span class="sort-indicator"></span></th>
+                    <th class="sortable" data-sort="text" data-column="1">Rule ID <span class="sort-indicator"></span></th>
+                    <th class="sortable" data-sort="text" data-column="2">Name <span class="sort-indicator"></span></th>
+                    <th class="sortable" data-sort="numeric" data-column="3">Lvl <span class="sort-indicator"></span></th>
+                    <th class="sortable" data-sort="text" data-column="4">Category <span class="sort-indicator"></span></th>
+                    <th class="sortable" data-sort="numeric" data-column="5">Pri <span class="sort-indicator"></span></th>
+                    <th class="sortable" data-sort="text" data-column="6">Action <span class="sort-indicator"></span></th>
+                    <th>Active</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="rule : ${rules}">
+                    <td th:text="${rule.id}">1</td>
+                    <td th:text="${rule.ruleId}">RULE</td>
+                    <td><a th:href="@{'/admin/rule/' + ${rule.id}}" th:text="${rule.name}">Name</a></td>
+                    <td th:text="${rule.level}">1</td>
+                    <td th:text="${rule.category}">MOOD</td>
+                    <td th:text="${rule.priority}">50</td>
+                    <td th:text="${rule.actionType}">DISPLAY_INFO</td>
+                    <td>
+                        <form th:method="post" th:action="@{'/admin/toggle/' + ${rule.id}}">
+                            <input type="hidden" name="active" th:value="${rule.isActive ? 'false' : 'true'}" />
+                            <button type="submit" class="btn btn-sm" th:text="${rule.isActive ? 'Deactivate' : 'Activate'}"
+                                    th:class="'btn btn-sm ' + ${rule.isActive ? 'btn-outline' : 'btn-primary'}">
+                                Toggle
+                            </button>
+                        </form>
+                    </td>
+                    <td>
+                        <a th:href="@{'/admin/rule/' + ${rule.id}}" class="btn btn-outline btn-sm">Edit</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <footer class="footer"><p>&copy; VCogniRule 2026</p></footer>
+    <script th:src="@{/js/admin-rules.js}"></script>
+</body>
+</html>

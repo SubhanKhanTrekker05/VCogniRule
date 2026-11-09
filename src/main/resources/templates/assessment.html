@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VCogniRule — Screening</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+    <div style="max-width: 800px; margin: 0 auto; padding: 1rem 1rem 0;">
+        <a href="/" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">← Back to Home</a>
+    </div>
+    <div class="assessment-page">
+        <div class="assessment-header">
+            <h1>Mental Health Screening</h1>
+            <p>Expand each section and answer the questions. Sections you skip will use default values (no symptoms reported).</p>
+        </div>
+
+        <form method="post" action="/screening">
+
+            <div th:each="entry : ${questionsByInstrument}">
+                <details class="instrument-section">
+                    <summary>
+                        <span th:text="${entry.key}">Instrument</span>
+                        <span class="count" th:text="${entry.value.size() + ' questions'}">N questions</span>
+                    </summary>
+
+                    <!-- C-SSRS warning -->
+                    <div th:if="${entry.key == 'C-SSRS'}" class="section-warning">
+                        The next questions ask about thoughts of death or self-harm. If you are in immediate danger, please contact emergency services.
+                    </div>
+
+                    <div th:each="question : ${entry.value}" class="question">
+                        <p th:text="${question.text}">Question text</p>
+
+                        <div th:switch="${question.scaleType}">
+
+                            <!-- LIKERT_03: 0-3 (PHQ-9, GAD-7, PSQI Likert) -->
+                            <div th:case="'LIKERT_03'" class="radio-group">
+                                <label><input type="radio" th:name="${question.fieldKey}" value="0" th:checked="${question.defaultValue == 0}"><span>Not at all</span></label>
+                                <label><input type="radio" th:name="${question.fieldKey}" value="1" th:checked="${question.defaultValue == 1}"><span>Several days</span></label>
+                                <label><input type="radio" th:name="${question.fieldKey}" value="2" th:checked="${question.defaultValue == 2}"><span>More than half</span></label>
+                                <label><input type="radio" th:name="${question.fieldKey}" value="3" th:checked="${question.defaultValue == 3}"><span>Nearly every day</span></label>
+                            </div>
+
+                            <!-- LIKERT_02: 0-2 (PHQ-15) -->
+                            <div th:case="'LIKERT_02'" class="radio-group">
+                                <label><input type="radio" th:name="${question.fieldKey}" value="0" th:checked="${question.defaultValue == 0}"><span>Not bothered</span></label>
+                                <label><input type="radio" th:name="${question.fieldKey}" value="1" th:checked="${question.defaultValue == 1}"><span>Bothered a little</span></label>
+                                <label><input type="radio" th:name="${question.fieldKey}" value="2" th:checked="${question.defaultValue == 2}"><span>Bothered a lot</span></label>
+                            </div>
+
+                            <!-- BINARY: 0-1 (C-SSRS, PC-PTSD) -->
+                            <div th:case="'BINARY'" class="radio-group">
+                                <label><input type="radio" th:name="${question.fieldKey}" value="0" th:checked="${question.defaultValue == 0}"><span>No</span></label>
+                                <label><input type="radio" th:name="${question.fieldKey}" value="1" th:checked="${question.defaultValue == 1}"><span>Yes</span></label>
+                            </div>
+
+                            <!-- LIKERT_04: 0-4 (PSS-10, ASRS) -->
+                            <div th:case="'LIKERT_04'" class="radio-group">
+                                <label><input type="radio" th:name="${question.fieldKey}" value="0" th:checked="${question.defaultValue == 0}"><span>Never</span></label>
+                                <label><input type="radio" th:name="${question.fieldKey}" value="1" th:checked="${question.defaultValue == 1}"><span>Rarely</span></label>
+                                <label><input type="radio" th:name="${question.fieldKey}" value="2" th:checked="${question.defaultValue == 2}"><span>Sometimes</span></label>
+                                <label><input type="radio" th:name="${question.fieldKey}" value="3" th:checked="${question.defaultValue == 3}"><span>Often</span></label>
+                                <label><input type="radio" th:name="${question.fieldKey}" value="4" th:checked="${question.defaultValue == 4}"><span>Very Often</span></label>
+                            </div>
+
+                            <!-- LIKERT_05: 0-5 (WHO-5) -->
+                            <div th:case="'LIKERT_05'" class="radio-group">
+                                <label><input type="radio" th:name="${question.fieldKey}" value="0" th:checked="${question.defaultValue == 0}"><span>At no time</span></label>
+                                <label><input type="radio" th:name="${question.fieldKey}" value="1" th:checked="${question.defaultValue == 1}"><span>Some of the time</span></label>
+                                <label><input type="radio" th:name="${question.fieldKey}" value="2" th:checked="${question.defaultValue == 2}"><span>Less than half</span></label>
+                                <label><input type="radio" th:name="${question.fieldKey}" value="3" th:checked="${question.defaultValue == 3}"><span>More than half</span></label>
+                                <label><input type="radio" th:name="${question.fieldKey}" value="4" th:checked="${question.defaultValue == 4}"><span>Most of the time</span></label>
+                                <label><input type="radio" th:name="${question.fieldKey}" value="5" th:checked="${question.defaultValue == 5}"><span>All of the time</span></label>
+                            </div>
+
+                            <!-- LIKERT_08: 0-8 dropdown (WSAS) -->
+                            <select th:case="'LIKERT_08'" th:name="${question.fieldKey}">
+                                <option value="0" th:selected="${question.defaultValue == 0}">0 — Not at all</option>
+                                <option value="1" th:selected="${question.defaultValue == 1}">1</option>
+                                <option value="2" th:selected="${question.defaultValue == 2}">2</option>
+                                <option value="3" th:selected="${question.defaultValue == 3}">3</option>
+                                <option value="4" th:selected="${question.defaultValue == 4}">4 — Definitely</option>
+                                <option value="5" th:selected="${question.defaultValue == 5}">5</option>
+                                <option value="6" th:selected="${question.defaultValue == 6}">6</option>
+                                <option value="7" th:selected="${question.defaultValue == 7}">7 — Markedly</option>
+                                <option value="8" th:selected="${question.defaultValue == 8}">8 — Very severely</option>
+                            </select>
+
+                            <!-- TEXT: time input (PSQI Q1, Q3) -->
+                            <input th:case="'TEXT'" type="time"
+                                   th:name="${question.fieldKey}"
+                                   th:value="${question.fieldKey == 'psqi_q1' ? '23:00' : (question.fieldKey == 'psqi_q3' ? '07:00' : '00:00')}" />
+
+                            <!-- NUMBER_INT (PSQI Q2) -->
+                            <input th:case="'NUMBER_INT'" type="number"
+                                   th:name="${question.fieldKey}"
+                                   th:value="${question.defaultValue}"
+                                   min="0" max="180" />
+
+                            <!-- NUMBER_DEC (PSQI Q4) -->
+                            <input th:case="'NUMBER_DEC'" type="number"
+                                   th:name="${question.fieldKey}"
+                                   th:value="${question.defaultValue}"
+                                   min="0" max="24" step="0.5" />
+
+                        </div>
+                    </div>
+                </details>
+            </div>
+
+            <div class="assessment-submit">
+                <button type="submit" class="btn btn-warm">Submit Screening</button>
+            </div>
+        </form>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; VCogniRule 2026</p>
+    </footer>
+</body>
+</html>

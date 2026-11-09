@@ -1,0 +1,21 @@
+# Shell scripts always use LF (Unix line endings) — even on Windows
+*.sh text eol=lf
+
+# Batch files always use CRLF (Windows line endings) — even on Mac/Linux
+*.bat text eol=crlf
+
+# Java/HTML/CSS/JS/SQL/properties: let Git auto-detect
+*.java text
+*.html text
+*.css text
+*.js text
+*.sql text
+*.properties text
+*.md text
+*.xml text
+
+# Binary files — never touch line endings
+*.png binary
+*.jpg binary
+*.ico binary
+*.db binary

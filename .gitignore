@@ -1,0 +1,24 @@
+# Maven build output
+target/
+
+# VSCode settings (machine-specific)
+.vscode/
+
+# OS junk
+Thumbs.db
+.DS_Store
+
+# Compiled Java
+*.class
+
+# SQLite database (generated at runtime, don't commit)
+database/*.db
+database/*.db-journal
+database/*.db-wal
+database/*.db-shm
+
+# Keep the folder itself
+!database/.gitkeep
+
+# Logs
+*.log
