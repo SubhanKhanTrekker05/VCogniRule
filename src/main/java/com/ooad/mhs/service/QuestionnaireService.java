@@ -62,11 +62,13 @@ public class QuestionnaireService {
     private QuestionView toView(Question q) {
         String key = q.fieldKey();
         String lead = leadFor(key);
+        // WSAS items contain a "[problem]" blank meant to be filled in; show it as plain text
+        String text = q.text().replaceAll("my \\[problem\\],? ", "my current difficulties, ");
         return switch (q.scaleType()) {
-            case "TEXT" -> new QuestionView(key, q.text(), lead, "time", List.of(), null, null, null, null);
-            case "NUMBER_INT" -> new QuestionView(key, q.text(), lead, "number", List.of(), "0", "180", "1", "minutes");
-            case "NUMBER_DEC" -> new QuestionView(key, q.text(), lead, "number", List.of(), "0", "24", "0.5", "hours");
-            default -> new QuestionView(key, q.text(), lead, "choice", optionsFor(q), null, null, null, null);
+            case "TEXT" -> new QuestionView(key, text, lead, "time", List.of(), null, null, null, null);
+            case "NUMBER_INT" -> new QuestionView(key, text, lead, "number", List.of(), "0", "180", "1", "minutes");
+            case "NUMBER_DEC" -> new QuestionView(key, text, lead, "number", List.of(), "0", "24", "0.5", "hours");
+            default -> new QuestionView(key, text, lead, "choice", optionsFor(q), null, null, null, null);
         };
     }
 

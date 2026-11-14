@@ -78,6 +78,13 @@ public class ReportService {
     private static final java.util.regex.Pattern REASSURING_KEY = java.util.regex.Pattern.compile(
         "^(good_mental_health|.*_(minimal|low|good|negative|no_risk|subclinical))$");
 
+    /** Display order of finding tones, most serious first. */
+    private static final List<String> TONE_ORDER =
+        List.of("crisis", "urgent", "recommend", "suggest", "monitor", "note", "info");
+
+    private static final java.util.regex.Pattern BETWEEN_NEED =
+        java.util.regex.Pattern.compile("^(-?\\d+) - (-?\\d+)$");
+
     /** Plain-language labels for calculated scores and flags shown in "Why this appears". */
     private static final Map<String, String> FRIENDLY_LABELS = Map.ofEntries(
         Map.entry("phq9_total", "Depression score (PHQ-9 total, 0–27)"),
@@ -131,7 +138,9 @@ public class ReportService {
      * @param depressionMissing true when the PHQ-9 (Depression) section was not completed
      */
     public record ScreeningReport(
-        List<FindingView> findings,
+        List<FindingView> results,      // about the user; safety-related always here, most serious first
+        List<FindingView> guidance,     // NICE recommendations written for professionals
+        List<FindingView> reasoning,    // intermediate engine steps (pathway gates, NICE synthesis)
         String overallKey,
         String overallLabel,
         String overallNote,
@@ -168,9 +177,16 @@ public class ReportService {
             key = "attention";
             label = "Needs attention";
             note = "One or more answers suggest a safety concern. This takes priority over every other result.";
+            if (severity != null) {
+                note += " Apart from the safety concern, the rules rated the overall pattern as "
+                    + severity.toUpperCase() + ".";
+            }
         } else if (severity != null) {
             key = severity;
             label = severity;
+            // A partly answered section was left out: say so, so "MINIMAL" is not read as covering it
+            boolean anyPartial = assessment.statuses().values().stream().anyMatch(SectionStatus::isPartial);
+            if (anyPartial) note = "Based only on the sections you completed. Partly answered sections are listed below.";
         } else if (!depressionComplete) {
             key = "undetermined";
             label = "Not determined";
@@ -215,6 +231,29 @@ public class ReportService {
             findingViews.add(styled(f, basis, safetyLinked, rulesById.get(f.ruleId())));
         }
 
+        // ---- Group findings by audience ----
+        // - overall_severity rules are shown in the banner, so they are not repeated as cards
+        // - anything safety-related stays in "results", whatever its source
+        // - NICE recommendations are written for professionals → "guidance"
+        // - pathway gates and the NICE synthesis are engine steps → "reasoning"
+        List<FindingView> results = new ArrayList<>();
+        List<FindingView> guidance = new ArrayList<>();
+        List<FindingView> reasoning = new ArrayList<>();
+        for (FindingView fv : findingViews) {
+            Rule rule = rulesById.get(fv.finding().ruleId());
+            String conclusion = rule != null && rule.conclusionKey() != null ? rule.conclusionKey() : "";
+            String source = fv.finding().sourceRef() != null ? fv.finding().sourceRef() : "";
+            if (conclusion.equals("overall_severity")) continue;
+            if (fv.tone().equals("crisis")) results.add(fv);
+            else if (conclusion.endsWith("_unlocked") || conclusion.equals("nice_overall")) reasoning.add(fv);
+            else if (source.startsWith("NICE")) guidance.add(fv);
+            else results.add(fv);
+        }
+        // Most serious first; the sort is stable, so rule priority order is kept within a tone
+        Comparator<FindingView> bySeriousness = Comparator.comparingInt(fv -> TONE_ORDER.indexOf(fv.tone()));
+        results.sort(bySeriousness);
+        guidance.sort(bySeriousness);
+
         // ---- Section coverage ----
         List<SectionStatus> statuses = List.copyOf(assessment.statuses().values());
         List<SectionStatus> assessed = statuses.stream().filter(SectionStatus::isComplete).toList();
@@ -239,7 +278,7 @@ public class ReportService {
             sectionAnswers.add(new SectionAnswers(status, score, scoreNote, rows));
         }
 
-        return new ScreeningReport(findingViews, key, label, note, hasCrisis,
+        return new ScreeningReport(results, guidance, reasoning, key, label, note, hasCrisis,
             assessed, partial, notStarted, !depressionComplete, sectionAnswers);
     }
 
@@ -317,9 +356,29 @@ public class ReportService {
         boolean binary = q != null && "BINARY".equals(q.scaleType());
         if (binary) {
             return new BasisLine(label, "1".equals(t.actualValue()) ? "Yes" : "No",
-                needed.equals("== 1") ? "Yes" : needed.equals("== 0") ? "No" : needed, false);
+                needed.equals("== 1") ? "Yes" : needed.equals("== 0") ? "No" : readableNeed(needed), false);
         }
-        return new BasisLine(label, t.actualValue(), needed, false);
+        return new BasisLine(label, t.actualValue(), readableNeed(needed), false);
+    }
+
+    /** ">= 16" → "16 or more", "15 - 19" → "between 15 and 19", "in [1,2]" → "one of 1, 2". */
+    private static String readableNeed(String needed) {
+        if (needed == null) return null;
+        String n = needed.trim();
+        java.util.regex.Matcher m = BETWEEN_NEED.matcher(n);
+        if (m.matches()) return "between " + m.group(1) + " and " + m.group(2);
+        String[] p = n.split("\\s+", 2);
+        if (p.length != 2) return n;
+        return switch (p[0]) {
+            case "==" -> p[1];
+            case "!=" -> "not " + p[1];
+            case ">=" -> p[1] + " or more";
+            case "<=" -> p[1] + " or less";
+            case ">" -> "more than " + p[1];
+            case "<" -> "less than " + p[1];
+            case "in" -> "one of " + p[1].replaceAll("[\\[\\]]", "").replace(",", ", ");
+            default -> n;
+        };
     }
 
     /** "Nearly every day" for choices, "23:30" for times, "45 minutes" for numbers. */
@@ -339,17 +398,17 @@ public class ReportService {
 
     /** Turns a numeric requirement on a choice question into its answer label, e.g. ">= 2" → "More than half the days or more". */
     private static String neededText(QuestionView qv, String needed) {
-        if (!"choice".equals(qv.kind()) || needed == null) return needed;
+        if (!"choice".equals(qv.kind()) || needed == null) return readableNeed(needed);
         String[] parts = needed.trim().split("\\s+");
-        if (parts.length != 2) return needed;
+        if (parts.length != 2) return readableNeed(needed);
         String target = null;
         for (Option o : qv.options()) if (o.value().equals(parts[1])) target = o.label();
-        if (target == null || target.equals(parts[1])) return needed;
+        if (target == null || target.equals(parts[1])) return readableNeed(needed);
         return switch (parts[0]) {
             case "==" -> target;
             case ">=" -> target + " or more";
             case "<=" -> target + " or less";
-            default -> needed;
+            default -> readableNeed(needed);
         };
     }
 
