@@ -10,17 +10,19 @@
 <body>
     <div class="report-page">
 
-        <!-- Header -->
+        <!-- Header + overall result -->
         <div class="report-header">
             <h1>Screening Report</h1>
-            <span class="severity-banner"
-                  th:text="${#strings.toUpperCase(report.overallSeverity)}"
-                  th:class="'severity-banner severity-' + ${report.overallSeverity}">
-                MODERATE
-            </span>
+            <span class="overall-label">Overall result</span>
+            <span th:text="${#strings.toUpperCase(report.overallLabel)}"
+                  th:class="'severity-banner severity-' + ${report.overallKey}">MODERATE</span>
+            <p th:if="${report.overallNote != null}" class="overall-note" th:text="${report.overallNote}">Note</p>
+            <p class="report-jump no-print">
+                <a href="#findings">Findings</a> · <a href="#your-answers">Your answers</a>
+            </p>
         </div>
 
-        <!-- Crisis alert — calm amber, NOT red -->
+        <!-- Crisis alert — calm ochre, NOT red -->
         <div th:if="${report.hasCrisis}" class="crisis-alert">
             <h3>We've identified a concern that needs attention</h3>
             <p>You are not alone. Help is available right now.</p>
@@ -31,44 +33,146 @@
             <p style="font-size: 0.85rem; margin-top: 0.5rem;">Please reach out to one of these resources. Speaking with someone can make a difference.</p>
         </div>
 
-        <!-- Findings -->
-        <div class="findings-section">
-            <h2 th:text="${report.findings.size() + ' findings'}">Findings</h2>
+        <!-- Depression section missing: explain why it matters -->
+        <div th:if="${report.depressionMissing}" class="card card-accent">
+            <h2 th:text="${report.overallKey == 'undetermined'}
+                    ? 'Your overall result could not be determined'
+                    : 'Complete the Depression & Mood section for a more accurate report'">Heading</h2>
+            <p>The <strong>Depression &amp; Mood</strong> section (PHQ-9) was not completed. It is the most
+               important part of this screening:</p>
+            <ul>
+                <li>The <strong>overall result</strong> is built from your depression score together with the
+                    Safety Check.</li>
+                <li><strong>Combined findings</strong>, such as low mood together with anxiety, poor sleep or
+                    low wellbeing, need it. Many of the screening rules look for these patterns.</li>
+                <li>PHQ-9 is the <strong>most widely used, validated depression questionnaire</strong>, so your
+                    report is easier to discuss with a doctor or counsellor.</li>
+                <li>It takes about <strong>2 minutes</strong> (9 questions). Your other answers are kept.</li>
+            </ul>
+            <a th:href="@{/screening(resume='PHQ-9')}" class="btn btn-primary no-print">Complete Depression section</a>
+        </div>
 
-            <div th:each="finding : ${report.findings}"
-                 class="finding"
-                 th:classappend="${finding.priority >= 90 ? 'finding-crisis' : (finding.priority >= 25 ? 'finding-fired' : '')}">
+        <!-- What was assessed -->
+        <div class="card">
+            <h2>What this report covers</h2>
+
+            <div class="coverage-group" th:if="${!report.assessed.isEmpty()}">
+                <h3>Assessed</h3>
+                <div class="chips">
+                    <span th:each="s : ${report.assessed}" class="chip chip-done">
+                        ✓ <span th:text="${s.section.label}">Section</span>
+                        <small th:text="${s.section.code}">CODE</small>
+                    </span>
+                </div>
+            </div>
+
+            <div class="coverage-group" th:if="${!report.partial.isEmpty()}">
+                <h3>Not enough data</h3>
+                <div th:each="s : ${report.partial}" class="partial-item">
+                    <p>
+                        <strong th:text="${s.section.label + ' (' + s.section.code + ')'}">Section</strong>:
+                        <span th:text="${s.answered + ' of ' + s.total + ' questions answered.'}">4 of 7</span>
+                        There was not enough data to give an accurate result, so this section was left out.
+                    </p>
+                    <a th:href="@{/screening(resume=${s.section.code})}" class="btn btn-sm btn-outline no-print">Complete this section</a>
+                </div>
+            </div>
+
+            <div class="coverage-group" th:if="${!report.notStarted.isEmpty()}">
+                <h3>Not assessed</h3>
+                <div class="chips">
+                    <a th:each="s : ${report.notStarted}" th:href="@{/screening(resume=${s.section.code})}"
+                       class="chip chip-skip" th:title="'Add ' + ${s.section.label} + ' to your screening'">
+                        + <span th:text="${s.section.label}">Section</span>
+                        <small th:text="${s.section.code}">CODE</small>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Findings -->
+        <div class="findings-section" id="findings">
+            <h2 th:text="${report.findings.size() == 1 ? '1 finding' : report.findings.size() + ' findings'}">Findings</h2>
+
+            <p th:if="${report.findings.isEmpty()}" class="empty-findings">
+                No findings for the sections you completed.
+            </p>
+
+            <!-- Colour = tone from ReportService.styled(): safety-linked first, then action type -->
+            <div th:each="fv : ${report.findings}" th:with="finding=${fv.finding}"
+                 class="finding" th:classappend="'tone-' + ${fv.tone}">
 
                 <div class="finding-header">
-                    <span class="finding-icon" th:text="${finding.priority >= 90 ? '⚠' : '✓'}">✓</span>
+                    <span class="finding-icon" th:text="${fv.icon}" aria-hidden="true">✓</span>
                     <span class="finding-name" th:text="${finding.name}">Finding name</span>
-                    <span class="finding-rule-id" th:text="'(' + finding.ruleId + ')'">(RULE)</span>
+                    <span class="finding-rule-id" th:text="'(' + ${finding.ruleId} + ')'">(RULE)</span>
                     <span class="finding-level-badge" th:text="'L' + ${finding.level}">L1</span>
+                    <span class="finding-action" th:text="${fv.action}">Action</span>
                 </div>
 
-                <!-- Trace (collapsible) -->
-                <div class="trace" th:if="${!finding.trace.isEmpty()}">
+                <p class="finding-explanation" th:text="${finding.explanation}">Explanation</p>
+
+                <!-- Why this appears: the answers, scores and earlier findings it was based on -->
+                <div class="trace" th:if="${!fv.basis.isEmpty()}">
                     <details>
-                        <summary>Matched conditions</summary>
-                        <ul>
-                            <li th:each="t : ${finding.trace}">
-                                <span th:text="${report.fieldLabels[t.fieldKey]}">field</span>:
-                                <strong th:text="${t.actualValue}">actual</strong>
-                                <span class="required" th:text="'(required: ' + ${t.requiredValue} + ')'">(required)</span>
+                        <summary>Why this appears</summary>
+                        <ul class="basis-list">
+                            <li th:each="b : ${fv.basis}" th:classappend="${b.fromEarlierFinding ? 'basis-chain' : ''}">
+                                <span class="basis-label" th:text="${b.label}">Question</span>
+                                <span class="basis-value">
+                                    <span th:text="${b.fromEarlierFinding ? '' : 'Your result: '}"></span><strong th:text="${b.value}">value</strong>
+                                </span>
+                                <span class="basis-needed" th:if="${b.needed != null}" th:text="'Rule needs: ' + ${b.needed}">needed</span>
                             </li>
                         </ul>
                     </details>
                 </div>
 
-                <p class="finding-explanation" th:text="${finding.explanation}">Explanation</p>
                 <p class="finding-source" th:if="${finding.sourceRef}" th:text="'Source: ' + ${finding.sourceRef}">Source</p>
             </div>
+        </div>
+
+        <!-- Your answers -->
+        <div class="answers-section" id="your-answers" th:if="${!report.answers.isEmpty()}">
+            <h2>Your answers</h2>
+            <p class="answers-intro">These are the answers your report is based on. Sections marked
+               <em>not included</em> were only partly answered and did not affect the results.</p>
+
+            <details th:each="sa : ${report.answers}" class="answer-block"
+                     th:classappend="${sa.status.isComplete() ? '' : 'answer-block-partial'}">
+                <summary>
+                    <span class="answer-title">
+                        <span th:text="${sa.status.section.label}">Section</span>
+                        <small th:text="${sa.status.section.code}">CODE</small>
+                    </span>
+                    <span th:if="${sa.score != null}" class="answer-score" th:text="${sa.score}">Score</span>
+                    <span th:if="${sa.score == null}" class="answer-score answer-score-partial"
+                          th:text="'Not included · ' + ${sa.status.answered} + ' of ' + ${sa.status.total} + ' answered'">Not included</span>
+                </summary>
+                <p th:if="${sa.scoreNote != null}" class="answer-note" th:text="${sa.scoreNote}">Note</p>
+                <table class="answer-table">
+                    <thead>
+                        <tr><th scope="col">#</th><th scope="col">Question</th><th scope="col">Your answer</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="row : ${sa.rows}" th:classappend="${row.answered ? '' : 'unanswered'}">
+                            <td th:text="${row.number}">1</td>
+                            <td th:text="${row.question}">Question</td>
+                            <td th:text="${row.answer}">Answer</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <a th:unless="${sa.status.isComplete()}"
+                   th:href="@{/screening(resume=${sa.status.section.code})}"
+                   class="btn btn-sm btn-outline no-print">Complete this section</a>
+            </details>
         </div>
 
         <!-- Actions -->
         <div class="report-actions no-print">
             <button class="btn btn-outline" onclick="window.print()">Save as PDF</button>
-            <a href="/screening" class="btn btn-outline">Retake Screening</a>
+            <a th:href="@{/screening(resume='')}" class="btn btn-outline">Edit my answers</a>
+            <a href="/screening" class="btn btn-outline">Start a new screening</a>
             <a href="/" class="btn btn-outline">Exit</a>
         </div>
     </div>
@@ -76,5 +180,12 @@
     <footer class="footer no-print">
         <p>&copy; VCogniRule 2026</p>
     </footer>
+
+    <!-- Expand every collapsible part when printing / saving as PDF -->
+    <script>
+        window.addEventListener('beforeprint', function () {
+            document.querySelectorAll('details').forEach(function (d) { d.open = true; });
+        });
+    </script>
 </body>
 </html>

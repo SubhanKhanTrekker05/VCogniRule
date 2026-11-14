@@ -6,119 +6,168 @@
     <title>VCogniRule — Screening</title>
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="stylesheet" th:href="@{/css/style.css}" />
+    <!-- Enables the tabbed, one-question-at-a-time layout; without JS the plain form is shown -->
+    <script>document.documentElement.classList.add('js');</script>
 </head>
 <body>
-    <div style="max-width: 800px; margin: 0 auto; padding: 1rem 1rem 0;">
-        <a href="/" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">← Back to Home</a>
+    <div class="page-top">
+        <a href="/" class="back-link">← Back to Home</a>
     </div>
-    <div class="assessment-page">
+
+    <main class="assessment-page" th:attr="data-resume=${resumeSection}">
         <div class="assessment-header">
             <h1>Mental Health Screening</h1>
-            <p>Expand each section and answer the questions. Sections you skip will use default values (no symptoms reported).</p>
+            <p>Pick a section and answer one question at a time. Only sections you fully complete are
+               included in your report. The <strong>Safety Check</strong> is required.</p>
         </div>
 
-        <form method="post" action="/screening">
+        <div th:if="${safetyRequired}" class="notice notice-warn" role="alert">
+            Please complete the <strong>Safety Check</strong> before submitting. It is required for every screening.
+        </div>
 
-            <div th:each="entry : ${questionsByInstrument}">
-                <details class="instrument-section">
-                    <summary>
-                        <span th:text="${entry.key}">Instrument</span>
-                        <span class="count" th:text="${entry.value.size() + ' questions'}">N questions</span>
-                    </summary>
+        <form id="screening-form" method="post" action="/screening" novalidate>
 
-                    <!-- C-SSRS warning -->
-                    <div th:if="${entry.key == 'C-SSRS'}" class="section-warning">
-                        The next questions ask about thoughts of death or self-harm. If you are in immediate danger, please contact emergency services.
+            <!-- Tabs -->
+            <div class="tab-bar" role="tablist" aria-label="Screening sections">
+                <button th:each="sv : ${sections}" type="button" role="tab" class="tab"
+                        th:id="'tab-' + ${sv.section.code}"
+                        th:attr="data-tab=${sv.section.code},aria-controls='panel-' + ${sv.section.code},data-mandatory=${sv.section.mandatory}"
+                        aria-selected="false">
+                    <span class="tab-label" th:text="${sv.section.label}">Label</span>
+                    <span class="tab-code" th:text="${sv.section.code}">CODE</span>
+                    <span class="tab-status" data-status></span>
+                </button>
+            </div>
+
+            <!-- One panel per section -->
+            <section th:each="sv : ${sections}" class="panel" role="tabpanel"
+                     th:id="'panel-' + ${sv.section.code}"
+                     th:attr="data-panel=${sv.section.code},data-label=${sv.section.label},aria-labelledby='tab-' + ${sv.section.code}">
+
+                <div class="panel-head">
+                    <h2>
+                        <span th:text="${sv.section.label}">Section</span>
+                        <span class="code-chip" th:text="${sv.section.code}">CODE</span>
+                        <span th:if="${sv.section.mandatory}" class="required-chip">Required</span>
+                    </h2>
+                    <p class="panel-desc" th:text="${sv.section.description}">What this section measures</p>
+                    <div class="progress" aria-hidden="true">
+                        <div class="progress-text" data-progress-text></div>
+                        <div class="progress-track"><div class="progress-fill" data-progress-fill></div></div>
                     </div>
+                </div>
 
-                    <div th:each="question : ${entry.value}" class="question">
-                        <p th:text="${question.text}">Question text</p>
+                <div th:if="${sv.section.code == 'C-SSRS'}" class="section-warning">
+                    These questions ask about thoughts of death or self-harm. They are asked of everyone so we can
+                    point you to support if needed. If you are in immediate danger, please contact emergency services.
+                </div>
 
-                        <div th:switch="${question.scaleType}">
+                <div th:each="q, st : ${sv.questions}" class="q-card" th:attr="data-index=${st.index}">
+                    <p class="q-count" th:text="'Question ' + ${st.count} + ' of ' + ${st.size}">Question 1 of 9</p>
+                    <p class="q-prompt" th:if="${q.lead != null or sv.section.prompt != null}"
+                       th:text="${q.lead != null ? q.lead : sv.section.prompt}">Prompt</p>
 
-                            <!-- LIKERT_03: 0-3 (PHQ-9, GAD-7, PSQI Likert) -->
-                            <div th:case="'LIKERT_03'" class="radio-group">
-                                <label><input type="radio" th:name="${question.fieldKey}" value="0" th:checked="${question.defaultValue == 0}"><span>Not at all</span></label>
-                                <label><input type="radio" th:name="${question.fieldKey}" value="1" th:checked="${question.defaultValue == 1}"><span>Several days</span></label>
-                                <label><input type="radio" th:name="${question.fieldKey}" value="2" th:checked="${question.defaultValue == 2}"><span>More than half</span></label>
-                                <label><input type="radio" th:name="${question.fieldKey}" value="3" th:checked="${question.defaultValue == 3}"><span>Nearly every day</span></label>
-                            </div>
+                    <fieldset>
+                        <legend class="q-text" th:text="${q.text}">Question text</legend>
 
-                            <!-- LIKERT_02: 0-2 (PHQ-15) -->
-                            <div th:case="'LIKERT_02'" class="radio-group">
-                                <label><input type="radio" th:name="${question.fieldKey}" value="0" th:checked="${question.defaultValue == 0}"><span>Not bothered</span></label>
-                                <label><input type="radio" th:name="${question.fieldKey}" value="1" th:checked="${question.defaultValue == 1}"><span>Bothered a little</span></label>
-                                <label><input type="radio" th:name="${question.fieldKey}" value="2" th:checked="${question.defaultValue == 2}"><span>Bothered a lot</span></label>
-                            </div>
-
-                            <!-- BINARY: 0-1 (C-SSRS, PC-PTSD) -->
-                            <div th:case="'BINARY'" class="radio-group">
-                                <label><input type="radio" th:name="${question.fieldKey}" value="0" th:checked="${question.defaultValue == 0}"><span>No</span></label>
-                                <label><input type="radio" th:name="${question.fieldKey}" value="1" th:checked="${question.defaultValue == 1}"><span>Yes</span></label>
-                            </div>
-
-                            <!-- LIKERT_04: 0-4 (PSS-10, ASRS) -->
-                            <div th:case="'LIKERT_04'" class="radio-group">
-                                <label><input type="radio" th:name="${question.fieldKey}" value="0" th:checked="${question.defaultValue == 0}"><span>Never</span></label>
-                                <label><input type="radio" th:name="${question.fieldKey}" value="1" th:checked="${question.defaultValue == 1}"><span>Rarely</span></label>
-                                <label><input type="radio" th:name="${question.fieldKey}" value="2" th:checked="${question.defaultValue == 2}"><span>Sometimes</span></label>
-                                <label><input type="radio" th:name="${question.fieldKey}" value="3" th:checked="${question.defaultValue == 3}"><span>Often</span></label>
-                                <label><input type="radio" th:name="${question.fieldKey}" value="4" th:checked="${question.defaultValue == 4}"><span>Very Often</span></label>
-                            </div>
-
-                            <!-- LIKERT_05: 0-5 (WHO-5) -->
-                            <div th:case="'LIKERT_05'" class="radio-group">
-                                <label><input type="radio" th:name="${question.fieldKey}" value="0" th:checked="${question.defaultValue == 0}"><span>At no time</span></label>
-                                <label><input type="radio" th:name="${question.fieldKey}" value="1" th:checked="${question.defaultValue == 1}"><span>Some of the time</span></label>
-                                <label><input type="radio" th:name="${question.fieldKey}" value="2" th:checked="${question.defaultValue == 2}"><span>Less than half</span></label>
-                                <label><input type="radio" th:name="${question.fieldKey}" value="3" th:checked="${question.defaultValue == 3}"><span>More than half</span></label>
-                                <label><input type="radio" th:name="${question.fieldKey}" value="4" th:checked="${question.defaultValue == 4}"><span>Most of the time</span></label>
-                                <label><input type="radio" th:name="${question.fieldKey}" value="5" th:checked="${question.defaultValue == 5}"><span>All of the time</span></label>
-                            </div>
-
-                            <!-- LIKERT_08: 0-8 dropdown (WSAS) -->
-                            <select th:case="'LIKERT_08'" th:name="${question.fieldKey}">
-                                <option value="0" th:selected="${question.defaultValue == 0}">0 — Not at all</option>
-                                <option value="1" th:selected="${question.defaultValue == 1}">1</option>
-                                <option value="2" th:selected="${question.defaultValue == 2}">2</option>
-                                <option value="3" th:selected="${question.defaultValue == 3}">3</option>
-                                <option value="4" th:selected="${question.defaultValue == 4}">4 — Definitely</option>
-                                <option value="5" th:selected="${question.defaultValue == 5}">5</option>
-                                <option value="6" th:selected="${question.defaultValue == 6}">6</option>
-                                <option value="7" th:selected="${question.defaultValue == 7}">7 — Markedly</option>
-                                <option value="8" th:selected="${question.defaultValue == 8}">8 — Very severely</option>
-                            </select>
-
-                            <!-- TEXT: time input (PSQI Q1, Q3) -->
-                            <input th:case="'TEXT'" type="time"
-                                   th:name="${question.fieldKey}"
-                                   th:value="${question.fieldKey == 'psqi_q1' ? '23:00' : (question.fieldKey == 'psqi_q3' ? '07:00' : '00:00')}" />
-
-                            <!-- NUMBER_INT (PSQI Q2) -->
-                            <input th:case="'NUMBER_INT'" type="number"
-                                   th:name="${question.fieldKey}"
-                                   th:value="${question.defaultValue}"
-                                   min="0" max="180" />
-
-                            <!-- NUMBER_DEC (PSQI Q4) -->
-                            <input th:case="'NUMBER_DEC'" type="number"
-                                   th:name="${question.fieldKey}"
-                                   th:value="${question.defaultValue}"
-                                   min="0" max="24" step="0.5" />
-
+                        <!-- Radio choices -->
+                        <div th:if="${q.kind == 'choice'}" class="options"
+                             th:classappend="${q.options.size() > 6 ? 'options-scale' : ''}">
+                            <label th:each="o : ${q.options}" class="option">
+                                <input type="radio" th:name="${q.fieldKey}" th:value="${o.value}"
+                                       th:checked="${answers[q.fieldKey] == o.value}" />
+                                <span class="option-body">
+                                    <span th:if="${q.options.size() > 6}" class="option-num" th:text="${o.value}">0</span>
+                                    <span th:unless="${q.options.size() > 6 and o.label == o.value}"
+                                          class="option-label" th:text="${o.label}">Label</span>
+                                </span>
+                            </label>
                         </div>
+
+                        <!-- Time (bedtime / wake time) -->
+                        <div th:if="${q.kind == 'time'}" class="field-row">
+                            <input type="time" th:name="${q.fieldKey}" th:value="${answers[q.fieldKey]}"
+                                   th:attr="aria-label=${q.text}" />
+                        </div>
+
+                        <!-- Number (minutes / hours) -->
+                        <div th:if="${q.kind == 'number'}" class="field-row">
+                            <input type="number" inputmode="decimal" th:name="${q.fieldKey}"
+                                   th:value="${answers[q.fieldKey]}"
+                                   th:min="${q.min}" th:max="${q.max}" th:step="${q.step}"
+                                   th:attr="aria-label=${q.text}" />
+                            <span class="unit" th:text="${q.unit}">unit</span>
+                        </div>
+                    </fieldset>
+                </div>
+
+                <p class="q-hint" data-hint hidden></p>
+
+                <div class="q-done" data-done hidden>
+                    <p class="done-title">✓ Section complete</p>
+                    <p>Your answers for <strong th:text="${sv.section.label}">this section</strong> are saved.
+                       You can review them or move on.</p>
+                    <div class="done-actions">
+                        <button type="button" class="btn btn-outline" data-review>Review answers</button>
+                        <button type="button" class="btn btn-primary" data-next-section>Next section →</button>
                     </div>
-                </details>
+                </div>
+
+                <div class="q-nav">
+                    <button type="button" class="btn btn-ghost" data-prev>← Back</button>
+                    <button type="button" class="btn btn-primary" data-next>Next →</button>
+                </div>
+            </section>
+
+            <!-- Sticky submit bar -->
+            <div class="submit-bar">
+                <p class="submit-summary" data-summary aria-live="polite"></p>
+                <button type="submit" class="btn btn-primary" data-submit>Submit Screening</button>
             </div>
 
-            <div class="assessment-submit">
-                <button type="submit" class="btn btn-warm">Submit Screening</button>
-            </div>
+            <!-- Confirmation dialog (filled in by screening.js) -->
+            <dialog id="submit-dialog" class="dialog" aria-labelledby="dlg-title">
+                <h2 id="dlg-title">Before you submit</h2>
+
+                <div class="dlg-block dlg-phq9" data-dlg-phq9 hidden>
+                    <h3>Your Depression &amp; Mood section (PHQ-9) is not complete</h3>
+                    <p>We strongly recommend completing it. Without it:</p>
+                    <ul>
+                        <li>Your <strong>overall result cannot be determined</strong>. The overall result is
+                            built from your depression score together with the Safety Check.</li>
+                        <li><strong>Combined findings are missed</strong>, such as low mood together with anxiety,
+                            poor sleep or low wellbeing. Many of the screening rules look for these patterns.</li>
+                        <li>PHQ-9 is the <strong>most widely used, validated depression questionnaire</strong>, so
+                            your report is easier to discuss with a doctor or counsellor.</li>
+                        <li>It takes about <strong>2 minutes</strong> (9 questions).</li>
+                    </ul>
+                </div>
+
+                <div class="dlg-block" data-dlg-partial hidden>
+                    <h3>Not enough answers in:</h3>
+                    <ul data-dlg-partial-list></ul>
+                    <p>These sections will be left out of your report. You can finish them later from the report
+                       without re-entering your answers.</p>
+                </div>
+
+                <div class="dlg-block">
+                    <h3>Included in your report:</h3>
+                    <ul data-dlg-included-list></ul>
+                </div>
+
+                <div class="dialog-actions">
+                    <button type="button" class="btn btn-ghost" data-dlg-back>Go back</button>
+                    <button type="button" class="btn btn-primary" data-dlg-phq9-go hidden>Complete Depression section</button>
+                    <button type="submit" class="btn btn-primary" data-dlg-submit>Submit</button>
+                </div>
+            </dialog>
         </form>
-    </div>
+    </main>
 
     <footer class="footer">
         <p>&copy; VCogniRule 2026</p>
     </footer>
+
+    <script th:src="@{/js/screening.js}"></script>
 </body>
 </html>
