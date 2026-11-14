@@ -68,6 +68,53 @@ public class ReportService {
         "crisis_detected", "cssrs_passive_ideation", "cssrs_any_positive", "phq9_q9",
         "cssrs_q1", "cssrs_q2", "cssrs_q3", "cssrs_q4", "cssrs_q5", "cssrs_q6");
 
+    /**
+     * Information findings are green only when their result is recognisably reassuring.
+     * Matched on the rule's conclusion key (e.g. depression_minimal, stress_low,
+     * wellbeing_good, ptsd_negative, cssrs_no_risk, functioning_subclinical).
+     * Anything else (symptom signals, follow-up gates, notes, rules added later
+     * by an admin) defaults to neutral, so the report never shows false reassurance.
+     */
+    private static final java.util.regex.Pattern REASSURING_KEY = java.util.regex.Pattern.compile(
+        "^(good_mental_health|.*_(minimal|low|good|negative|no_risk|subclinical))$");
+
+    /** Plain-language labels for calculated scores and flags shown in "Why this appears". */
+    private static final Map<String, String> FRIENDLY_LABELS = Map.ofEntries(
+        Map.entry("phq9_total", "Depression score (PHQ-9 total, 0–27)"),
+        Map.entry("phq9_core_symptom", "Low mood or loss of interest on more than half the days"),
+        Map.entry("phq9_symptom_count", "Depression symptoms on more than half the days"),
+        Map.entry("gad7_total", "Anxiety score (GAD-7 total, 0–21)"),
+        Map.entry("gad7_symptom_count", "Anxiety symptoms on more than half the days"),
+        Map.entry("phq15_total", "Physical symptoms score (PHQ-15 total, 0–30)"),
+        Map.entry("phq15_severe_count", "Physical symptoms that bother you a lot"),
+        Map.entry("cssrs_passive_ideation", "Thoughts of death or of not waking up"),
+        Map.entry("cssrs_any_positive", "Any Yes answer in the Safety Check"),
+        Map.entry("crisis_detected", "Safety Check: intent, plan or past actions"),
+        Map.entry("who5_raw", "Wellbeing score (WHO-5, 0–25)"),
+        Map.entry("pss10_total", "Stress score (PSS-10 total, 0–40)"),
+        Map.entry("pss10_helplessness", "Stress: feeling helpless (0–24)"),
+        Map.entry("pss10_efficacy", "Stress: low confidence in coping (0–16)"),
+        Map.entry("psqi_c1", "Sleep: how you rate your sleep (0–3)"),
+        Map.entry("psqi_c2", "Sleep: time to fall asleep (0–3)"),
+        Map.entry("psqi_c3", "Sleep: hours of sleep (0–3)"),
+        Map.entry("psqi_c4", "Sleep: time in bed actually asleep (0–3)"),
+        Map.entry("psqi_c5", "Sleep: disturbances during the night (0–3)"),
+        Map.entry("psqi_c6", "Sleep: use of sleep medicine (0–3)"),
+        Map.entry("psqi_c7", "Sleep: daytime tiredness and drive (0–3)"),
+        Map.entry("psqi_global", "Sleep quality score (PSQI, 0–21)"),
+        Map.entry("wsas_total", "Daily functioning score (WSAS, 0–40)"),
+        Map.entry("asrs_inattentive_count", "Attention: inattention answers in the screening range (0–3)"),
+        Map.entry("asrs_hyperactive_count", "Attention: restlessness answers in the screening range (0–3)"),
+        Map.entry("asrs_shaded_count", "Attention answers in the screening range (0–6)"),
+        Map.entry("pcptsd_total", "Trauma response: Yes answers (0–4)"),
+        Map.entry("panic_physical_symptom", "Racing heart or shortness of breath"),
+        Map.entry("depression_any", "Depression score of 5 or more (at least mild)"),
+        Map.entry("depression_moderate_plus", "Depression score of 10 or more (moderate or higher)"),
+        Map.entry("anxiety_any", "Anxiety score of 5 or more (at least mild)"),
+        Map.entry("anxiety_moderate_plus", "Anxiety score of 10 or more (moderate or higher)"),
+        Map.entry("sleep_poor_any", "Sleep score above 5 (poor sleep)"),
+        Map.entry("any_treatment_recommendation", "At least one other finding recommends support or monitoring"));
+
     /** One answered (or unanswered) question in the "Your answers" list. */
     public record AnswerRow(int number, String question, String answer, boolean answered) {}
 
@@ -144,7 +191,9 @@ public class ReportService {
 
         Map<String, String> conclusionNames = new HashMap<>();
         Set<String> crisisConclusions = new HashSet<>();
+        Map<String, Rule> rulesById = new HashMap<>();
         for (Rule r : ruleRepository.getActiveRules()) {
+            rulesById.put(r.ruleId(), r);
             if (r.conclusionKey() != null) {
                 conclusionNames.putIfAbsent(r.conclusionKey(), r.name());
                 if (r.actionType() == ActionType.CRISIS_PROTOCOL) crisisConclusions.add(r.conclusionKey());
@@ -163,7 +212,7 @@ public class ReportService {
                     safetyLinked = true;
                 }
             }
-            findingViews.add(styled(f, basis, safetyLinked));
+            findingViews.add(styled(f, basis, safetyLinked, rulesById.get(f.ruleId())));
         }
 
         // ---- Section coverage ----
@@ -200,9 +249,10 @@ public class ReportService {
      * Colour/icon of a finding:
      * 1. Safety-linked (basis contains a positive risk signal) or a crisis rule → crisis.
      * 2. Otherwise by the rule's action type (how serious the recommendation is).
+     * 3. Information (DISPLAY_INFO) findings: green only if reassuring, otherwise neutral.
      * Priority is NOT used: it orders findings, it does not say how serious they are.
      */
-    private static FindingView styled(Finding f, List<BasisLine> basis, boolean safetyLinked) {
+    private static FindingView styled(Finding f, List<BasisLine> basis, boolean safetyLinked, Rule rule) {
         ActionType a = f.actionType();
         String action = switch (a) {
             case CRISIS_PROTOCOL -> "Crisis support";
@@ -221,8 +271,22 @@ public class ReportService {
             case RECOMMEND_ASSESSMENT -> new FindingView(f, basis, "recommend", "!", action);
             case SUGGEST_PROFESSIONAL -> new FindingView(f, basis, "suggest", "!", action);
             case MONITOR -> new FindingView(f, basis, "monitor", "•", action);
-            default -> new FindingView(f, basis, "info", "✓", action);
+            default -> infoStyled(f, basis, rule);
         };
+    }
+
+    /** DISPLAY_INFO findings: green ✓ only when reassuring; symptom signals, gates and notes stay neutral. */
+    private static FindingView infoStyled(Finding f, List<BasisLine> basis, Rule rule) {
+        String key = rule != null && rule.conclusionKey() != null ? rule.conclusionKey() : "";
+        String value = rule != null ? rule.conclusionValue() : null;
+        boolean reassuring = REASSURING_KEY.matcher(key).matches()
+            || ("overall_severity".equals(key) && "minimal".equals(value));
+        if (reassuring) return new FindingView(f, basis, "info", "✓", "No concern");
+        if (key.endsWith("_clinical") || key.equals("ptsd_single")) {
+            return new FindingView(f, basis, "note", "•", "Symptom noted");
+        }
+        if (key.endsWith("_unlocked")) return new FindingView(f, basis, "note", "→", "Follow-up checks");
+        return new FindingView(f, basis, "note", "i", "Information");
     }
 
     private BasisLine basisLine(ConditionTrace t, Map<String, Question> questionsByKey,
@@ -249,7 +313,7 @@ public class ReportService {
 
         // 3. A calculated score or flag
         Question q = questionsByKey.get(key);
-        String label = q != null ? q.text() : key;
+        String label = FRIENDLY_LABELS.getOrDefault(key, q != null ? q.text() : key);
         boolean binary = q != null && "BINARY".equals(q.scaleType());
         if (binary) {
             return new BasisLine(label, "1".equals(t.actualValue()) ? "Yes" : "No",
