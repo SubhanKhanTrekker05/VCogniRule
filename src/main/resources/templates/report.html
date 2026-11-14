@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VCogniRule — Report</title>
-    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" type="image/png" href="/favicon.png" />
     <link rel="stylesheet" th:href="@{/css/style.css}" />
 </head>
 <body>
@@ -18,7 +19,7 @@
                   th:class="'severity-banner severity-' + ${report.overallKey}">MODERATE</span>
             <p th:if="${report.overallNote != null}" class="overall-note" th:text="${report.overallNote}">Note</p>
             <p class="report-jump no-print">
-                <a href="#findings">Findings</a> · <a href="#your-answers">Your answers</a>
+                <a href="#findings">Results</a> · <a href="#your-answers">Your answers</a>
             </p>
         </div>
 
@@ -90,46 +91,36 @@
             </div>
         </div>
 
-        <!-- Findings -->
+        <!-- Findings, grouped by audience (see ReportService) -->
         <div class="findings-section" id="findings">
-            <h2 th:text="${report.findings.size() == 1 ? '1 finding' : report.findings.size() + ' findings'}">Findings</h2>
+            <h2>Your results</h2>
+            <p class="findings-intro">What your answers show, most important first. Open
+               <em>Why this appears</em> on any result to see the answers it is based on.</p>
 
-            <p th:if="${report.findings.isEmpty()}" class="empty-findings">
-                No findings for the sections you completed.
+            <p th:if="${report.results.isEmpty()}" class="empty-findings">
+                No results for the sections you completed.
             </p>
+            <th:block th:each="fv : ${report.results}"><div th:replace="~{fragments/finding :: card(${fv})}"></div></th:block>
 
-            <!-- Colour = tone from ReportService.styled(): safety-linked first, then action type -->
-            <div th:each="fv : ${report.findings}" th:with="finding=${fv.finding}"
-                 class="finding" th:classappend="'tone-' + ${fv.tone}">
+            <details class="finding-group" th:if="${!report.guidance.isEmpty()}">
+                <summary>
+                    <span>Guidance for professionals</span>
+                    <span class="group-count" th:text="${report.guidance.size()}">9</span>
+                </summary>
+                <p class="findings-intro">Recommendations from the NICE depression guideline (NG222) that match
+                   your answers. They are written for doctors and counsellors, so share this report with them.</p>
+                <th:block th:each="fv : ${report.guidance}"><div th:replace="~{fragments/finding :: card(${fv})}"></div></th:block>
+            </details>
 
-                <div class="finding-header">
-                    <span class="finding-icon" th:text="${fv.icon}" aria-hidden="true">✓</span>
-                    <span class="finding-name" th:text="${finding.name}">Finding name</span>
-                    <span class="finding-rule-id" th:text="'(' + ${finding.ruleId} + ')'">(RULE)</span>
-                    <span class="finding-level-badge" th:text="'L' + ${finding.level}">L1</span>
-                    <span class="finding-action" th:text="${fv.action}">Action</span>
-                </div>
-
-                <p class="finding-explanation" th:text="${finding.explanation}">Explanation</p>
-
-                <!-- Why this appears: the answers, scores and earlier findings it was based on -->
-                <div class="trace" th:if="${!fv.basis.isEmpty()}">
-                    <details>
-                        <summary>Why this appears</summary>
-                        <ul class="basis-list">
-                            <li th:each="b : ${fv.basis}" th:classappend="${b.fromEarlierFinding ? 'basis-chain' : ''}">
-                                <span class="basis-label" th:text="${b.label}">Question</span>
-                                <span class="basis-value">
-                                    <span th:text="${b.fromEarlierFinding ? '' : 'Your result: '}"></span><strong th:text="${b.value}">value</strong>
-                                </span>
-                                <span class="basis-needed" th:if="${b.needed != null}" th:text="'Rule needs: ' + ${b.needed}">needed</span>
-                            </li>
-                        </ul>
-                    </details>
-                </div>
-
-                <p class="finding-source" th:if="${finding.sourceRef}" th:text="'Source: ' + ${finding.sourceRef}">Source</p>
-            </div>
+            <details class="finding-group" th:if="${!report.reasoning.isEmpty()}">
+                <summary>
+                    <span>How the system reasoned</span>
+                    <span class="group-count" th:text="${report.reasoning.size()}">3</span>
+                </summary>
+                <p class="findings-intro">Intermediate steps the rule engine took to connect your answers
+                   (for example, opening extra checks once depression was found). Shown for transparency.</p>
+                <th:block th:each="fv : ${report.reasoning}"><div th:replace="~{fragments/finding :: card(${fv})}"></div></th:block>
+            </details>
         </div>
 
         <!-- Your answers -->

@@ -71,6 +71,8 @@ h1, h2 { font-family: var(--font-display); font-weight: 700; }
 .btn-warn:hover { background: #8F5615; }
 .btn-outline { background: transparent; border-color: var(--primary); color: var(--primary); }
 .btn-outline:hover { background: var(--primary); color: #fff; }
+.btn-danger { background: transparent; border-color: var(--terracotta); color: var(--terracotta); }
+.btn-danger:hover { background: var(--terracotta); color: #fff; }
 .btn-ghost { background: transparent; color: var(--text-muted); }
 .btn-ghost:hover:not(:disabled) { background: var(--surface-alt); color: var(--text); }
 .btn-sm { padding: 0.4rem 1rem; font-size: 0.85rem; }
@@ -135,6 +137,10 @@ h1, h2 { font-family: var(--font-display); font-weight: 700; }
     transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
 }
 .tab:hover { border-color: var(--primary); }
+/* Wide screens: all tabs visible (wrap into rows). Phones keep the swipeable single row. */
+@media (min-width: 700px) {
+    .tab-bar { flex-wrap: wrap; overflow: visible; }
+}
 .tab-label { font-weight: 600; font-size: 0.92rem; grid-column: 1; }
 .tab-code { font-size: 0.72rem; color: var(--text-muted); grid-column: 1; letter-spacing: 0.02em; }
 .tab-status {
@@ -393,6 +399,16 @@ a.chip-skip:hover { border-color: var(--primary); color: var(--primary); }
 .trace li strong { color: var(--text); }
 .trace .required { color: var(--text-muted); font-size: 0.8rem; }
 .empty-findings { color: var(--text-muted); font-size: 0.93rem; }
+.findings-intro { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.75rem; }
+
+/* Collapsible finding groups (guidance for professionals, how the system reasoned) */
+.finding-group { margin-top: 1rem; background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius); padding: 0 1rem; }
+.finding-group[open] { padding-bottom: 0.25rem; }
+.finding-group > summary { display: flex; align-items: center; gap: 0.6rem; padding: 0.9rem 0.25rem; cursor: pointer; list-style: none; font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--primary); }
+.finding-group > summary::-webkit-details-marker { display: none; }
+.finding-group > summary::before { content: '▸'; transition: transform 0.15s; }
+.finding-group[open] > summary::before { transform: rotate(90deg); }
+.group-count { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 0.05rem 0.55rem; }
 .report-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; margin-top: 2rem; }
 
 /* ABOUT */
@@ -444,7 +460,7 @@ mark { background: var(--amber-bg); color: var(--amber-text); padding: 0 2px; bo
 .conditions-section h2 { color: var(--primary); font-size: 1.2rem; margin-bottom: 0.5rem; }
 .group-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin-top: 0.75rem; margin-bottom: 0.25rem; }
 .danger-zone { max-width: 600px; margin: 0 auto 2rem; text-align: center; }
-.admin-icon { width: 80px; height: auto; vertical-align: middle; }
+.admin-icon { width: 34px; height: auto; vertical-align: middle; }
 .toast { background: var(--fired-bg); border: 1px solid var(--fired-border); border-radius: var(--radius); padding: 0.75rem 1.25rem; margin-bottom: 1rem; color: var(--text); font-size: 0.9rem; }
 
 /* LOGIN */

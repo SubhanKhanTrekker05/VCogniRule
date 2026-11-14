@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VCogniRule — About</title>
-    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" type="image/png" href="/favicon.png" />
     <link rel="stylesheet" th:href="@{/css/style.css}" />
 </head>
 <body>
@@ -12,7 +13,7 @@
         <a href="/" class="back-link">← Back to Home</a>
 
         <div class="about-content">
-            <img src="/logo.png" alt="VCogniRule" class="about-logo-img" />
+            <img src="/logo.svg" alt="VCogniRule" class="about-logo-img" />
             <h1>VCogniRule</h1>
             <p class="tagline">Rule-Based Early Mental Health Screening System</p>
 
@@ -25,16 +26,16 @@
             <h2>What does it screen for?</h2>
             <p>The system screens across 7 clinical domains using 10 validated instruments:</p>
             <ul>
-                <li><strong>Depression</strong> — PHQ-9 (Patient Health Questionnaire-9)</li>
+                <li><strong>Depression &amp; Mood</strong> — PHQ-9 (Patient Health Questionnaire-9)</li>
                 <li><strong>Anxiety</strong> — GAD-7 (Generalized Anxiety Disorder-7)</li>
-                <li><strong>Suicide Risk</strong> — C-SSRS (Columbia Suicide Severity Rating Scale)</li>
+                <li><strong>Safety Check</strong> (suicide risk) — C-SSRS (Columbia Suicide Severity Rating Scale)</li>
                 <li><strong>Sleep Quality</strong> — PSQI (Pittsburgh Sleep Quality Index)</li>
-                <li><strong>Mental Well-being</strong> — WHO-5 Well-Being Index</li>
-                <li><strong>Perceived Stress</strong> — PSS-10 (Perceived Stress Scale)</li>
-                <li><strong>Somatic Symptoms</strong> — PHQ-15</li>
-                <li><strong>Functional Impairment</strong> — WSAS (Work and Social Adjustment Scale)</li>
-                <li><strong>ADHD Symptoms</strong> — ASRS (Adult ADHD Self-Report Scale)</li>
-                <li><strong>PTSD Symptoms</strong> — PC-PTSD (Primary Care PTSD Screen)</li>
+                <li><strong>Wellbeing</strong> — WHO-5 Well-Being Index</li>
+                <li><strong>Stress</strong> — PSS-10 (Perceived Stress Scale)</li>
+                <li><strong>Physical Symptoms</strong> — PHQ-15 (Patient Health Questionnaire-15)</li>
+                <li><strong>Daily Functioning</strong> — WSAS (Work and Social Adjustment Scale)</li>
+                <li><strong>Attention &amp; Focus</strong> (ADHD symptoms) — ASRS (Adult ADHD Self-Report Scale)</li>
+                <li><strong>Trauma Response</strong> (PTSD symptoms) — PC-PTSD (Primary Care PTSD Screen)</li>
             </ul>
 
             <h2>How does it work?</h2>
@@ -51,7 +52,7 @@
             <p><strong>No.</strong> VCogniRule is a screening tool, not a diagnostic system. It identifies possible warning signs and recommends professional support. It does not diagnose mental health conditions. The results should be discussed with a qualified mental health professional.</p>
 
             <h2>Privacy</h2>
-            <p>The system stores zero user data. No responses, no findings, no session information is persisted. The engine evaluates responses in memory and discards them when the report is displayed. Only the knowledge base (rules and questions) and admin accounts are stored in the database.</p>
+            <p>Your answers are never saved to the database or any file. While you are using the screening, they are kept temporarily in the server's memory, linked to your browser session, so you can go back from the report and finish a section without re-entering anything. They are deleted when you start a new screening, and automatically when the session expires (after about 30 minutes of inactivity). Only the knowledge base (rules and questions) and admin accounts are stored in the database.</p>
 
             <h2>Technology</h2>
             <p>Built with Java 21, Spring Boot 4.1.2, Thymeleaf, SQLite, and JdbcTemplate. The inference engine is framework-independent plain Java, fully unit-testable in isolation.</p>

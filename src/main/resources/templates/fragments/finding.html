@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+    One finding card. Used by report.html for every findings group.
+    Colour = tone from ReportService.styled(): safety-linked first, then action type.
+-->
+<div th:fragment="card(fv)" th:with="finding=${fv.finding}"
+     class="finding" th:classappend="'tone-' + ${fv.tone}">
+
+    <div class="finding-header">
+        <span class="finding-icon" th:text="${fv.icon}" aria-hidden="true">✓</span>
+        <span class="finding-name" th:text="${finding.name}">Finding name</span>
+        <span class="finding-rule-id" th:text="'(' + ${finding.ruleId} + ')'">(RULE)</span>
+        <span class="finding-level-badge" th:text="'L' + ${finding.level}">L1</span>
+        <span class="finding-action" th:text="${fv.action}">Action</span>
+    </div>
+
+    <p class="finding-explanation" th:text="${finding.explanation}">Explanation</p>
+
+    <!-- Why this appears: the answers, scores and earlier findings it was based on -->
+    <div class="trace" th:if="${!fv.basis.isEmpty()}">
+        <details>
+            <summary>Why this appears</summary>
+            <ul class="basis-list">
+                <li th:each="b : ${fv.basis}" th:classappend="${b.fromEarlierFinding ? 'basis-chain' : ''}">
+                    <span class="basis-label" th:text="${b.label}">Question</span>
+                    <span class="basis-value">
+                        <span th:text="${b.fromEarlierFinding ? '' : 'Your result: '}"></span><strong th:text="${b.value}">value</strong>
+                    </span>
+                    <span class="basis-needed" th:if="${b.needed != null}" th:text="'Rule needs: ' + ${b.needed}">needed</span>
+                </li>
+            </ul>
+        </details>
+    </div>
+
+    <p class="finding-source" th:if="${finding.sourceRef}" th:text="'Source: ' + ${finding.sourceRef}">Source</p>
+</div>
+</body>
+</html>
