@@ -366,7 +366,9 @@ a.chip-skip:hover { border-color: var(--primary); color: var(--primary); }
 .tone-recommend { border-left-color: var(--moderate); background: var(--surface); }
 .tone-suggest { border-left-color: #B79A5E; background: var(--surface); }
 .tone-monitor { border-left-color: var(--info-border); background: var(--surface); }
-.tone-info { border-left-color: var(--fired-border); background: var(--fired-bg); }
+.tone-info { border-left-color: var(--fired-border); background: var(--fired-bg); }   /* reassuring only */
+.tone-note { border-left-color: var(--info-border); background: var(--surface); }      /* symptom noted, follow-up, information */
+.tone-note .finding-icon { color: var(--text-muted); font-weight: 700; }
 .tone-crisis .finding-icon { color: var(--amber); }
 .tone-urgent .finding-icon { color: var(--terracotta); }
 .tone-recommend .finding-icon, .tone-suggest .finding-icon { color: var(--moderate); font-weight: 700; }
