@@ -140,7 +140,7 @@ INSERT OR IGNORE INTO rule (id, rule_id, name, level, category, priority, action
 (121,'NICE-SUICIDE','Suicide risk precautions',2,'CROSS_CUTTING',70,'RECOMMEND_ASSESSMENT','NICE 1.2.12: Do not withhold treatment. Consider toxicity.','NICE NG222 1.2.12','nice_suicide_precautions','1'),
 (122,'NICE-CRHT','Crisis Resolution and Home Treatment',2,'CROSS_CUTTING',85,'URGENT_ASSESSMENT','NICE 1.16.10: CRHT for severe depression + risk.','NICE NG222 1.16.10','nice_crht','1'),
 (123,'NICE-LESS-SEV','Less severe pathway',2,'CROSS_CUTTING',35,'MONITOR','NICE 1.5: Less severe (PHQ-9<16). Self-help, CBT, exercise first.','NICE NG222 1.5','nice_less_severe','1'),
-(124,'NICE-MORE-SEV','More severe pathway',2,'CROSS_CUTTING',55,'RECOMMEND_ASSESSMENT','NICE 1.6: More severe (PHQ-9>=16). CBT+medication.','NICE NG222 1.6','nice_more_severe','1'),
+(124,'NICE-MORE-SEV','More severe pathway',1,'CROSS_CUTTING',55,'RECOMMEND_ASSESSMENT','NICE 1.6: More severe (PHQ-9>=16). CBT+medication.','NICE NG222 1.6','nice_more_severe','1'),
 (125,'NICE-MONITOR','Review at 2-4 weeks',2,'CROSS_CUTTING',15,'DISPLAY_INFO','NICE 1.4.3: Review treatment at 2-4 weeks.','NICE NG222 1.4.3','nice_monitor','1'),
 (126,'NICE-ROUTINE','Routine outcome monitoring',2,'CROSS_CUTTING',10,'DISPLAY_INFO','NICE 1.4.3: Use PHQ-9 for routine monitoring.','NICE NG222 1.4.3','nice_routine_monitoring','1'),
 (127,'NICE-RELAPSE','Higher relapse risk',2,'CROSS_CUTTING',40,'MONITOR','NICE 1.8.2: Relapse risk with severe depression + impairment.','NICE NG222 1.8.2','nice_relapse_risk','1'),

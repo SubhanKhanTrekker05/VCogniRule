@@ -26,7 +26,8 @@ import java.util.*;
 public class RuleEngine {
 
     /**
-     * Result of the evaluation — the findings list + overall severity.
+     * Result of the evaluation — the findings list + overall severity
+     * (null when no overall_severity rule fired).
      */
     public record RuleEngineResult(List<Finding> findings, String overallSeverity) {}
 
@@ -37,7 +38,8 @@ public class RuleEngine {
      */
     public RuleEngineResult evaluate(List<Rule> rules, Map<String, Integer> workingFacts) {
         List<Finding> findings = new ArrayList<>();
-        String overallSeverity = "minimal";
+        // null = no overall-severity rule fired; the caller decides how to present that
+        String overallSeverity = null;
 
         // Pass 1: Level 1 rules
         overallSeverity = evaluatePass(rules, workingFacts, findings, 1, overallSeverity);
@@ -112,8 +114,12 @@ public class RuleEngine {
                     }
                 }
 
-                // Capture overall severity from Level 4 rules
-                if (rule.level() == 4) {
+                // Capture overall severity from the Level 4 overall_severity rules.
+                // Rules are visited highest priority first, so the first one that
+                // fires wins (a later "mild" must not overwrite an earlier "critical").
+                // Other Level 4 rules (e.g. NICE-OVERALL) do not set the severity.
+                if (rule.level() == 4 && severity == null
+                        && "overall_severity".equals(rule.conclusionKey())) {
                     severity = rule.conclusionValue();
                 }
 

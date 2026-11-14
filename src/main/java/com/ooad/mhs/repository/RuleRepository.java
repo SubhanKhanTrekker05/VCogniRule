@@ -3,10 +3,11 @@ package com.ooad.mhs.repository;
 import com.ooad.mhs.domain.*;
 import com.ooad.mhs.util.*;
 import jakarta.annotation.PostConstruct;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.stereotype.Repository;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -110,7 +111,8 @@ public class RuleRepository {
                              Integer valueInt, String valueText, Integer valueMin, Integer valueMax) {
         Long groupId = getOrCreateGroup(ruleId);
         jdbcTemplate.update(
-            "INSERT INTO rule_condition (group_id, field_key, operator, value_int, value_text, value_min, value_max) VALUES (?,?,?,?,?,?,?)",
+            // OR IGNORE: an identical condition already exists (unique index uq_rule_condition)
+            "INSERT OR IGNORE INTO rule_condition (group_id, field_key, operator, value_int, value_text, value_min, value_max) VALUES (?,?,?,?,?,?,?)",
             groupId, fieldKey, operator, valueInt, valueText, valueMin, valueMax);
         refreshCache();
     }
@@ -118,7 +120,8 @@ public class RuleRepository {
     public void updateCondition(Long conditionId, String fieldKey, String operator,
                                 Integer valueInt, String valueText, Integer valueMin, Integer valueMax) {
         jdbcTemplate.update(
-            "UPDATE rule_condition SET field_key=?, operator=?, value_int=?, value_text=?, value_min=?, value_max=? WHERE id=?",
+            // OR IGNORE: skip an edit that would duplicate another condition of the same rule
+            "UPDATE OR IGNORE rule_condition SET field_key=?, operator=?, value_int=?, value_text=?, value_min=?, value_max=? WHERE id=?",
             fieldKey, operator, valueInt, valueText, valueMin, valueMax, conditionId);
         refreshCache();
     }
@@ -154,28 +157,19 @@ public class RuleRepository {
         jdbcTemplate.update("DELETE FROM rule_condition_group");
         jdbcTemplate.update("DELETE FROM rule");
 
-        jdbcTemplate.execute(loadMasterSql());
+        // Run rules_master.sql statement by statement. A single jdbcTemplate.execute(...)
+        // of the whole file only ran its FIRST statement on SQLite (the rule INSERT),
+        // silently skipping the groups and conditions, so a reset left every rule
+        // without conditions.
+        ResourceDatabasePopulator populator =
+            new ResourceDatabasePopulator(new ClassPathResource("rules_master.sql"));
+        populator.setSqlScriptEncoding("UTF-8");
+        populator.execute(Objects.requireNonNull(jdbcTemplate.getDataSource()));
 
         refreshCache();
 
         Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rule", Integer.class);
         return count != null ? count : 0;
-    }
-
-    /**
-     * Loads rules_master.sql from the classpath as a single String.
-     * The file contains the rule/group/condition INSERTs extracted from data.sql
-     * (questions and admin accounts are NOT included - they are never reset).
-     */
-    private String loadMasterSql() {
-        try (var is = getClass().getClassLoader().getResourceAsStream("rules_master.sql")) {
-            if (is == null) {
-                throw new IllegalStateException("rules_master.sql not found on classpath");
-            }
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to load rules_master.sql", e);
-        }
     }
 
     // === Assembly ===

@@ -57,3 +57,19 @@ CREATE INDEX IF NOT EXISTS idx_question_order ON question(display_order);
 CREATE INDEX IF NOT EXISTS idx_rule_active ON rule(is_active);
 CREATE INDEX IF NOT EXISTS idx_rule_level ON rule(level);
 CREATE INDEX IF NOT EXISTS idx_condition_group ON rule_condition(group_id);
+
+-- data.sql runs on every startup and inserts conditions without explicit IDs.
+-- Without a uniqueness rule, INSERT OR IGNORE had nothing to conflict with and
+-- every restart added another full copy of all conditions.
+-- 1) Remove copies left behind by earlier startups (keeps the oldest row).
+DELETE FROM rule_condition WHERE id NOT IN (
+    SELECT MIN(id) FROM rule_condition
+    GROUP BY group_id, field_key, operator, value_int, value_text, value_min, value_max
+);
+-- 2) Make each condition unique. IFNULL is needed because SQLite treats NULLs
+--    as distinct in a UNIQUE index, and every condition has some NULL columns.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_rule_condition ON rule_condition(
+    group_id, field_key, operator,
+    IFNULL(value_int, -2147483648), IFNULL(value_text, ''),
+    IFNULL(value_min, -2147483648), IFNULL(value_max, -2147483648)
+);

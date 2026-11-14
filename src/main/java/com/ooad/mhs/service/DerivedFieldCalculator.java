@@ -1,9 +1,12 @@
 package com.ooad.mhs.service;
 
+import com.ooad.mhs.util.Section;
 import org.springframework.stereotype.Service;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Computes all 34 derived fields from raw user responses BEFORE rule evaluation.
@@ -20,20 +23,30 @@ import java.util.Map;
 @Service
 public class DerivedFieldCalculator {
 
+    /** Scores every section (all answers assumed present). */
     public Map<String, Integer> calculate(Map<String, Integer> responses) {
+        return calculate(responses, EnumSet.allOf(Section.class));
+    }
+
+    /**
+     * Scores only the completed sections. Derived fields of sections the user
+     * did not complete are left out of working_facts, so rules that need them
+     * do not fire instead of firing on default values.
+     */
+    public Map<String, Integer> calculate(Map<String, Integer> responses, Set<Section> completed) {
         Map<String, Integer> facts = new HashMap<>(responses);
 
-        calculatePhq9(facts);
-        calculateGad7(facts);
-        calculatePhq15(facts);
-        calculateCssrs(facts);
-        calculateWho5(facts);
-        calculatePss10(facts);
-        calculatePsqi(facts);
-        calculateWsas(facts);
-        calculateAsrs(facts);
-        calculatePcptsd(facts);
-        calculateDerivedFlags(facts);
+        if (completed.contains(Section.PHQ9)) calculatePhq9(facts);
+        if (completed.contains(Section.GAD7)) calculateGad7(facts);
+        if (completed.contains(Section.PHQ15)) calculatePhq15(facts);
+        if (completed.contains(Section.CSSRS)) calculateCssrs(facts);
+        if (completed.contains(Section.WHO5)) calculateWho5(facts);
+        if (completed.contains(Section.PSS10)) calculatePss10(facts);
+        if (completed.contains(Section.PSQI)) calculatePsqi(facts);
+        if (completed.contains(Section.WSAS)) calculateWsas(facts);
+        if (completed.contains(Section.ASRS)) calculateAsrs(facts);
+        if (completed.contains(Section.PCPTSD)) calculatePcptsd(facts);
+        calculateDerivedFlags(facts, completed);
 
         return facts;
     }
@@ -185,16 +198,24 @@ public class DerivedFieldCalculator {
         f.put("pcptsd_total", total);
     }
 
-    private void calculateDerivedFlags(Map<String, Integer> f) {
+    private void calculateDerivedFlags(Map<String, Integer> f, Set<Section> completed) {
         // Panic: heart racing OR shortness of breath
-        f.put("panic_physical_symptom",
-            (f.getOrDefault("phq15_i", 0) >= 1 || f.getOrDefault("phq15_j", 0) >= 1) ? 1 : 0);
+        if (completed.contains(Section.PHQ15)) {
+            f.put("panic_physical_symptom",
+                (f.getOrDefault("phq15_i", 0) >= 1 || f.getOrDefault("phq15_j", 0) >= 1) ? 1 : 0);
+        }
 
         // Broad category flags for Level 2 composites
-        f.put("depression_any", f.getOrDefault("phq9_total", 0) >= 5 ? 1 : 0);
-        f.put("depression_moderate_plus", f.getOrDefault("phq9_total", 0) >= 10 ? 1 : 0);
-        f.put("anxiety_any", f.getOrDefault("gad7_total", 0) >= 5 ? 1 : 0);
-        f.put("anxiety_moderate_plus", f.getOrDefault("gad7_total", 0) >= 10 ? 1 : 0);
-        f.put("sleep_poor_any", f.getOrDefault("psqi_global", 0) > 5 ? 1 : 0);
+        if (completed.contains(Section.PHQ9)) {
+            f.put("depression_any", f.getOrDefault("phq9_total", 0) >= 5 ? 1 : 0);
+            f.put("depression_moderate_plus", f.getOrDefault("phq9_total", 0) >= 10 ? 1 : 0);
+        }
+        if (completed.contains(Section.GAD7)) {
+            f.put("anxiety_any", f.getOrDefault("gad7_total", 0) >= 5 ? 1 : 0);
+            f.put("anxiety_moderate_plus", f.getOrDefault("gad7_total", 0) >= 10 ? 1 : 0);
+        }
+        if (completed.contains(Section.PSQI)) {
+            f.put("sleep_poor_any", f.getOrDefault("psqi_global", 0) > 5 ? 1 : 0);
+        }
     }
 }
