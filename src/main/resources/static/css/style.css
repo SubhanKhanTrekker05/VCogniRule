@@ -140,9 +140,14 @@ h1, h2 { font-family: var(--font-display); font-weight: 700; }
     transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
 }
 .tab:hover { border-color: var(--primary); }
-/* Wide screens: all tabs visible (wrap into rows). Phones keep the swipeable single row. */
-@media (min-width: 700px) {
-    .tab-bar { flex-wrap: wrap; overflow: visible; }
+/* All tabs always visible: wrap into rows on every screen (no hidden sideways strip). */
+.tab-bar { flex-wrap: wrap; overflow: visible; }
+/* Phones: a compact two-column grid, so all 10 sections are visible at once */
+@media (max-width: 699px) {
+    .tab-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+    .tab { padding: 0.45rem 0.6rem; min-width: 0; }
+    .tab-label { font-size: 0.85rem; line-height: 1.25; overflow-wrap: anywhere; }
+    .tab-code { font-size: 0.68rem; }
 }
 /* Laptop-height screens: a more compact header, tabs and section heading, so more of the
    question fits on screen (nothing is removed, only spacing and sizes are tighter). */
