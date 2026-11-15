@@ -235,7 +235,7 @@ Each item was first confirmed unused in all Java code, HTML templates and JavaSc
 - **New:** `service/OverallResultResolver.java`: the overall banner (Needs attention / severity /
   Not determined / Not classified, and its note). Returns a small `OverallResult` record.
 - **Changed:** `service/ReportService.java`: uses the two classes (constructor injection) instead of
-  its own private methods and constants (516 → 428 lines). The logic itself is unchanged.
+  its own private methods and constants (516 → 429 lines). The logic itself is unchanged.
   Fully written `java.util.regex` names replaced with imports.
 - **Verified:** 7/7 regression tests identical (including the full report text, so every tone, icon
   and label is unchanged), wrong-input 12/12, admin write-path 8/8, security 13/13, 9/9 tests.
