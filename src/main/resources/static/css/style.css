@@ -19,7 +19,7 @@
 
     /* Status scale (kept distinct from the brand wine so severity never looks like a button) */
     --sage: #5F7355;            /* mild / positive */
-    --moderate: #86672A;        /* moderate */
+    --moderate: #4F6D7A;        /* moderate: calm slate blue, clearly different from the warm crisis amber */
     --terracotta: #8E4A32;      /* severe */
     --terracotta-hover: #763C28;
     --amber: #A8661C;           /* crisis — calm ochre, not alarm red */
@@ -314,14 +314,14 @@ html:not(.js) .progress { display: none; }
 .report-header h1 { color: var(--primary); font-size: 2rem; }
 .overall-label { display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-top: 0.75rem; }
 .severity-banner { display: inline-block; padding: 0.5rem 1.5rem; border-radius: var(--radius); margin-top: 0.35rem; font-weight: 700; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 1px; }
-.severity-critical { background: var(--amber); color: #fff; }
+.severity-critical { background: var(--amber); color: #fff; box-shadow: 0 0 0 5px #F6E1C2, 0 0 0 6px var(--amber); }
 .severity-severe { background: var(--terracotta); color: #fff; }
 .severity-moderate { background: var(--moderate); color: #fff; }
 .severity-mild { background: var(--sage); color: #fff; }
 .severity-minimal { background: var(--info-border); color: var(--text); }
 .severity-undetermined,
 .severity-unclassified { background: var(--surface-alt); color: var(--text-muted); border: 1px dashed var(--info-border); }
-.severity-attention { background: var(--amber); color: #fff; }
+.severity-attention { background: var(--amber); color: #fff; box-shadow: 0 0 0 5px #F6E1C2, 0 0 0 6px var(--amber); }
 /* Disclaimer: neutral information style, so it is never confused with the crisis box */
 .report-disclaimer { background: var(--info-bg); border: 1px solid var(--info-border); border-radius: var(--radius); padding: 0.85rem 1.25rem; margin-bottom: 1.25rem; }
 .report-disclaimer p { color: var(--text); font-size: 0.9rem; margin: 0; }
