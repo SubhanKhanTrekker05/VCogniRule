@@ -197,7 +197,7 @@ INSERT OR IGNORE INTO rule_condition_group (id, rule_id, logic) VALUES
 (142,142,'AND'),(143,143,'AND'),(144,144,'AND'),(145,145,'AND'),(146,146,'AND'),(147,147,'AND'),
 (148,148,'AND'),(149,149,'AND'),(150,150,'AND');
 
--- ========== CONDITIONS (205) ==========
+-- ========== CONDITIONS (209) ==========
 -- Format: (group_id, field_key, operator, value_int, value_text, value_min, value_max)
 INSERT OR IGNORE INTO rule_condition (group_id, field_key, operator, value_int, value_text, value_min, value_max) VALUES
 -- PHQ-9 (IDs 1-8)

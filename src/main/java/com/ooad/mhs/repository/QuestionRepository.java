@@ -14,9 +14,10 @@ import java.util.Optional;
  * 
  * 151 rows total: 84 real (shown to user) + 67 derived/conclusion (internal).
  * 
- * The screening form uses findAllReal() to get only the 84 user-facing questions.
- * The FindingBuilder uses findByFieldKey() to look up human-readable labels
- * for the trace display.
+ * findAllReal() returns only the 84 user-facing questions (used to build the
+ * screening form and to check which sections were completed).
+ * findAll() also returns the calculated fields; ReportService uses it for the
+ * labels in "Why this appears", and the admin condition form lists them as fields.
  */
 @Repository
 public class QuestionRepository {

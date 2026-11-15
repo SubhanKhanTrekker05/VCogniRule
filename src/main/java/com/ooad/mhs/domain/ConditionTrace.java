@@ -12,19 +12,15 @@ import com.ooad.mhs.util.Operator;
  * This is what makes the system transparent — the user can see
  * WHY a rule fired, not just THAT it fired.
  * 
- * Example trace rendered in the report:
- *   • PHQ-9 Total Score: 14 (threshold: ≥ 10)
- *   • Symptom Duration: 21 days (threshold: ≥ 14)
- * 
- * Adopted from the IAI project's trace patterns (VSecretServerAdvisor):
- * - Fired rules show all matched conditions (green styling)
- * - "May have" rules show borderline conditions (yellow styling)
- * - Not-fired rules show first failed condition (gray, collapsible)
+ * Only rules that FIRED get a trace, and it lists the conditions that matched.
+ * ReportService turns each trace line into plain language for the report's
+ * "Why this appears" list, for example:
+ *   Depression score (PHQ-9 total, 0–27)   Your result: 14   Rule needs: between 10 and 14
  */
 public record ConditionTrace(
     String fieldKey,        // e.g., "phq9_total"
     String actualValue,     // e.g., "14" — what the user's responses produced
-    String requiredValue,   // e.g., "≥ 10" — what the rule required
+    String requiredValue,   // e.g., "10 - 14" or ">= 10" — what the rule required (OperatorStrategy.describe)
     Operator operator,      // GTE, BETWEEN, EQ, etc.
     boolean matched         // true = condition passed, false = condition failed
 ) {}

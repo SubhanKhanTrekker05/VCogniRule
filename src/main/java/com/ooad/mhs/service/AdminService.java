@@ -59,7 +59,7 @@ public class AdminService {
     public void deleteCondition(Long conditionId) { ruleRepository.deleteCondition(conditionId); }
 
     /**
-     * Factory reset: restores all 150 rules + 150 groups + 205 conditions to their original state.
+     * Factory reset: restores all 150 rules + 150 groups + 209 conditions to their original state.
      * Undoes every CRUD change made via the admin panel (added/edited/deactivated/deleted rules).
      *
      * Used by the "Reset KB" button on the rule management dashboard - the ultimate Ctrl+Z

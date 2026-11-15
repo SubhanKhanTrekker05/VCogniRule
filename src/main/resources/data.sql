@@ -1,8 +1,8 @@
 -- VCogniRule Seed Data — Clean Version
--- Questions: 84 real + 30 derived = 114 rows
+-- Questions: 84 real + 67 calculated (derived fields and rule conclusions) = 151 rows
 -- Rules: 150 (explicit IDs 1-150)
 -- Groups: 150 (ID = rule ID)
--- Conditions: ~205
+-- Conditions: 209
 
 -- ========== QUESTIONS (84 real) ==========
 INSERT OR IGNORE INTO question (field_key, text, category, display_order, instrument, scale_type, default_value) VALUES
@@ -363,7 +363,7 @@ INSERT OR IGNORE INTO rule_condition_group (id, rule_id, logic) VALUES
 (142,142,'AND'),(143,143,'AND'),(144,144,'AND'),(145,145,'AND'),(146,146,'AND'),(147,147,'AND'),
 (148,148,'AND'),(149,149,'AND'),(150,150,'AND');
 
--- ========== CONDITIONS (205) ==========
+-- ========== CONDITIONS (209) ==========
 -- Fix (PHQ9-MINIMAL): the minimal band is 0-4 (Kroenke 2001), not 1-4. Remove the old
 -- 1-4 condition from databases created before the fix, so the 0-4 row below replaces it
 -- instead of being added next to it (both together would still fail for a score of 0).

@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * The output of a fired rule. This is what the report displays.
  * 
- * When the RuleEngine evaluates a rule and it fires, the FindingBuilder
+ * When the RuleEngine evaluates a rule and it fires, the FindingFactory
  * assembles a Finding from:
  * - The rule's metadata (id, name, category, priority, action, explanation, source)
  * - The matched conditions (as ConditionTrace objects)
@@ -17,7 +17,7 @@ import java.util.List;
  * 
  *   ✓ PHQ-9 Moderate Depression (PHQ9-MODERATE)
  *     Matched conditions:
- *       • PHQ-9 Total Score: 14 (threshold: ≥ 10)
+ *       • PHQ-9 Total Score: 14 (rule needs: 10 - 14)
  *     → Your responses suggest moderate depressive symptoms...
  *     Source: Kroenke 2001
  * 

@@ -143,7 +143,7 @@ public class RuleRepository {
      *   1. DELETE rule_condition        (grandchildren - the leaf conditions)
      *   2. DELETE rule_condition_group  (children - the AND groups)
      *   3. DELETE rule                  (parent - the 150 rules themselves)
-     *   4. Re-execute rules_master.sql  (re-seeds all 150 rules + 150 groups + 205 conditions)
+     *   4. Re-execute rules_master.sql  (re-seeds all 150 rules + 150 groups + 209 conditions)
      *   5. refreshCache()               (reload in-memory cache so engine sees restored rules)
      *
      * NOTE: SQLite FK enforcement is OFF by default (the JDBC URL has no ?foreign_keys=on

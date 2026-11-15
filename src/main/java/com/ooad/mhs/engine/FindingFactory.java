@@ -7,15 +7,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Assembles a Finding object from a fired rule and its matched conditions.
- * 
- * Uses the Builder pattern conceptually — takes multiple inputs (rule,
- * matched conditions, working facts) and produces a single Finding
- * with trace data.
- * 
+ * Creates a Finding object from a fired rule and its matched conditions.
+ *
+ * Factory (static factory method): {@link #create} hides how a Finding and its
+ * trace are put together. The caller (RuleEngine) passes the rule, the matched
+ * conditions and the working facts and gets back a finished Finding.
+ *
  * Pure logic, no Spring annotations.
  */
-public class FindingBuilder {
+public class FindingFactory {
 
     /**
      * @param rule              The rule that fired
@@ -23,7 +23,7 @@ public class FindingBuilder {
      * @param workingFacts      The facts map (to look up actual values)
      * @return A Finding with trace showing what matched and why
      */
-    public static Finding build(Rule rule, List<Condition> matchedConditions,
+    public static Finding create(Rule rule, List<Condition> matchedConditions,
                                  Map<String, Integer> workingFacts) {
 
         List<ConditionTrace> trace = matchedConditions.stream()
