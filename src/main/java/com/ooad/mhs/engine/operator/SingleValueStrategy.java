@@ -3,28 +3,19 @@ package com.ooad.mhs.engine.operator;
 import com.ooad.mhs.domain.Condition;
 
 /**
- * Base class for the six operators that compare against one number ({@code valueInt}):
- * EQ, NE, GT, GTE, LT and LTE.
- *
- * Template Method pattern: {@link #test} and {@link #describe} are written once here
- * (check that a value exists, then compare); each subclass only supplies its own
- * comparison and symbol.
+ * Abstract base class of the six operators that compare against one number ({@code valueInt}):
+ * EQ, NE, GT, GTE, LT and LTE. It only offers two shared helpers; each subclass implements
+ * {@link #test} and {@link #describe} itself.
  */
 public abstract class SingleValueStrategy implements OperatorStrategy {
 
-    @Override
-    public final boolean test(int actual, Condition condition) {
-        return condition.valueInt() != null && compare(actual, condition.valueInt());
+    /** True if the condition has the number this operator needs. */
+    protected static boolean hasValue(Condition condition) {
+        return condition.valueInt() != null;
     }
 
-    @Override
-    public final String describe(Condition condition) {
-        return symbol() + " " + condition.valueInt();
+    /** The text shown under "Rule needs", e.g. {@code ">= 10"}. */
+    protected static String describeWith(String symbol, Condition condition) {
+        return symbol + " " + condition.valueInt();
     }
-
-    /** The comparison itself, e.g. {@code actual >= required}. */
-    protected abstract boolean compare(int actual, int required);
-
-    /** The symbol shown in the report, e.g. {@code ">="}. */
-    protected abstract String symbol();
 }

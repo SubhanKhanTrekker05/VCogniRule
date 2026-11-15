@@ -17,7 +17,7 @@ public class WsasQuestionnaire extends Questionnaire {
     }
 
     @Override
-    protected void computeScores(Map<String, Integer> f) {
+    public void score(Map<String, Integer> f) {
         f.put("wsas_total", sum(f, "wsas_q", 1, 5));
     }
 

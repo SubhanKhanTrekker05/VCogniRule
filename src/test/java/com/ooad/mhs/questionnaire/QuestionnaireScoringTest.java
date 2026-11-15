@@ -25,7 +25,7 @@ class QuestionnaireScoringTest {
 
     private static Map<String, Integer> score(Questionnaire q, Map<String, Integer> answers) {
         Map<String, Integer> facts = new HashMap<>(answers);
-        q.contributeTo(facts);
+        q.score(facts);
         return facts;
     }
 
@@ -254,8 +254,8 @@ class QuestionnaireScoringTest {
     // ------------------------------------------------------------------ inheritance / registry
 
     @Test
-    @DisplayName("Template method: contributeTo adds both the scores and the flags")
-    void templateMethodRunsBothSteps() {
+    @DisplayName("score() adds both the totals and the flags")
+    void scoreAddsTotalsAndFlags() {
         Map<String, Integer> f = score(new Phq9Questionnaire(), items("phq9_q", 0, 0, 0, 0, 0, 0, 0, 0, 0));
         assertThat(f).containsKeys("phq9_total", "depression_any");
     }

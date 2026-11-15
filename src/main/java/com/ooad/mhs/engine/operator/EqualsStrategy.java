@@ -1,15 +1,17 @@
 package com.ooad.mhs.engine.operator;
 
+import com.ooad.mhs.domain.Condition;
+
 /** Equals: {@code actual == required}. */
 public class EqualsStrategy extends SingleValueStrategy {
 
     @Override
-    protected boolean compare(int actual, int required) {
-        return actual == required;
+    public boolean test(int actual, Condition condition) {
+        return hasValue(condition) && actual == condition.valueInt();
     }
 
     @Override
-    protected String symbol() {
-        return "==";
+    public String describe(Condition condition) {
+        return describeWith("==", condition);
     }
 }

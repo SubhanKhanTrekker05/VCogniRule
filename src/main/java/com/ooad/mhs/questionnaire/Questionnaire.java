@@ -16,11 +16,8 @@ import java.util.Objects;
  * the rules in the knowledge base (e.g. PHQ9-MODERATE: phq9_total BETWEEN 10 AND 14), so
  * an admin can change it without touching Java code.
  *
- * Design patterns:
- * - Template Method: {@link #contributeTo} fixes the order of the steps
- *   (scores first, then flags); subclasses fill in the steps.
- * - Polymorphism: DerivedFieldCalculator calls {@code contributeTo} on every questionnaire
- *   without knowing which one it is.
+ * Inheritance and polymorphism: DerivedFieldCalculator calls {@link #score} on every
+ * questionnaire without knowing which subclass it is.
  */
 public abstract class Questionnaire {
 
@@ -36,30 +33,17 @@ public abstract class Questionnaire {
     }
 
     /**
-     * Template method: adds this questionnaire's derived fields to the working facts.
-     * Called only when the user completed the section.
+     * Adds this questionnaire's derived fields (totals, subscales, flags) to the working facts.
+     * Called only when the user completed the section. Each subclass implements its own scoring.
      *
      * @param facts the user's converted answers; derived fields are added to this map
      */
-    public final void contributeTo(Map<String, Integer> facts) {
-        computeScores(facts);
-        computeFlags(facts);
-    }
-
-    /** Step 1: totals and subscale scores, e.g. phq9_total. */
-    protected abstract void computeScores(Map<String, Integer> facts);
-
-    /**
-     * Step 2 (optional hook): yes/no flags read by combined rules, e.g. depression_any.
-     * Does nothing unless a subclass overrides it.
-     */
-    protected void computeFlags(Map<String, Integer> facts) {
-    }
+    public abstract void score(Map<String, Integer> facts);
 
     /**
      * The score line shown in the report's "Your answers" list, e.g. "Total score 14 / 27".
      *
-     * @param facts   working facts (after {@link #contributeTo})
+     * @param facts   working facts (after {@link #score})
      * @param answers the user's raw answers as submitted (needed to count graded Yes answers)
      */
     public abstract String summary(Map<String, Integer> facts, Map<String, String> answers);

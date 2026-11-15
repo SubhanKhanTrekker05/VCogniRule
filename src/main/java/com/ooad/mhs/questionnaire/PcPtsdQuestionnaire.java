@@ -17,7 +17,7 @@ public class PcPtsdQuestionnaire extends Questionnaire {
     }
 
     @Override
-    protected void computeScores(Map<String, Integer> f) {
+    public void score(Map<String, Integer> f) {
         f.put("pcptsd_total", sum(f, "pcptsd_q", 1, 4));
     }
 

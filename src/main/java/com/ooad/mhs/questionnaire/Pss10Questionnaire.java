@@ -21,7 +21,7 @@ public class Pss10Questionnaire extends Questionnaire {
     }
 
     @Override
-    protected void computeScores(Map<String, Integer> f) {
+    public void score(Map<String, Integer> f) {
         // Helplessness: q1, q2, q3, q6, q9, q10 (summed directly)
         int helpless = value(f, "pss10_q1") + value(f, "pss10_q2") + value(f, "pss10_q3")
             + value(f, "pss10_q6") + value(f, "pss10_q9") + value(f, "pss10_q10");

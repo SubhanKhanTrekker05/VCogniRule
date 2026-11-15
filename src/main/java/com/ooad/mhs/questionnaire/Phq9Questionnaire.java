@@ -18,15 +18,13 @@ public class Phq9Questionnaire extends Questionnaire {
     }
 
     @Override
-    protected void computeScores(Map<String, Integer> f) {
+    public void score(Map<String, Integer> f) {
         f.put("phq9_total", sum(f, "phq9_q", 1, 9));
         // Core symptom: low interest (q1) or low mood (q2) on more than half the days
         f.put("phq9_core_symptom", flag(value(f, "phq9_q1") >= MORE_THAN_HALF_THE_DAYS || value(f, "phq9_q2") >= MORE_THAN_HALF_THE_DAYS));
         f.put("phq9_symptom_count", countAtLeast(f, "phq9_q", 1, 9, MORE_THAN_HALF_THE_DAYS));
-    }
 
-    @Override
-    protected void computeFlags(Map<String, Integer> f) {
+        // Flags read by combined rules
         f.put("depression_any", flag(value(f, "phq9_total") >= MILD_CUTOFF));
         f.put("depression_moderate_plus", flag(value(f, "phq9_total") >= MODERATE_CUTOFF));
     }
