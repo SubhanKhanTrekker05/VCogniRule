@@ -304,8 +304,9 @@ html:not(.js) .progress { display: none; }
 .severity-undetermined,
 .severity-unclassified { background: var(--surface-alt); color: var(--text-muted); border: 1px dashed var(--info-border); }
 .severity-attention { background: var(--amber); color: #fff; }
-.report-disclaimer { background: var(--amber-bg); border: 1px solid var(--amber); border-radius: var(--radius); padding: 0.85rem 1.25rem; margin-bottom: 1.25rem; }
-.report-disclaimer p { color: var(--amber-text); font-size: 0.9rem; margin: 0; }
+/* Disclaimer: neutral information style, so it is never confused with the crisis box */
+.report-disclaimer { background: var(--info-bg); border: 1px solid var(--info-border); border-radius: var(--radius); padding: 0.85rem 1.25rem; margin-bottom: 1.25rem; }
+.report-disclaimer p { color: var(--text); font-size: 0.9rem; margin: 0; }
 .overall-note { max-width: 520px; margin: 0.6rem auto 0; font-size: 0.9rem; color: var(--text-muted); }
 .report-jump { margin-top: 0.75rem; font-size: 0.88rem; }
 .report-jump a { color: var(--primary); }
@@ -364,8 +365,13 @@ a.chip-skip:hover { border-color: var(--primary); color: var(--primary); }
 .partial-item { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; padding: 0.75rem 1rem; background: var(--amber-bg); border: 1px solid #E8D2AE; border-radius: var(--radius); margin-bottom: 0.5rem; }
 .partial-item p { margin: 0; font-size: 0.9rem; color: var(--amber-text); }
 
-.crisis-alert { background: var(--amber-bg); border: 2px solid var(--amber); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; }
-.crisis-alert h3 { color: var(--amber-text); font-size: 1.1rem; margin-bottom: 0.5rem; }
+/* Crisis box: deeper warm fill, thick left bar and shadow so it stands apart from the
+   (neutral) disclaimer box. Still calm ochre, not alarm red. */
+.crisis-alert { background: #F6E1C2; border: 2px solid var(--amber); border-left: 8px solid var(--amber);
+                border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem;
+                box-shadow: 0 4px 14px rgba(168, 102, 28, 0.18); }
+.crisis-alert h3 { color: var(--amber-text); font-size: 1.2rem; margin-bottom: 0.5rem; }
+.crisis-alert h3::before { content: '\2665\00A0'; color: var(--amber); }
 .crisis-alert p { color: var(--amber-text); margin-bottom: 0.5rem; }
 .crisis-alert ul { list-style: none; padding-left: 0; }
 .crisis-alert li { color: var(--amber-text); padding: 0.25rem 0; font-weight: 500; }
