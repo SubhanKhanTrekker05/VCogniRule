@@ -17,6 +17,15 @@
             <span class="overall-label">Overall result</span>
             <span th:text="${#strings.toUpperCase(report.overallLabel)}"
                   th:class="'severity-banner severity-' + ${report.overallKey}">MODERATE</span>
+            <!-- One plain sentence for each severity, so the one-word banner is understood at a glance.
+                 (Needs attention / Not determined / Not classified already have their own note below.) -->
+            <p class="overall-meaning" th:switch="${report.overallKey}">
+                <span th:case="'minimal'">Your answers show few or no signs of concern.</span>
+                <span th:case="'mild'">Your answers show some mild signs. Keep an eye on how you feel, and talk to someone you trust if it continues.</span>
+                <span th:case="'moderate'">Your answers show signs that are worth talking about with a doctor or counsellor.</span>
+                <span th:case="'severe'">Your answers show strong signs. Please speak to a doctor or mental health professional soon.</span>
+                <span th:case="'critical'">Your answers show a serious concern. Please contact a helpline or emergency services now.</span>
+            </p>
             <p th:if="${report.overallNote != null}" class="overall-note" th:text="${report.overallNote}">Note</p>
             <p class="report-jump no-print">
                 <a href="#findings">Results</a> · <a href="#your-answers">Your answers</a>
