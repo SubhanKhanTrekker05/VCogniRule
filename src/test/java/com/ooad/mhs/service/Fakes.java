@@ -50,13 +50,17 @@ final class Fakes {
     }
 
     /** Rules kept in a list; one condition group per rule. */
-    static final class FakeRuleRepository implements RuleRepository {
+    static class FakeRuleRepository implements RuleRepository {
         final List<Rule> rules = new ArrayList<>();
         private long nextId = 100;
 
         @Override
         public List<Rule> getActiveRules() {
             return rules.stream().filter(Rule::isActive).toList();
+        }
+
+        @Override
+        public void reloadActiveRules() {
         }
 
         @Override

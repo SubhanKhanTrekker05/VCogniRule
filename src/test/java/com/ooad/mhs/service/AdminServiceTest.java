@@ -12,6 +12,9 @@ import org.junit.jupiter.api.Test;
 import com.ooad.mhs.security.BCryptPasswordHasher;
 import com.ooad.mhs.security.PasswordHasher;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -20,6 +23,7 @@ class AdminServiceTest {
 
     private Fakes.FakeRuleRepository rules;
     private AdminService service;
+    private final List<String> changes = new ArrayList<>();   // a recording observer
 
     @BeforeEach
     void setUp() {
@@ -27,7 +31,7 @@ class AdminServiceTest {
         PasswordHasher hasher = new BCryptPasswordHasher();
         admins.save("admin", hasher.hash("admin123"));
         rules = new Fakes.FakeRuleRepository();
-        service = new AdminService(admins, rules, new Fakes.FakeQuestionRepository(), hasher);
+        service = new AdminService(admins, rules, new Fakes.FakeQuestionRepository(), hasher, List.of(changes::add));
     }
 
     private static RuleDetails details(String ruleId) {
@@ -115,5 +119,31 @@ class AdminServiceTest {
             .isInstanceOf(InvalidInputException.class);
         service.deleteCondition(a.id(), conditionOfA);
         assertThat(a.groups().get(0).conditions()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Observer: every change notifies the listeners; a refused change does not")
+    void changesNotifyListeners() {
+        service.createRule(details("NEW-1"));
+        Long id = onlyRule().id();
+        service.toggleRuleActive(id, false);
+        service.deleteRule(id);
+        service.resetKnowledgeBase();
+        assertThatThrownBy(() -> service.createRule(details(""))).isInstanceOf(InvalidInputException.class);
+
+        assertThat(changes).containsExactly(
+            "rule NEW-1 created", "rule " + id + " deactivated", "rule " + id + " deleted", "knowledge base reset");
+    }
+
+    @Test
+    @DisplayName("Observer: RuleCacheRefresher reloads the engine's rules after a change")
+    void cacheRefresherReloads() {
+        int[] reloads = {0};
+        Fakes.FakeRuleRepository repo = new Fakes.FakeRuleRepository() {
+            @Override
+            public void reloadActiveRules() { reloads[0]++; }
+        };
+        new RuleCacheRefresher(repo).onRulesChanged("rule 1 updated");
+        assertThat(reloads[0]).isEqualTo(1);
     }
 }

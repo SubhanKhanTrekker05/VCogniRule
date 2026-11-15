@@ -38,7 +38,7 @@ class AdminIntegrationTest extends IntegrationTestBase {
     /** Every test that changes rules is undone with a factory reset, so tests never affect each other. */
     @AfterEach
     void restoreKnowledgeBase() {
-        ruleRepository.resetKnowledgeBase();
+        adminService.resetKnowledgeBase();   // through the Facade, so the observers reload the rules
     }
 
     private Rule ruleByRuleId(String ruleId) {
