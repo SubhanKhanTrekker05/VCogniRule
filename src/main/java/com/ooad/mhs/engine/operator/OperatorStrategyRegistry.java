@@ -11,19 +11,20 @@ import java.util.Map;
  * The strategies hold no data, so one object per operator is enough for the whole app.
  * The private constructor creates them once, through the Factory Method
  * {@link Operator#createStrategy()}; everyone else uses {@link #getInstance()}.
+ *
+ * With tracing on (demo switch), each strategy is wrapped in the Decorator
+ * {@link TracingOperatorStrategy}.
  */
 public final class OperatorStrategyRegistry {
 
     /** The single instance, created when the class is first used. */
     private static final OperatorStrategyRegistry INSTANCE = new OperatorStrategyRegistry();
 
-    private final Map<Operator, OperatorStrategy> strategies = new EnumMap<>(Operator.class);
+    private volatile Map<Operator, OperatorStrategy> strategies;
 
     /** Private: no other class can create a second registry. */
     private OperatorStrategyRegistry() {
-        for (Operator op : Operator.values()) {
-            strategies.put(op, op.createStrategy());   // Factory Method
-        }
+        setTracing(false);
     }
 
     /** @return the single shared registry */
@@ -34,5 +35,15 @@ public final class OperatorStrategyRegistry {
     /** @return the shared strategy for the operator (never null) */
     public OperatorStrategy strategyFor(Operator operator) {
         return strategies.get(operator);
+    }
+
+    /** Demo switch: true wraps every strategy in a {@link TracingOperatorStrategy}. */
+    public void setTracing(boolean on) {
+        Map<Operator, OperatorStrategy> map = new EnumMap<>(Operator.class);
+        for (Operator op : Operator.values()) {
+            OperatorStrategy strategy = op.createStrategy();                  // Factory Method
+            map.put(op, on ? new TracingOperatorStrategy(strategy) : strategy); // Decorator
+        }
+        strategies = map;
     }
 }
