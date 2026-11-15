@@ -4,6 +4,10 @@
 
 A privacy-first mental health screening tool that evaluates user responses across 10 validated clinical instruments using a 4-level forward-chaining rule engine with 150 rules. Produces a screening report with traceable findings, comorbid pattern detection, and treatment recommendations aligned with NICE NG222 clinical guidelines.
 
+> **This is a screening tool, not a diagnostic system.** It points out possible warning signs and recommends professional support. Every report says so.
+
+Built for CT-263 Object-Oriented Analysis & Design (NED University). See [CHANGELOG.md](CHANGELOG.md) for the changes made during the OOAD review.
+
 ---
 
 ## Table of Contents
@@ -15,11 +19,12 @@ A privacy-first mental health screening tool that evaluates user responses acros
 - [Default Credentials](#default-credentials)
 - [Project Structure](#project-structure)
 - [How It Works](#how-it-works)
+- [Object-Oriented Design](#object-oriented-design)
+- [Testing](#testing)
 - [Configuration](#configuration)
 - [Deployment](#deployment)
 - [Clinical Instruments](#clinical-instruments)
 - [Privacy](#privacy)
-- [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -27,16 +32,17 @@ A privacy-first mental health screening tool that evaluates user responses acros
 
 ## Features
 
-- **10 validated clinical instruments** — PHQ-9, GAD-7, C-SSRS, WHO-5, PSS-10, PSQI, PHQ-15, WSAS, ASRS, PC-PTSD
-- **150-rule knowledge base** organized into a 4-level forward-chaining DAG:
-  - Level 1 (78 rules): Instrument-specific scoring
-  - Level 2 (57 rules): Comorbid pattern detection + NICE NG222 clinical pathways
-  - Level 3 (12 rules): Complex multi-domain interactions
-  - Level 4 (6 rules): Overall severity synthesis
-- **Privacy by design** — zero user data stored. Responses are processed in memory and discarded after the report is generated.
-- **Explanation facility** — every finding includes a trace showing which conditions matched and why
-- **Admin knowledge-acquisition module** — full CRUD on rules and conditions via a web interface
-- **Factory reset** — one-click restoration of the entire rule knowledge base to its original state
+- **10 validated clinical instruments**: PHQ-9, GAD-7, C-SSRS, WHO-5, PSS-10, PSQI, PHQ-15, WSAS, ASRS, PC-PTSD
+- **150-rule knowledge base** (150 condition groups, 209 conditions) organized into a 4-level forward-chaining DAG:
+  - Level 1 (79 rules): instrument scoring and single-item flags
+  - Level 2 (53 rules): comorbid patterns, hedged findings, gating and NICE NG222 pathways
+  - Level 3 (12 rules): complex multi-domain interactions
+  - Level 4 (6 rules): overall severity synthesis (5 rules) and the NICE overall summary
+- **Safety first**: the Safety Check (C-SSRS) is mandatory; any risk answer shows crisis helplines and outranks every other result
+- **Only completed sections are scored**: answers are validated, and an invalid or missing answer leaves its section "partly answered" instead of being guessed
+- **Explanation facility**: every finding shows "Why this appears" (the answers, scores or earlier findings that made the rule fire)
+- **Admin knowledge-acquisition module**: create, edit, delete and switch rules and conditions, with validation and clear error messages
+- **Factory reset**: one click restores the original 150-rule knowledge base
 - **Real-time search & sortable columns** in the admin dashboard
 
 ---
@@ -46,11 +52,13 @@ A privacy-first mental health screening tool that evaluates user responses acros
 | Layer | Technology |
 |---|---|
 | Language | Java 21 |
-| Framework | Spring Boot 4.1.2 |
+| Framework | Spring Boot 4.1.2 (Spring MVC) |
 | Template engine | Thymeleaf |
-| Database | SQLite 3.54 (via JDBC) |
+| Database | SQLite (sqlite-jdbc 3.54.1.0) |
 | Data access | Spring JdbcTemplate |
-| Auth | BCrypt password hashing |
+| Validation | Jakarta Bean Validation |
+| Auth | BCrypt password hashing (jBCrypt 0.4) |
+| Tests | JUnit 5 (spring-boot-starter-test) |
 | Build | Maven 3.9+ |
 
 ---
@@ -97,21 +105,6 @@ sudo dnf install java-21-openjdk maven
 sudo pacman -S jdk-openjdk maven
 ```
 
-### Multiple Java versions on Mac/Linux?
-
-No problem — they coexist without conflict:
-
-- **macOS:** use `/usr/libexec/java_home -v 21` to select JDK 21 for the current session
-- **Linux:** use `sudo update-alternatives --config java` to switch the system default
-
-Or install [SDKMAN](https://sdkman.io/) for per-project version management:
-
-```bash
-curl -s "https://get.sdkman.io" | bash
-sdk install java 21.0.2-tem
-sdk use java 21.0.2-tem
-```
-
 ### Verify your setup
 
 ```bash
@@ -129,15 +122,9 @@ mvn -version    # should show 3.9+
 git clone https://github.com/SubhanKhanTrekker05/VCogniRule.git
 ```
 
-Place the cloned `VCogniRule` folder next to your `jdk21` and `apache-maven` folders (Windows) or anywhere you like (Mac/Linux).
-
 ### 2. Run
 
-**Windows — double-click:**
-
-1. Open the `VCogniRule` folder in File Explorer
-2. Double-click `start-dev.bat`
-3. A terminal opens — type `mvn spring-boot:run`
+**Windows — double-click:** open the `VCogniRule` folder, double-click `start-dev.bat`, then type `mvn spring-boot:run` in the terminal that opens.
 
 **Windows — terminal:**
 
@@ -151,18 +138,18 @@ mvn spring-boot:run
 
 ```bash
 cd path/to/VCogniRule
-chmod +x start-dev.sh
-./start-dev.sh
 mvn spring-boot:run
 ```
+
+> `./start-dev.sh` checks that Java and Maven are installed and opens VS Code if available; `mvn spring-boot:run` also works on its own.
 
 ### 3. Open
 
 Navigate to **http://localhost:8080**
 
-The app starts in ~15 seconds. On first launch, Spring Boot creates the SQLite database, loads the schema, seeds 150 rules + 151 questions (84 user-facing + 67 derived), and creates a default admin account.
+The app starts in about 5–15 seconds. On first launch, Spring Boot creates the SQLite database in `database/`, loads the schema, seeds 150 rules and 151 question rows (84 questions shown to the user + 67 calculated fields and rule conclusions), and creates a default admin account.
 
-> **Do not open the `.html` files directly in a browser.** Thymeleaf templates must be served through the running Spring Boot app. Always access the app via `http://localhost:8080`.
+> **Do not open the `.html` files directly in a browser.** Thymeleaf templates must be served through the running Spring Boot app.
 
 ---
 
@@ -170,65 +157,74 @@ The app starts in ~15 seconds. On first launch, Spring Boot creates the SQLite d
 
 | | Value |
 |---|---|
+| Admin page | http://localhost:8080/admin |
 | Username | `admin` |
 | Password | `admin123` |
 
-These are created automatically on first startup if no admin exists. The password is BCrypt-hashed in the database. **Change this immediately in any non-local environment.**
+These are created automatically on first startup if no admin exists. The password is BCrypt-hashed in the database. **Change this in any non-local environment.**
 
 ---
 
 ## Project Structure
 
+63 Java source files: 46 classes (2 of them abstract), 9 records, 4 enums and 4 interfaces.
+
 ```
 VCogniRule/
 ├── src/main/java/com/ooad/mhs/
-│   ├── MentalHealthApp.java              # Entry point
+│   ├── MentalHealthApp.java                 # Entry point (@SpringBootApplication)
 │   ├── config/
-│   │   └── DataSeeder.java               # Creates default admin on startup
-│   ├── controller/
-│   │   ├── WelcomeController.java        # Home page
-│   │   ├── AboutController.java          # About page
-│   │   ├── ScreeningController.java      # Assessment form + report
-│   │   └── AdminController.java          # Admin CRUD + reset
-│   ├── domain/                           # Records: Rule, Condition, ConditionGroup, etc.
+│   │   ├── DataSeeder.java                  # Creates the default admin on startup
+│   │   ├── AdminAuthInterceptor.java        # Blocks /admin/** pages unless logged in
+│   │   └── WebConfig.java                   # Registers the interceptor
+│   ├── controller/                          # MVC controllers
+│   │   ├── WelcomeController.java           # GET /
+│   │   ├── AboutController.java             # GET /about
+│   │   ├── ScreeningController.java         # GET/POST /screening (form → report)
+│   │   └── AdminController.java             # /admin/** (rules, conditions, reset)
+│   ├── domain/                              # Records: Rule, ConditionGroup, Condition, Finding,
+│   │                                        # ConditionTrace, Question, Admin, RuleDetails, ConditionDetails
 │   ├── engine/
-│   │   └── RuleEngine.java               # 4-pass forward-chaining inference
-│   ├── repository/
-│   │   ├── RuleRepository.java           # Rule CRUD + in-memory cache + factory reset
-│   │   ├── QuestionRepository.java
-│   │   └── AdminRepository.java
+│   │   ├── RuleEngine.java                  # 4-pass forward-chaining inference
+│   │   ├── ConditionEvaluator.java          # Evaluates one condition
+│   │   ├── FindingFactory.java              # Creates a Finding with its trace
+│   │   ├── ConflictResolver.java            # Sorts findings by priority
+│   │   └── operator/                        # Strategy pattern: one class per operator
+│   │       ├── OperatorStrategy.java        #   interface
+│   │       ├── SingleValueStrategy.java     #   abstract base of EQ, NE, GT, GTE, LT, LTE
+│   │       ├── EqualsStrategy.java … LessOrEqualStrategy.java, BetweenStrategy.java, InStrategy.java
+│   │       └── OperatorStrategyFactory.java #   Factory
+│   ├── questionnaire/                       # Inheritance: one subclass per instrument
+│   │   ├── Questionnaire.java               #   abstract base class (Template Method)
+│   │   ├── Phq9Questionnaire.java … WsasQuestionnaire.java   # 10 subclasses
+│   │   └── QuestionnaireRegistry.java       #   one questionnaire per section
+│   ├── repository/                          # Repository pattern: interface + JDBC implementation
+│   │   ├── RuleRepository.java / JdbcRuleRepository.java
+│   │   ├── QuestionRepository.java / JdbcQuestionRepository.java
+│   │   └── AdminRepository.java / JdbcAdminRepository.java
 │   ├── service/
-│   │   ├── AdminService.java             # Admin operations + reset wrapper
-│   │   ├── AssessmentService.java        # Form data → working facts
-│   │   ├── DerivedFieldCalculator.java   # 34 derived fields
-│   │   ├── ScreeningService.java         # Orchestrates rule evaluation
-│   │   └── ReportService.java            # Builds report model
-│   └── util/
-│       ├── ActionType.java               # Enum: 6 action types
-│       ├── Category.java                 # Enum: 8 clinical domains
-│       └── Operator.java                 # Enum: 8 comparison operators
+│   │   ├── QuestionnaireService.java        # Questions + answer options for the form
+│   │   ├── AssessmentService.java           # Validates answers, finds completed sections
+│   │   ├── DerivedFieldCalculator.java      # Asks each completed questionnaire to score itself
+│   │   ├── ScreeningService.java            # Runs the rule engine on the active rules
+│   │   ├── ReportService.java               # Builds the report (ScreeningReport + Builder)
+│   │   ├── FindingStyler.java               # Tone / icon / label of each finding
+│   │   ├── OverallResultResolver.java       # Overall banner
+│   │   ├── AdminService.java                # Admin operations + business-rule checks
+│   │   └── InvalidInputException.java       # Business-rule error with a message
+│   └── util/                                # Enums: ActionType, Category, Operator, Section
 ├── src/main/resources/
-│   ├── application.properties            # Spring Boot config
-│   ├── schema.sql                        # 5-table SQLite schema
-│   ├── data.sql                          # Seed data (150 rules + 151 questions)
-│   ├── rules_master.sql                  # Factory-reset data source
-│   ├── static/
-│   │   ├── css/style.css
-│   │   └── js/admin-rules.js             # Search + sort
-│   └── templates/
-│       ├── welcome.html
-│       ├── about.html
-│       ├── assessment.html
-│       ├── report.html
-│       └── admin-*.html                  # 5 admin templates
-├── database/                             # SQLite .db file created here at runtime
-│   └── .gitkeep
-├── pom.xml
-├── start-dev.bat                         # Windows launcher
-├── start-dev.sh                          # Mac/Linux launcher
-├── .gitignore
-├── LICENSE
-└── README.md
+│   ├── application.properties / application-prod.properties
+│   ├── schema.sql                           # 5 tables
+│   ├── data.sql                             # Seed data, runs on every startup (INSERT OR IGNORE)
+│   ├── rules_master.sql                     # Factory-reset data
+│   ├── static/                              # css/style.css, js/screening.js, js/admin-rules.js, logos
+│   └── templates/                           # welcome, about, assessment, report, admin-* (5), fragments/finding
+├── src/test/java/com/ooad/mhs/              # JUnit 5 tests
+├── database/                                # SQLite .db file created here at runtime
+├── pom.xml, Dockerfile, start-dev.bat, start-dev.sh
+├── docs/TEST_CASES.md                     # Test case table for the report
+├── CHANGELOG.md, DEMO_SCRIPT.md, LICENSE, README.md
 ```
 
 ---
@@ -238,29 +234,31 @@ VCogniRule/
 ### Screening flow
 
 ```
-User submits form
+User submits the form (POST /screening)
        │
        ▼
 AssessmentService
-  converts form strings → integers
-  parses PSQI times → minutes
+  keeps only valid answers (invalid → not answered)
+  works out which sections are complete (C-SSRS is mandatory)
+  converts answers to integers (times → minutes)
        │
        ▼
 DerivedFieldCalculator
-  computes 34 derived fields
-  (phq9_total, crisis_detected, etc.)
+  each completed Questionnaire subclass adds its own
+  totals, subscales and flags (phq9_total, crisis_detected, …)
        │
        ▼
-RuleEngine (4 passes)
-  Level 1: instrument scoring (78 rules)
-  Level 2: comorbid + NICE (57 rules)
-  Level 3: complex interactions (12 rules)
-  Level 4: severity synthesis (6 rules)
+RuleEngine (4 passes, one per level)
+  ConditionEvaluator → OperatorStrategy for each condition
+  fired rules → FindingFactory → Finding + trace
+  conclusions are added to the facts for the next level (forward chaining)
+  ConflictResolver sorts by priority
        │
        ▼
 ReportService
-  builds findings + trace + severity
-  detects crisis → shows helpline
+  OverallResultResolver → banner;  FindingStyler → colours/icons
+  plain-language "Why this appears", answers per section
+  ScreeningReport.builder()…build()
        │
        ▼
 Thymeleaf renders report.html
@@ -273,90 +271,119 @@ Each rule has:
 - A unique `rule_id` (e.g., `PHQ9-MINIMAL`)
 - A `level` (1–4) controlling evaluation order
 - A `category` (MOOD, ANXIETY, RISK, etc.)
-- A `priority` (0–100) for conflict resolution
+- A `priority` (0–100) for ordering
 - An `action_type` (DISPLAY_INFO → CRISIS_PROTOCOL)
-- One or more condition groups (AND within group, OR between groups)
-- A `conclusion_key` + `conclusion_value` that gets set in working memory when the rule fires (enabling forward chaining)
+- One or more condition groups (AND within a group, OR between groups; every seeded rule has one group)
+- A `conclusion_key` + `conclusion_value` that is added to the working facts when the rule fires (forward chaining)
 
 ### Admin dashboard
 
-The admin dashboard supports:
-
-- **Create / edit / delete** rules and their conditions
-- **Toggle** rule active/inactive
+- **Create / edit / delete** rules and their conditions (validated; errors are shown on the form)
+- **Toggle** a rule active/inactive
 - **Search** by rule ID or name with real-time highlighting
-- **Sort** by any column (ascending/descending) — click any column header
-- **Factory reset** — wipes all CRUD changes and restores the original 150-rule knowledge base from `rules_master.sql`
+- **Sort** by any column (click a column header)
+- **Factory reset**: restores the original 150 rules, 150 groups and 209 conditions from `rules_master.sql`
+
+---
+
+## Object-Oriented Design
+
+| Concept / pattern | Where |
+|---|---|
+| Inheritance + polymorphism | `Questionnaire` (abstract) → 10 subclasses; `SingleValueStrategy` (abstract) → 6 subclasses |
+| Interfaces | `OperatorStrategy` (8 implementations), `RuleRepository`, `QuestionRepository`, `AdminRepository`; `AdminAuthInterceptor implements HandlerInterceptor` |
+| Composition | `Rule` → `ConditionGroup` → `Condition`; `ScreeningReport` → `FindingView` |
+| Aggregation | services → repositories; `QuestionnaireRegistry` → `Questionnaire` |
+| Encapsulation | immutable records, `private final` fields, private helpers |
+| Template Method | `Questionnaire.contributeTo`, `SingleValueStrategy.test/describe` |
+| Strategy + Factory | `OperatorStrategy` + `OperatorStrategyFactory`; `FindingFactory` |
+| Builder | `ReportService.ScreeningReport.Builder` |
+| Repository + Dependency Inversion | `repository/` interfaces with JDBC implementations |
+| MVC | controllers + Thymeleaf views + domain/service model |
+| Singleton / Dependency Injection | Spring beans (one instance each, injected through constructors) |
+| Facade | `AdminService` |
+
+Severity (mild, moderate, …) is decided by the rules in the knowledge base, not by Java code, so an admin can change it without recompiling.
+
+---
+
+## Testing
+
+```bash
+mvn test
+```
+
+Runs **237 JUnit 5 tests** in about 30 seconds (`Tests run: 237, Failures: 0`). No database or running app is needed: the integration tests start the app themselves with a fresh SQLite file in `target/`.
+
+| Test class | Type | What it checks |
+|---|---|---|
+| `OperatorStrategyTest` | Unit | each of the 8 operator strategies (incl. NE and IN) and the factory |
+| `RuleEngineTest` | Unit | AND/OR, forward chaining, overall severity, FindingFactory, sorting |
+| `QuestionnaireScoringTest` | Unit | scoring of all 10 questionnaires with hand-calculated examples and cut-offs |
+| `QuestionnaireRefactorEquivalenceTest` | Unit | new scoring = original scoring on 10,000 random answer sets |
+| `ReportPartsTest` | Unit | `ScreeningReport.Builder`, `OverallResultResolver`, `FindingStyler` |
+| `AssessmentServiceTest` | Unit | answer validation (bad answers count as not answered), section completion |
+| `FormValidationTest` | Unit | Bean Validation rules of the admin forms |
+| `AdminServiceTest` | Unit | admin business rules, using in-memory fake repositories |
+| `ScreeningFlowIntegrationTest` | Integration | the screening flow through the running app (Spring Boot Test + MockMvc) |
+| `AdminIntegrationTest` | Integration | admin login/logout, the 13 protected URLs, create/edit/delete/reset, bad input |
+
+The test case table for the report (ID, input, expected, actual, result) is in [docs/TEST_CASES.md](docs/TEST_CASES.md), and the live demo guide is [DEMO_SCRIPT.md](DEMO_SCRIPT.md).
 
 ---
 
 ## Configuration
 
-Key properties in `application.properties`:
+`src/main/resources/application.properties`:
 
 ```properties
 # === Database ===
 spring.datasource.url=jdbc:sqlite:database/vcognirule.db
 spring.datasource.driver-class-name=org.sqlite.JDBC
-spring.datasource.username=
-spring.datasource.password=
 spring.datasource.hikari.maximum-pool-size=1
 
 # === Schema + data initialization ===
 spring.sql.init.mode=always
 spring.sql.init.schema-locations=classpath:schema.sql
 spring.sql.init.data-locations=classpath:data.sql
-spring.sql.init.continue-on-error=false
-
-# === Thymeleaf ===
-spring.thymeleaf.cache=false
-spring.thymeleaf.prefix=classpath:/templates/
-spring.thymeleaf.suffix=.html
-spring.thymeleaf.encoding=UTF-8
 
 # === Web server ===
 server.port=${PORT:8080}
-server.error.include-stacktrace=always
-server.error.include-message=always
+server.error.include-stacktrace=never
+server.error.include-message=never
 
 # === Logging ===
 logging.level.com.ooad.mhs=DEBUG
-logging.level.org.springframework.web=INFO
-logging.level.org.springframework.jdbc.core=DEBUG
 ```
+
+`application-prod.properties` (activate with `SPRING_PROFILES_ACTIVE=prod`) enables template caching and quieter logging.
 
 ---
 
 ## Deployment
 
-### Railway (no cold starts)
+### Railway
 
 1. Push to GitHub
 2. Go to [railway.app](https://railway.app) → New Project → Deploy from GitHub repo
 3. Railway auto-detects Maven → builds → runs `java -jar target/*.jar`
 4. Generate a domain in Settings → Networking
-5. App is live at `https://yourapp.up.railway.app`
 
-### Render (free tier alternative)
+### Render (free tier) — uses the included `Dockerfile`
 
 1. Push to GitHub
 2. Go to [render.com](https://render.com) → New → Web Service
-3. Build command: `mvn clean package`
-4. Start command: `java -jar target/*.jar`
-5. Select free tier
-6. App is live at `https://yourapp.onrender.com`
+3. Select free tier
 
-> Render's free tier sleeps after 15 minutes of inactivity. The first request after sleep takes ~30–60 seconds to wake up.
+> Render's free tier sleeps after 15 minutes of inactivity. The first request after sleep takes ~30–60 seconds.
 
 ### SQLite note
 
-Both platforms use ephemeral filesystems on free tiers. Since `data.sql` uses `INSERT OR IGNORE` and runs on every startup, the app always starts in its factory state (150 rules, default admin). This is by design — consistent with the privacy-first philosophy.
+Both platforms use ephemeral filesystems on free tiers. Since `data.sql` uses `INSERT OR IGNORE` and runs on every startup, the app always starts in its factory state (150 rules, default admin).
 
 ---
 
 ## Clinical Instruments
-
-All instruments are validated, peer-reviewed tools:
 
 | Instrument | Domain | Items | Source |
 |---|---|---|---|
@@ -365,7 +392,7 @@ All instruments are validated, peer-reviewed tools:
 | C-SSRS | Suicide risk | 6 | Columbia University |
 | WHO-5 | Well-being | 5 | WHO (CC BY-NC-SA 3.0) |
 | PSS-10 | Stress | 10 | Public domain |
-| PSQI | Sleep quality | 19 | University of Pittsburgh |
+| PSQI | Sleep quality | 17 in this form (19 in the full PSQI) | University of Pittsburgh |
 | PHQ-15 | Somatic symptoms | 15 | Public domain (Pfizer) |
 | WSAS | Functional impairment | 5 | Freely available |
 | ASRS | ADHD | 6 | WHO |
@@ -377,13 +404,11 @@ Clinical recommendations sourced from **NICE NG222** (Depression in adults: trea
 
 ## Privacy
 
-This system is designed to be used without an account and without storing any user data:
-
-- **No user accounts** — screening is anonymous
-- **No response storage** — answers are processed in memory and discarded
-- **No session persistence** — the report exists only in the current page
-- **No analytics or tracking**
-- **Only the knowledge base and admin credentials are persisted** in the SQLite database
+- **No user accounts**: screening is anonymous.
+- **Answers are never written to the database.** They are processed in memory to build the report.
+- **Short-term session only:** the last submitted answers are kept in the server's HTTP session so the user can go back from the report and finish a section. They are cleared when a new screening is started and expire with the session (30 minutes of inactivity by default).
+- **No analytics or tracking.**
+- **Only the knowledge base and admin credentials are stored** in the SQLite database.
 
 ---
 
@@ -391,11 +416,10 @@ This system is designed to be used without an account and without storing any us
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -am 'Add your feature'`)
-4. Push to the branch (`git push origin feature/your-feature`)
-5. Open a Pull Request
+3. Commit your changes and push the branch
+4. Open a Pull Request
 
-Please ensure your code follows the existing layered architecture (Controller → Service → Repository) and that any new rules include a `source_ref` pointing to peer-reviewed literature.
+Please keep the layered architecture (Controller → Service → Repository), run `mvn test` before committing, and give any new rule a `source_ref` pointing to peer-reviewed literature.
 
 ---
 

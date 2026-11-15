@@ -4,9 +4,10 @@ package com.ooad.mhs.util;
  * Represents the action the system recommends when a rule fires.
  * 
  * Ordered from least urgent (DISPLAY_INFO) to most urgent (CRISIS_PROTOCOL).
- * The ConflictResolver uses this to sort findings by urgency.
- * 
- * Used by: Rule (domain), FindingBuilder (engine), ReportService (service)
+ * ReportService uses it to choose each finding's colour, icon and action label.
+ * (Findings are SORTED by rule priority in ConflictResolver, not by action type.)
+ *
+ * Used by: Rule, Finding (domain), RuleEngine, FindingFactory (engine), ReportService (service)
  * Stored in: rule.action_type column
  */
 public enum ActionType {

@@ -5,6 +5,8 @@ import com.ooad.mhs.domain.Finding;
 import com.ooad.mhs.domain.Question;
 import com.ooad.mhs.domain.Rule;
 import com.ooad.mhs.engine.RuleEngine;
+import com.ooad.mhs.questionnaire.Questionnaire;
+import com.ooad.mhs.questionnaire.QuestionnaireRegistry;
 import com.ooad.mhs.repository.QuestionRepository;
 import com.ooad.mhs.repository.RuleRepository;
 import com.ooad.mhs.service.AssessmentService.PreparedAssessment;
@@ -17,6 +19,8 @@ import com.ooad.mhs.util.Section;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Builds the report model that the Thymeleaf template renders.
@@ -28,6 +32,9 @@ import java.util.*;
  *   matched conditions: the user's own answers, scores, or earlier findings
  * - The user's answers per section, with each section's score
  * - Which sections were assessed, partly answered, or skipped
+ *
+ * Two jobs are delegated (Single Responsibility): FindingStyler decides how each finding
+ * looks, OverallResultResolver decides the overall banner.
  */
 @Service
 public class ReportService {
@@ -35,13 +42,22 @@ public class ReportService {
     private final QuestionRepository questionRepository;
     private final QuestionnaireService questionnaireService;
     private final RuleRepository ruleRepository;
+    private final QuestionnaireRegistry questionnaires;
+    private final FindingStyler styler;
+    private final OverallResultResolver overallResolver;
 
     public ReportService(QuestionRepository questionRepository,
                          QuestionnaireService questionnaireService,
-                         RuleRepository ruleRepository) {
+                         RuleRepository ruleRepository,
+                         QuestionnaireRegistry questionnaires,
+                         FindingStyler styler,
+                         OverallResultResolver overallResolver) {
         this.questionRepository = questionRepository;
         this.questionnaireService = questionnaireService;
         this.ruleRepository = ruleRepository;
+        this.questionnaires = questionnaires;
+        this.styler = styler;
+        this.overallResolver = overallResolver;
     }
 
     // ------------------------------------------------------------------ model
@@ -59,31 +75,7 @@ public class ReportService {
     public record FindingView(Finding finding, List<BasisLine> basis,
                               String tone, String icon, String action) {}
 
-    /**
-     * Facts that signal a safety risk when their value is not 0.
-     * A finding whose basis contains one of these (or a conclusion of a
-     * CRISIS_PROTOCOL rule) is styled as crisis, whatever its action type.
-     */
-    private static final Set<String> RISK_FACTS = Set.of(
-        "crisis_detected", "cssrs_passive_ideation", "cssrs_any_positive", "phq9_q9",
-        "cssrs_q1", "cssrs_q2", "cssrs_q3", "cssrs_q4", "cssrs_q5", "cssrs_q6");
-
-    /**
-     * Information findings are green only when their result is recognisably reassuring.
-     * Matched on the rule's conclusion key (e.g. depression_minimal, stress_low,
-     * wellbeing_good, ptsd_negative, cssrs_no_risk, functioning_subclinical).
-     * Anything else (symptom signals, follow-up gates, notes, rules added later
-     * by an admin) defaults to neutral, so the report never shows false reassurance.
-     */
-    private static final java.util.regex.Pattern REASSURING_KEY = java.util.regex.Pattern.compile(
-        "^(good_mental_health|.*_(minimal|low|good|negative|no_risk|subclinical))$");
-
-    /** Display order of finding tones, most serious first. */
-    private static final List<String> TONE_ORDER =
-        List.of("crisis", "urgent", "recommend", "suggest", "monitor", "note", "info");
-
-    private static final java.util.regex.Pattern BETWEEN_NEED =
-        java.util.regex.Pattern.compile("^(-?\\d+) - (-?\\d+)$");
+    private static final Pattern BETWEEN_NEED = Pattern.compile("^(-?\\d+) - (-?\\d+)$");
 
     /** Plain-language labels for calculated scores and flags shown in "Why this appears". */
     private static final Map<String, String> FRIENDLY_LABELS = Map.ofEntries(
@@ -120,7 +112,7 @@ public class ReportService {
         Map.entry("anxiety_any", "Anxiety score of 5 or more (at least mild)"),
         Map.entry("anxiety_moderate_plus", "Anxiety score of 10 or more (moderate or higher)"),
         Map.entry("sleep_poor_any", "Sleep score above 5 (poor sleep)"),
-        Map.entry("any_treatment_recommendation", "At least one other finding recommends support or monitoring"));
+        Map.entry(RuleEngine.ANY_TREATMENT_KEY, "At least one other finding recommends support or monitoring"));
 
     /** One answered (or unanswered) question in the "Your answers" list. */
     public record AnswerRow(int number, String question, String answer, boolean answered) {}
@@ -136,6 +128,8 @@ public class ReportService {
      * @param overallLabel text shown in the overall banner
      * @param overallNote  explanation under the banner, or null
      * @param depressionMissing true when the PHQ-9 (Depression) section was not completed
+     *
+     * Create it with {@link #builder()} rather than the 12-argument constructor.
      */
     public record ScreeningReport(
         List<FindingView> results,      // about the user; safety-related always here, most serious first
@@ -150,7 +144,93 @@ public class ReportService {
         List<SectionStatus> notStarted,
         boolean depressionMissing,
         List<SectionAnswers> answers
-    ) {}
+    ) {
+        /** Starts building a report. */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /**
+         * Builder pattern: sets the report's 12 parts by name, step by step, instead of one
+         * 12-argument constructor call where two lists or two booleans could easily be swapped.
+         * Lists that are not set are empty; {@link #build()} checks the overall result is set.
+         */
+        public static final class Builder {
+            private List<FindingView> results = List.of();
+            private List<FindingView> guidance = List.of();
+            private List<FindingView> reasoning = List.of();
+            private String overallKey;
+            private String overallLabel;
+            private String overallNote;
+            private boolean hasCrisis;
+            private List<SectionStatus> assessed = List.of();
+            private List<SectionStatus> partial = List.of();
+            private List<SectionStatus> notStarted = List.of();
+            private boolean depressionMissing;
+            private List<SectionAnswers> answers = List.of();
+
+            private Builder() {
+            }
+
+            /** The three groups of finding cards. */
+            public Builder findings(List<FindingView> results, List<FindingView> guidance,
+                                    List<FindingView> reasoning) {
+                this.results = results;
+                this.guidance = guidance;
+                this.reasoning = reasoning;
+                return this;
+            }
+
+            /** The overall banner: state key, label and optional note (may be null). */
+            public Builder overall(String key, String label, String note) {
+                this.overallKey = key;
+                this.overallLabel = label;
+                this.overallNote = note;
+                return this;
+            }
+
+            /** Whether a crisis rule fired (shows the helpline box). */
+            public Builder crisis(boolean hasCrisis) {
+                this.hasCrisis = hasCrisis;
+                return this;
+            }
+
+            /** Which sections were completed, partly answered, or not started. */
+            public Builder coverage(List<SectionStatus> assessed, List<SectionStatus> partial,
+                                    List<SectionStatus> notStarted) {
+                this.assessed = assessed;
+                this.partial = partial;
+                this.notStarted = notStarted;
+                return this;
+            }
+
+            /** Whether the Depression and Mood (PHQ-9) section is missing. */
+            public Builder depressionMissing(boolean depressionMissing) {
+                this.depressionMissing = depressionMissing;
+                return this;
+            }
+
+            /** The "Your answers" list. */
+            public Builder answers(List<SectionAnswers> answers) {
+                this.answers = answers;
+                return this;
+            }
+
+            /**
+             * @return the finished, unchangeable report
+             * @throws IllegalStateException if the overall result was not set
+             */
+            public ScreeningReport build() {
+                if (overallKey == null || overallLabel == null) {
+                    throw new IllegalStateException("The overall result must be set before build()");
+                }
+                return new ScreeningReport(List.copyOf(results), List.copyOf(guidance), List.copyOf(reasoning),
+                    overallKey, overallLabel, overallNote, hasCrisis,
+                    List.copyOf(assessed), List.copyOf(partial), List.copyOf(notStarted),
+                    depressionMissing, List.copyOf(answers));
+            }
+        }
+    }
 
     // ------------------------------------------------------------------ build
 
@@ -164,38 +244,10 @@ public class ReportService {
             .anyMatch(f -> f.actionType() == ActionType.CRISIS_PROTOCOL);
         boolean depressionComplete = assessment.isComplete(Section.PHQ9);
 
-        // ---- Overall result ----
-        // The rule base has five overall rules (L4). When none fires, there is no
-        // basis for a severity, so we never fall back to "minimal". A crisis
-        // finding always outranks a reassuring overall label.
-        String severity = engineResult.overallSeverity();
-        String key;
-        String label;
-        String note = null;
-        if (hasCrisis && (severity == null || severity.equals("mild") || severity.equals("minimal")
-                || severity.equals("moderate"))) {
-            key = "attention";
-            label = "Needs attention";
-            note = "One or more answers suggest a safety concern. This takes priority over every other result.";
-            if (severity != null) {
-                note += " Apart from the safety concern, the rules rated the overall pattern as "
-                    + severity.toUpperCase() + ".";
-            }
-        } else if (severity != null) {
-            key = severity;
-            label = severity;
-            // A partly answered section was left out: say so, so "MINIMAL" is not read as covering it
-            boolean anyPartial = assessment.statuses().values().stream().anyMatch(SectionStatus::isPartial);
-            if (anyPartial) note = "Based only on the sections you completed. Partly answered sections are listed below.";
-        } else if (!depressionComplete) {
-            key = "undetermined";
-            label = "Not determined";
-            note = "The overall result needs the Depression & Mood section (see below).";
-        } else {
-            key = "unclassified";
-            label = "Not classified";
-            note = "Your answers did not match one of the overall patterns. Please read the individual findings below.";
-        }
+        // ---- Overall result (banner) ----
+        boolean anyPartial = assessment.statuses().values().stream().anyMatch(SectionStatus::isPartial);
+        OverallResultResolver.OverallResult overall =
+            overallResolver.resolve(engineResult.overallSeverity(), hasCrisis, depressionComplete, anyPartial);
 
         // ---- Lookups for readable text ----
         Map<String, Question> questionsByKey = new HashMap<>();
@@ -223,12 +275,10 @@ public class ReportService {
             boolean safetyLinked = false;
             for (ConditionTrace t : f.trace()) {
                 basis.add(basisLine(t, questionsByKey, viewsByKey, conclusionNames, answers));
-                boolean positive = !"0".equals(t.actualValue());
-                if (positive && (RISK_FACTS.contains(t.fieldKey()) || crisisConclusions.contains(t.fieldKey()))) {
-                    safetyLinked = true;
-                }
+                if (styler.isSafetySignal(t, crisisConclusions)) safetyLinked = true;
             }
-            findingViews.add(styled(f, basis, safetyLinked, rulesById.get(f.ruleId())));
+            FindingStyler.Style style = styler.style(f, safetyLinked, rulesById.get(f.ruleId()));
+            findingViews.add(new FindingView(f, basis, style.tone(), style.icon(), style.action()));
         }
 
         // ---- Group findings by audience ----
@@ -243,14 +293,14 @@ public class ReportService {
             Rule rule = rulesById.get(fv.finding().ruleId());
             String conclusion = rule != null && rule.conclusionKey() != null ? rule.conclusionKey() : "";
             String source = fv.finding().sourceRef() != null ? fv.finding().sourceRef() : "";
-            if (conclusion.equals("overall_severity")) continue;
-            if (fv.tone().equals("crisis")) results.add(fv);
+            if (conclusion.equals(RuleEngine.OVERALL_SEVERITY_KEY)) continue;
+            if (fv.tone().equals(FindingStyler.CRISIS_TONE)) results.add(fv);
             else if (conclusion.endsWith("_unlocked") || conclusion.equals("nice_overall")) reasoning.add(fv);
             else if (source.startsWith("NICE")) guidance.add(fv);
             else results.add(fv);
         }
         // Most serious first; the sort is stable, so rule priority order is kept within a tone
-        Comparator<FindingView> bySeriousness = Comparator.comparingInt(fv -> TONE_ORDER.indexOf(fv.tone()));
+        Comparator<FindingView> bySeriousness = Comparator.comparingInt(fv -> styler.seriousness(fv.tone()));
         results.sort(bySeriousness);
         guidance.sort(bySeriousness);
 
@@ -273,60 +323,24 @@ public class ReportService {
                 rows.add(new AnswerRow(n++, qv.text(),
                     raw == null ? "Not answered" : answerText(qv, raw), raw != null));
             }
-            String score = status.isComplete() ? scoreText(sv.section(), facts, answers) : null;
-            String scoreNote = status.isComplete() ? scoreNote(sv.section()) : null;
+            // Each questionnaire describes its own score (polymorphism, no switch on the section)
+            Questionnaire questionnaire = questionnaires.get(sv.section());
+            String score = status.isComplete() ? questionnaire.summary(facts, answers) : null;
+            String scoreNote = status.isComplete() ? questionnaire.scoreNote() : null;
             sectionAnswers.add(new SectionAnswers(status, score, scoreNote, rows));
         }
 
-        return new ScreeningReport(results, guidance, reasoning, key, label, note, hasCrisis,
-            assessed, partial, notStarted, !depressionComplete, sectionAnswers);
+        return ScreeningReport.builder()
+            .overall(overall.key(), overall.label(), overall.note())
+            .crisis(hasCrisis)
+            .findings(results, guidance, reasoning)
+            .coverage(assessed, partial, notStarted)
+            .depressionMissing(!depressionComplete)
+            .answers(sectionAnswers)
+            .build();
     }
 
     // ------------------------------------------------------------------ helpers
-
-    /**
-     * Colour/icon of a finding:
-     * 1. Safety-linked (basis contains a positive risk signal) or a crisis rule → crisis.
-     * 2. Otherwise by the rule's action type (how serious the recommendation is).
-     * 3. Information (DISPLAY_INFO) findings: green only if reassuring, otherwise neutral.
-     * Priority is NOT used: it orders findings, it does not say how serious they are.
-     */
-    private static FindingView styled(Finding f, List<BasisLine> basis, boolean safetyLinked, Rule rule) {
-        ActionType a = f.actionType();
-        String action = switch (a) {
-            case CRISIS_PROTOCOL -> "Crisis support";
-            case URGENT_ASSESSMENT -> "Urgent assessment";
-            case RECOMMEND_ASSESSMENT -> "Assessment recommended";
-            case SUGGEST_PROFESSIONAL -> "Consider professional support";
-            case MONITOR -> "Monitor";
-            case DISPLAY_INFO -> "Information";
-        };
-        if (a == ActionType.CRISIS_PROTOCOL || safetyLinked) {
-            if (a != ActionType.CRISIS_PROTOCOL) action += " · safety-related";
-            return new FindingView(f, basis, "crisis", "⚠", action);
-        }
-        return switch (a) {
-            case URGENT_ASSESSMENT -> new FindingView(f, basis, "urgent", "⚠", action);
-            case RECOMMEND_ASSESSMENT -> new FindingView(f, basis, "recommend", "!", action);
-            case SUGGEST_PROFESSIONAL -> new FindingView(f, basis, "suggest", "!", action);
-            case MONITOR -> new FindingView(f, basis, "monitor", "•", action);
-            default -> infoStyled(f, basis, rule);
-        };
-    }
-
-    /** DISPLAY_INFO findings: green ✓ only when reassuring; symptom signals, gates and notes stay neutral. */
-    private static FindingView infoStyled(Finding f, List<BasisLine> basis, Rule rule) {
-        String key = rule != null && rule.conclusionKey() != null ? rule.conclusionKey() : "";
-        String value = rule != null ? rule.conclusionValue() : null;
-        boolean reassuring = REASSURING_KEY.matcher(key).matches()
-            || ("overall_severity".equals(key) && "minimal".equals(value));
-        if (reassuring) return new FindingView(f, basis, "info", "✓", "No concern");
-        if (key.endsWith("_clinical") || key.equals("ptsd_single")) {
-            return new FindingView(f, basis, "note", "•", "Symptom noted");
-        }
-        if (key.endsWith("_unlocked")) return new FindingView(f, basis, "note", "→", "Follow-up checks");
-        return new FindingView(f, basis, "note", "i", "Information");
-    }
 
     private BasisLine basisLine(ConditionTrace t, Map<String, Question> questionsByKey,
                                 Map<String, QuestionView> viewsByKey, Map<String, String> conclusionNames,
@@ -365,7 +379,7 @@ public class ReportService {
     private static String readableNeed(String needed) {
         if (needed == null) return null;
         String n = needed.trim();
-        java.util.regex.Matcher m = BETWEEN_NEED.matcher(n);
+        Matcher m = BETWEEN_NEED.matcher(n);
         if (m.matches()) return "between " + m.group(1) + " and " + m.group(2);
         String[] p = n.split("\\s+", 2);
         if (p.length != 2) return n;
@@ -412,39 +426,4 @@ public class ReportService {
         };
     }
 
-    private static String scoreText(Section section, Map<String, Integer> f, Map<String, String> answers) {
-        return switch (section) {
-            case PHQ9 -> "Total score " + f.get("phq9_total") + " / 27";
-            case GAD7 -> "Total score " + f.get("gad7_total") + " / 21";
-            case PHQ15 -> "Total score " + f.get("phq15_total") + " / 30";
-            case CSSRS -> countYes(answers, "cssrs_q", 6) + " of 6 answered Yes";
-            case WHO5 -> "Wellbeing score " + f.get("who5_raw") + " / 25 (" + (f.get("who5_raw") * 4) + "%)";
-            case PSS10 -> "Total score " + f.get("pss10_total") + " / 40";
-            case PSQI -> "Global score " + f.get("psqi_global") + " / 21";
-            case WSAS -> "Total score " + f.get("wsas_total") + " / 40";
-            case ASRS -> f.get("asrs_shaded_count") + " of 6 answers in the screening range";
-            case PCPTSD -> countYes(answers, "pcptsd_q", 4) + " of 4 answered Yes";
-        };
-    }
-
-    private static String scoreNote(Section section) {
-        return switch (section) {
-            case WHO5 -> "Higher is better. 50% or below suggests low wellbeing.";
-            case PSQI -> "Lower is better. Above 5 suggests poor sleep.";
-            case CSSRS -> "Any Yes answer is followed up in the findings.";
-            case ASRS -> "4 or more suggests symptoms worth discussing with a professional.";
-            case PCPTSD -> "3 or more suggests trauma-related symptoms.";
-            default -> "Higher means more symptoms.";
-        };
-    }
-
-    /** Counts Yes answers: any answered value other than "0" (covers graded Safety Check answers). */
-    private static int countYes(Map<String, String> answers, String prefix, int count) {
-        int yes = 0;
-        for (int i = 1; i <= count; i++) {
-            String v = answers.get(prefix + i);
-            if (v != null && !"0".equals(v)) yes++;
-        }
-        return yes;
-    }
 }

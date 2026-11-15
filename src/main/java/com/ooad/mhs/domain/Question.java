@@ -21,6 +21,5 @@ public record Question(
     Category category,     // MOOD, ANXIETY, SLEEP, etc.
     Integer displayOrder,  // 1-84 for real questions, 200+ for derived
     String instrument,     // PHQ-9, GAD-7, CALCULATED
-    String scaleType,      // LIKERT_03, BINARY, TEXT, NUMBER_INT, etc.
-    Integer defaultValue   // 0 for symptom scales, 5 for WHO-5
+    String scaleType       // LIKERT_03, BINARY, TEXT, NUMBER_INT, etc.
 ) {}

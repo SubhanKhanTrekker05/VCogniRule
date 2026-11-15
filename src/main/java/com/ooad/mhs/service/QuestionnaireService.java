@@ -28,6 +28,12 @@ public class QuestionnaireService {
         this.questionRepository = questionRepository;
     }
 
+    /** Upper limit of the "minutes to fall asleep" field (PSQI question 2). */
+    private static final String MAX_MINUTES_TO_FALL_ASLEEP = "180";
+
+    /** Upper limit of the "hours of sleep" field (PSQI question 4); it accepts half hours. */
+    private static final String MAX_HOURS_SLEPT = "24";
+
     /** One answer choice: the submitted value and its label. */
     public record Option(String value, String label) {}
 
@@ -66,8 +72,8 @@ public class QuestionnaireService {
         String text = q.text().replaceAll("my \\[problem\\],? ", "my current difficulties, ");
         return switch (q.scaleType()) {
             case "TEXT" -> new QuestionView(key, text, lead, "time", List.of(), null, null, null, null);
-            case "NUMBER_INT" -> new QuestionView(key, text, lead, "number", List.of(), "0", "180", "1", "minutes");
-            case "NUMBER_DEC" -> new QuestionView(key, text, lead, "number", List.of(), "0", "24", "0.5", "hours");
+            case "NUMBER_INT" -> new QuestionView(key, text, lead, "number", List.of(), "0", MAX_MINUTES_TO_FALL_ASLEEP, "1", "minutes");
+            case "NUMBER_DEC" -> new QuestionView(key, text, lead, "number", List.of(), "0", MAX_HOURS_SLEPT, "0.5", "hours");
             default -> new QuestionView(key, text, lead, "choice", optionsFor(q), null, null, null, null);
         };
     }

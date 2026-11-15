@@ -1,17 +1,19 @@
 package com.ooad.mhs.engine;
 
 import com.ooad.mhs.domain.Condition;
-import com.ooad.mhs.util.Operator;
+import com.ooad.mhs.engine.operator.OperatorStrategyFactory;
 
 import java.util.Map;
 
 /**
  * Evaluates a single condition against the working facts map.
- * 
+ *
  * Pure logic, no Spring annotations. Static methods only.
- * 
+ *
  * Given a Condition (field_key, operator, value) and the working facts,
  * returns true if the condition is satisfied, false otherwise.
+ * The comparison itself is delegated to the operator's strategy
+ * (see {@link com.ooad.mhs.engine.operator.OperatorStrategy}).
  */
 public class ConditionEvaluator {
 
@@ -22,7 +24,6 @@ public class ConditionEvaluator {
      */
     public static boolean evaluate(Condition condition, Map<String, Integer> workingFacts) {
         String fieldKey = condition.fieldKey();
-        Operator operator = condition.operator();
 
         // Field not found in facts → condition fails
         if (!workingFacts.containsKey(fieldKey)) {
@@ -31,23 +32,6 @@ public class ConditionEvaluator {
 
         int actual = workingFacts.get(fieldKey);
 
-        return switch (operator) {
-            case EQ       -> condition.valueInt() != null && actual == condition.valueInt();
-            case NE       -> condition.valueInt() != null && actual != condition.valueInt();
-            case GT       -> condition.valueInt() != null && actual > condition.valueInt();
-            case GTE      -> condition.valueInt() != null && actual >= condition.valueInt();
-            case LT       -> condition.valueInt() != null && actual < condition.valueInt();
-            case LTE      -> condition.valueInt() != null && actual <= condition.valueInt();
-            case BETWEEN  -> condition.valueMin() != null && condition.valueMax() != null
-                                && actual >= condition.valueMin() && actual <= condition.valueMax();
-            case IN       -> condition.valueText() != null && evaluateIn(actual, condition.valueText());
-        };
-    }
-
-    private static boolean evaluateIn(int actual, String commaSeparatedValues) {
-        for (String s : commaSeparatedValues.split(",")) {
-            if (actual == Integer.parseInt(s.trim())) return true;
-        }
-        return false;
+        return OperatorStrategyFactory.forOperator(condition.operator()).test(actual, condition);
     }
 }

@@ -298,6 +298,8 @@ html:not(.js) .progress { display: none; }
 .severity-undetermined,
 .severity-unclassified { background: var(--surface-alt); color: var(--text-muted); border: 1px dashed var(--info-border); }
 .severity-attention { background: var(--amber); color: #fff; }
+.report-disclaimer { background: var(--amber-bg); border: 1px solid var(--amber); border-radius: var(--radius); padding: 0.85rem 1.25rem; margin-bottom: 1.25rem; }
+.report-disclaimer p { color: var(--amber-text); font-size: 0.9rem; margin: 0; }
 .overall-note { max-width: 520px; margin: 0.6rem auto 0; font-size: 0.9rem; color: var(--text-muted); }
 .report-jump { margin-top: 0.75rem; font-size: 0.88rem; }
 .report-jump a { color: var(--primary); }
@@ -471,6 +473,7 @@ mark { background: var(--amber-bg); color: var(--amber-text); padding: 0 2px; bo
 .login-form label { font-size: 0.85rem; font-weight: 600; color: var(--text); display: block; margin-bottom: 0.3rem; }
 .login-form input { padding: 0.7rem 0.8rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.95rem; width: 100%; background: var(--surface); }
 .login-form input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus-ring); }
+.form-error { color: var(--terracotta); background: rgba(142, 74, 50, 0.08); border: 1px solid rgba(142, 74, 50, 0.35); border-radius: var(--radius); padding: 0.75rem 1.25rem; margin-bottom: 1rem; font-size: 0.9rem; }
 .login-error { color: var(--terracotta); font-size: 0.85rem; text-align: center; background: rgba(142, 74, 50, 0.08); padding: 0.5rem; border-radius: 4px; }
 
 .logo-img { width: 200px; height: auto; margin-bottom: 0.01rem; }

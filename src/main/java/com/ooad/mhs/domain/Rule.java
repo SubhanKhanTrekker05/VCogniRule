@@ -13,8 +13,8 @@ import java.util.List;
  * a conclusion that downstream rules can read.
  * 
  * Rules are organized into 4 DAG levels:
- * - Level 1: Evaluate user responses directly (78 rules)
- * - Level 2: Read Level 1 conclusions — composites, hedged, gating, NICE (57 rules)
+ * - Level 1: Evaluate user responses directly (79 rules)
+ * - Level 2: Read Level 1 conclusions — composites, hedged, gating, NICE (53 rules)
  * - Level 3: Read Level 2 conclusions — higher-order patterns (12 rules)
  * - Level 4: Synthesis — overall severity (6 rules, includes NICE-OVERALL)
  * 
@@ -24,7 +24,7 @@ import java.util.List;
  * 
  * Stored in: rule table (150 rows)
  * Groups loaded from: rule_condition_group table (150 rows)
- * Conditions loaded from: rule_condition table (205 rows)
+ * Conditions loaded from: rule_condition table (209 rows)
  */
 public record Rule(
     Long id,

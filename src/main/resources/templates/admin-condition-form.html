@@ -12,6 +12,7 @@
             <h1 th:text="${isNew ? 'Add Condition' : 'Edit Condition'}">Condition</h1>
             <a th:href="@{'/admin/rule/' + ${ruleId}}" class="btn btn-outline btn-sm">← Back to Rule</a>
         </div>
+        <div th:if="${formError != null}" class="form-error" role="alert" th:text="${formError}">Error</div>
 
         <form th:method="post"
               th:action="${isNew ? '/admin/rule/' + ruleId + '/condition/new' : '/admin/rule/' + ruleId + '/condition/' + conditionId + '/edit'}"
