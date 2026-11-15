@@ -60,17 +60,21 @@ public record RuleDetails(
     String conclusionValue
 ) {
 
-    /** A conclusion needs both a key and a value (or neither): the engine sets key = value when the rule fires. */
-    @AssertTrue(message = "Conclusion key and conclusion value must be filled in together (or both left empty).")
+    /**
+     * A conclusion key needs a value: the engine sets key = value when the rule fires.
+     * An empty key means "no conclusion"; any value is then ignored (the new-rule form
+     * fills in "1" as the default value, so the value alone must not cause an error).
+     */
+    @AssertTrue(message = "A conclusion key needs a conclusion value.")
     public boolean isConclusionComplete() {
-        return isBlank(conclusionKey) == isBlank(conclusionValue);
+        return isBlank(conclusionKey) || !isBlank(conclusionValue);
     }
 
     /** Same details with blank optional texts stored as null (no conclusion = null in the database). */
     public RuleDetails normalized() {
         return new RuleDetails(ruleId == null ? null : ruleId.trim(), name.trim(), level, category, priority,
             actionType, blankToNull(explanation), blankToNull(sourceRef),
-            blankToNull(conclusionKey), blankToNull(conclusionValue));
+            blankToNull(conclusionKey), isBlank(conclusionKey) ? null : blankToNull(conclusionValue));
     }
 
     private static boolean isBlank(String s) {
