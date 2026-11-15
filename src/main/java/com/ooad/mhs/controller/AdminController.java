@@ -1,5 +1,6 @@
 package com.ooad.mhs.controller;
 
+import com.ooad.mhs.domain.Rule;
 import com.ooad.mhs.repository.QuestionRepository;
 import com.ooad.mhs.service.AdminService;
 import jakarta.servlet.http.HttpSession;
@@ -7,6 +8,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/admin")
@@ -83,9 +86,15 @@ public class AdminController {
     }
 
     @GetMapping("/rule/{id}")
-    public String ruleDetail(@PathVariable Long id, HttpSession session, Model model) {
+    public String ruleDetail(@PathVariable Long id, HttpSession session, Model model,
+                             RedirectAttributes redirectAttributes) {
         if (!isLoggedIn(session)) return "redirect:/admin";
-        model.addAttribute("rule", adminService.getRuleById(id).orElse(null));
+        Optional<Rule> rule = adminService.getRuleById(id);
+        if (rule.isEmpty()) {
+            redirectAttributes.addFlashAttribute("toast", "Rule " + id + " was not found.");
+            return "redirect:/admin/dashboard";
+        }
+        model.addAttribute("rule", rule.get());
         model.addAttribute("availableFields", questionRepository.findAll());
         return "admin-rule-detail";
     }
