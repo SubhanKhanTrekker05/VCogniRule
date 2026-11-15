@@ -307,6 +307,8 @@ html:not(.js) .progress { display: none; }
 /* Disclaimer: neutral information style, so it is never confused with the crisis box */
 .report-disclaimer { background: var(--info-bg); border: 1px solid var(--info-border); border-radius: var(--radius); padding: 0.85rem 1.25rem; margin-bottom: 1.25rem; }
 .report-disclaimer p { color: var(--text); font-size: 0.9rem; margin: 0; }
+.overall-meaning { max-width: 560px; margin: 0.7rem auto 0; font-size: 1.05rem; font-weight: 500; color: var(--text); }
+.overall-meaning:empty, .overall-meaning:not(:has(span)) { display: none; }
 .overall-note { max-width: 520px; margin: 0.6rem auto 0; font-size: 0.9rem; color: var(--text-muted); }
 .report-jump { margin-top: 0.75rem; font-size: 0.88rem; }
 .report-jump a { color: var(--primary); }
