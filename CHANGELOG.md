@@ -33,3 +33,10 @@ Baseline: commit `e7095d2` (the code as received). It built and ran correctly be
   stays first). It is also included when the report is printed / saved as PDF.
 - **Changed:** `static/css/style.css`: new `.report-disclaimer` style (same amber colours as the
   welcome page disclaimer).
+
+### 4. S7: Hide stack traces from users
+- **Problem:** `application.properties` had `server.error.include-stacktrace=always`, so any error
+  during a demo showed Java internals on screen.
+- **Changed:** `application.properties`: `include-stacktrace=never`, `include-message=never`.
+  Errors are still logged in full in the console.
+- **Verified:** `/admin/rule/abc` gives a plain HTTP 400 page with no stack trace.
