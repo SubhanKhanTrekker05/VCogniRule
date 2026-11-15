@@ -32,6 +32,8 @@
             <span class="search-count" id="searchCount"></span>
         </div>
 
+        <!-- On small screens the table scrolls inside this box; the page itself never scrolls sideways -->
+        <div class="table-scroll">
         <table class="rule-table">
             <thead>
                 <tr>
@@ -75,6 +77,7 @@
                 </tr>
             </tbody>
         </table>
+        </div>
     </div>
     <footer class="footer"><p>&copy; VCogniRule 2026</p></footer>
     <script th:src="@{/js/admin-rules.js}"></script>
