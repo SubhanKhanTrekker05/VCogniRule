@@ -16,8 +16,11 @@ import java.util.Optional;
  */
 public interface RuleRepository {
 
-    /** The active rules, as used by the rule engine (kept in memory, refreshed after every change). */
+    /** The active rules, as used by the rule engine (kept in memory). */
     List<Rule> getActiveRules();
+
+    /** Reloads the in-memory active rules from the database (after a change). */
+    void reloadActiveRules();
 
     /** Every rule, active or not (admin dashboard). */
     List<Rule> findAllIncludingInactive();

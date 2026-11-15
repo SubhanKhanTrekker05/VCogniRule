@@ -18,8 +18,8 @@ import java.util.stream.Collectors;
  *
  * Rules are stored in three tables: rule → rule_condition_group → rule_condition.
  * The active rules are assembled into Rule objects once and kept in memory
- * (cachedRules) for the rule engine; every change made through the admin panel
- * reloads the cache.
+ * (cachedRules) for the rule engine. After a change, {@link #reloadActiveRules()} is called by
+ * the observer RuleCacheRefresher (Observer pattern), not by this class.
  */
 @Repository
 public class JdbcRuleRepository implements RuleRepository {
@@ -71,7 +71,8 @@ public class JdbcRuleRepository implements RuleRepository {
     @Override
     public List<Rule> getActiveRules() { return cachedRules; }
 
-    private void refreshCache() {
+    @Override
+    public void reloadActiveRules() {
         cachedRules = loadRulesFromDb(true);
     }
 
@@ -95,7 +96,6 @@ public class JdbcRuleRepository implements RuleRepository {
             "INSERT INTO rule (rule_id, name, level, category, priority, action_type, explanation, source_ref, conclusion_key, conclusion_value, is_active) VALUES (?,?,?,?,?,?,?,?,?,?,1)",
             d.ruleId(), d.name(), d.level(), d.category().name(), d.priority(), d.actionType().name(),
             d.explanation(), d.sourceRef(), d.conclusionKey(), d.conclusionValue());
-        refreshCache();
     }
 
     @Override
@@ -104,19 +104,16 @@ public class JdbcRuleRepository implements RuleRepository {
             "UPDATE rule SET name=?, level=?, category=?, priority=?, action_type=?, explanation=?, source_ref=?, conclusion_key=?, conclusion_value=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
             d.name(), d.level(), d.category().name(), d.priority(), d.actionType().name(),
             d.explanation(), d.sourceRef(), d.conclusionKey(), d.conclusionValue(), id);
-        refreshCache();
     }
 
     @Override
     public void deleteById(Long id) {
         jdbcTemplate.update("DELETE FROM rule WHERE id=?", id);
-        refreshCache();
     }
 
     @Override
     public void toggleActive(Long id, boolean active) {
         jdbcTemplate.update("UPDATE rule SET is_active=? WHERE id=?", active ? 1 : 0, id);
-        refreshCache();
     }
 
     // === Condition CRUD ===
@@ -136,7 +133,6 @@ public class JdbcRuleRepository implements RuleRepository {
             // OR IGNORE: an identical condition already exists (unique index uq_rule_condition)
             "INSERT OR IGNORE INTO rule_condition (group_id, field_key, operator, value_int, value_text, value_min, value_max) VALUES (?,?,?,?,?,?,?)",
             groupId, c.fieldKey(), c.operator().name(), c.valueInt(), c.valueText(), c.valueMin(), c.valueMax());
-        refreshCache();
     }
 
     @Override
@@ -145,13 +141,11 @@ public class JdbcRuleRepository implements RuleRepository {
             // OR IGNORE: skip an edit that would duplicate another condition of the same rule
             "UPDATE OR IGNORE rule_condition SET field_key=?, operator=?, value_int=?, value_text=?, value_min=?, value_max=? WHERE id=?",
             c.fieldKey(), c.operator().name(), c.valueInt(), c.valueText(), c.valueMin(), c.valueMax(), conditionId);
-        refreshCache();
     }
 
     @Override
     public void deleteCondition(Long conditionId) {
         jdbcTemplate.update("DELETE FROM rule_condition WHERE id=?", conditionId);
-        refreshCache();
     }
         // === Factory Reset ===
     /**
@@ -162,7 +156,7 @@ public class JdbcRuleRepository implements RuleRepository {
      *   2. DELETE rule_condition_group  (children - the AND groups)
      *   3. DELETE rule                  (parent - the 150 rules themselves)
      *   4. Re-execute rules_master.sql  (re-seeds all 150 rules + 150 groups + 209 conditions)
-     *   5. refreshCache()               (reload in-memory cache so engine sees restored rules)
+     *   (the in-memory cache is then reloaded by the observer RuleCacheRefresher)
      *
      * NOTE: SQLite FK enforcement is OFF by default (the JDBC URL has no ?foreign_keys=on
      *       parameter), so the ON DELETE CASCADE declared in schema.sql does NOT fire
@@ -190,7 +184,6 @@ public class JdbcRuleRepository implements RuleRepository {
         populator.setSqlScriptEncoding("UTF-8");
         populator.execute(Objects.requireNonNull(jdbcTemplate.getDataSource()));
 
-        refreshCache();
 
         Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rule", Integer.class);
         return count != null ? count : 0;

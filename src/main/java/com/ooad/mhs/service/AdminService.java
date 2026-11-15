@@ -26,6 +26,9 @@ import java.util.Optional;
  * are checked earlier by Bean Validation on RuleDetails / ConditionDetails):
  * a new rule ID must be unique, a condition field must exist, and a condition must belong to the
  * rule it is edited through. A broken rule throws {@link InvalidInputException}.
+ *
+ * Observer pattern: this class is the subject. After every change to the knowledge base it
+ * notifies all {@link RuleChangeListener}s (RuleCacheRefresher, AuditLogListener).
  */
 @Service
 public class AdminService {
@@ -34,13 +37,16 @@ public class AdminService {
     private final RuleRepository ruleRepository;
     private final QuestionRepository questionRepository;
     private final PasswordHasher passwordHasher;
+    private final List<RuleChangeListener> listeners;
 
     public AdminService(AdminRepository adminRepository, RuleRepository ruleRepository,
-                        QuestionRepository questionRepository, PasswordHasher passwordHasher) {
+                        QuestionRepository questionRepository, PasswordHasher passwordHasher,
+                        List<RuleChangeListener> listeners) {
         this.adminRepository = adminRepository;
         this.ruleRepository = ruleRepository;
         this.questionRepository = questionRepository;
         this.passwordHasher = passwordHasher;
+        this.listeners = List.copyOf(listeners);
     }
 
     public boolean authenticate(String username, String password) {
@@ -61,23 +67,32 @@ public class AdminService {
             .anyMatch(r -> r.ruleId().equals(d.ruleId()));
         if (taken) throw new InvalidInputException("Rule ID " + d.ruleId() + " already exists.");
         ruleRepository.save(d);
+        notifyListeners("rule " + d.ruleId() + " created");
     }
 
     /** @throws InvalidInputException if the rule does not exist */
     public void updateRule(Long id, RuleDetails details) {
         requireRule(id);
         ruleRepository.updateRule(id, details.normalized());
+        notifyListeners("rule " + id + " updated");
     }
 
-    public void deleteRule(Long id) { ruleRepository.deleteById(id); }
+    public void deleteRule(Long id) {
+        ruleRepository.deleteById(id);
+        notifyListeners("rule " + id + " deleted");
+    }
 
-    public void toggleRuleActive(Long id, boolean active) { ruleRepository.toggleActive(id, active); }
+    public void toggleRuleActive(Long id, boolean active) {
+        ruleRepository.toggleActive(id, active);
+        notifyListeners("rule " + id + (active ? " activated" : " deactivated"));
+    }
 
     /** @throws InvalidInputException if the rule does not exist or the field is unknown */
     public void addCondition(Long ruleId, ConditionDetails condition) {
         requireRule(ruleId);
         requireKnownField(condition.fieldKey());
         ruleRepository.addCondition(ruleId, condition.normalized());
+        notifyListeners("condition added to rule " + ruleId);
     }
 
     /** @throws InvalidInputException if the condition is not part of the rule, or the field is unknown */
@@ -85,12 +100,14 @@ public class AdminService {
         requireConditionOfRule(ruleId, conditionId);
         requireKnownField(condition.fieldKey());
         ruleRepository.updateCondition(conditionId, condition.normalized());
+        notifyListeners("condition " + conditionId + " updated");
     }
 
     /** @throws InvalidInputException if the condition is not part of the rule */
     public void deleteCondition(Long ruleId, Long conditionId) {
         requireConditionOfRule(ruleId, conditionId);
         ruleRepository.deleteCondition(conditionId);
+        notifyListeners("condition " + conditionId + " deleted");
     }
 
     // ------------------------------------------------------------------ business-rule checks
@@ -119,11 +136,21 @@ public class AdminService {
      * Used by the "Reset KB" button on the rule management dashboard - the ultimate Ctrl+Z
      * for viva demos when you've experimented with rules and want to restore the factory state.
      *
-     * Delegates to RuleRepository which performs the actual DB wipe + re-seed + cache refresh.
+     * Delegates to RuleRepository which performs the actual DB wipe + re-seed; the listeners
+     * are then notified (RuleCacheRefresher reloads the engine's rules).
      *
      * @return number of rules after reset (should always be 150)
      */
     public int resetKnowledgeBase() {
-        return ruleRepository.resetKnowledgeBase();
+        int count = ruleRepository.resetKnowledgeBase();
+        notifyListeners("knowledge base reset");
+        return count;
+    }
+
+    /** Observer pattern: tells every listener that the knowledge base changed. */
+    private void notifyListeners(String change) {
+        for (RuleChangeListener listener : listeners) {
+            listener.onRulesChanged(change);
+        }
     }
 }

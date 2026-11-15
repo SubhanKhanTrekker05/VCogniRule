@@ -4,7 +4,7 @@ import com.ooad.mhs.domain.Condition;
 import com.ooad.mhs.domain.ConditionDetails;
 import com.ooad.mhs.domain.Rule;
 import com.ooad.mhs.domain.RuleDetails;
-import com.ooad.mhs.repository.RuleRepository;
+import com.ooad.mhs.service.AdminService;
 import com.ooad.mhs.util.Operator;
 import jakarta.servlet.RequestDispatcher;
 import org.junit.jupiter.api.AfterEach;
@@ -31,11 +31,11 @@ class FormRecoveryAndErrorPageIntegrationTest extends IntegrationTestBase {
     private static final long RULE_ID = 20;
 
     @Autowired
-    private RuleRepository ruleRepository;
+    private AdminService adminService;
 
     @AfterEach
     void restoreKnowledgeBase() {
-        ruleRepository.resetKnowledgeBase();
+        adminService.resetKnowledgeBase();   // through the Facade, so the observers reload the rules
     }
 
     private Condition firstCondition(MockHttpSession session) throws Exception {
