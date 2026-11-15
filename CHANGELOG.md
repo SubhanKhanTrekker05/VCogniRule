@@ -293,3 +293,84 @@ Each item was first confirmed unused in all Java code, HTML templates and JavaSc
 - `DEMO_SCRIPT.md`: live demo guide with verified answer sets for MINIMAL / MILD / MODERATE /
   NEEDS ATTENTION, the admin demo, troubleshooting, and the screenshot list.
 - `README.md`: Testing section, project structure, start-dev.sh note updated.
+
+### 24. Themed error page and admin form recovery (team member's commit `208d6b7`)
+- New `templates/error.html`: 404 / 500 errors show a themed page with a plain message and links
+  home, instead of the default error page. No exception text reaches the browser.
+- Admin forms keep the typed values after a failed save; "Edit condition" opens pre-filled.
+- Form error box styled as an error (red accent and warning sign).
+- 7 new integration tests in `FormRecoveryAndErrorPageIntegrationTest` (244 tests).
+
+## UI/UX polish (branch `ui-polish`)
+
+Based on the UI/UX review (screenshots in `docs/screenshots/`). Only page text, CSS and page
+scripts changed; the rule engine, the rules and the scoring are untouched. 245 tests pass after
+every step (one new test).
+
+### 25. M1: Safety Check message is impossible to miss
+- **Problem:** clicking Submit with the Safety Check unfinished showed a small message inside the
+  question card, often off-screen; nothing changed near the Submit button.
+- **Changed:** `static/js/screening.js`, `templates/assessment.html`, `static/css/style.css`: the
+  page scrolls to the unanswered question, the message is a warning box, and a second message next
+  to the Submit button says how many questions are left (it disappears once the Safety Check is done).
+
+### 26. M2: tap-to-call helplines
+- **Problem:** helpline numbers were plain text (no tap-to-call on a phone) and broke over two lines.
+- **Changed:** `templates/report.html`, `style.css`: 1166 and 042-35761999 are `tel:` links,
+  findahelpline.com is a link, numbers never wrap.
+
+### 27. M3: crisis box stands apart from the disclaimer
+- **Problem:** the crisis box and the disclaimer box had the same beige/amber look.
+- **Changed:** `style.css`: crisis box has a deeper warm background, thick amber left bar, shadow and
+  a calm heart sign (still not red); the disclaimer uses the neutral information style.
+
+### 28. M4: a plain sentence under the overall result
+- **Problem:** the banner was one word (e.g. MINIMAL) with no explanation.
+- **Changed:** `templates/report.html`, `style.css`: one plain sentence for MINIMAL, MILD, MODERATE,
+  SEVERE and CRITICAL (e.g. "Your answers show few or no signs of concern.").
+
+### 29. S1: About page explains the technical terms
+- **Problem:** many technical terms with no explanation for a non-technical reader.
+- **Changed:** `templates/about.html`, `style.css`: every term is kept (needed for the viva) and
+  followed by a short plain explanation in grey italics.
+
+### 30. S2: the current question is always fully on screen
+- **Problem:** on a laptop screen the answers were below the visible area; the user scrolled for
+  every question.
+- **Changed:** `screening.js`: new `revealActive()` scrolls only when the answers would be hidden
+  behind the sticky submit bar; `style.css`: more compact header, tabs and section heading on
+  laptop-height screens. Checked at laptop size and at 390px.
+
+### 31. S3: MODERATE and NEEDS ATTENTION no longer look alike
+- **Problem:** both banners were similar browns (brightness ratio only 1.15:1).
+- **Changed:** `style.css`: MODERATE is a calm slate blue; NEEDS ATTENTION and CRITICAL keep the
+  amber and get a halo ring. White on slate blue 5.52:1 (WCAG AA).
+
+### 32. S4: rule ID and level moved into "Why this appears"
+- **Problem:** "(PHQ9-MODERATE) L1" next to every result name was noise for a normal user.
+- **Changed:** `templates/fragments/finding.html`, `style.css`: the rule ID and level are the first
+  line inside "Why this appears" ("Rule PHQ9-MODERATE · Level 1"): moved, not removed (viva).
+
+### 33. S5: admin dashboard shows status and asks before switching a rule off
+- **Problem:** no Active/Inactive text; "Deactivate" looked like "Edit" and acted with one click.
+- **Changed:** `templates/admin-rule-list.html`, `static/js/admin-rules.js`, `style.css`: status in
+  words, inactive rows greyed, Deactivate has its own warning look and asks "Switch off rule X?".
+- **Test added:** `AdminIntegrationTest.dashboardStatusAndConfirm` (245 tests).
+
+### 34. S6: login error matches the other error boxes
+- **Changed:** `style.css`: same red accent and warning sign as the admin form errors.
+
+### 35. S7: all 10 screening tabs visible on a phone
+- **Problem:** on a phone the tabs were a sideways strip showing only 1½ of 10.
+- **Changed:** `style.css`: two-column tab grid on phones (labels wrap, never cut). 10 of 10 on screen at 390px.
+
+### 36. N1-N4: smaller improvements
+- **N1** `assessment.html`: example time next to bedtime ("e.g. 11:30 PM") and wake-up time ("e.g. 7:00 AM").
+- **N2** `report.html`: "Start a new screening" is the main (filled) button at the end of the report.
+- **N3** `admin-rule-list.html`, `style.css`: on a phone the rules table scrolls inside its own box.
+- **N4** `admin-rule-list.html`: headers "Level"/"Priority"; category and action as words
+  ("Crisis protocol") with the code name as a tooltip.
+
+### 37. Fix made during this work
+- A shell escape put two NUL bytes into `style.css` instead of the warning-sign code in M1; found by
+  checking the file type, fixed in the next commit, and every tracked text file was checked (0 NUL bytes).
