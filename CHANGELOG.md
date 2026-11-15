@@ -60,3 +60,30 @@ Baseline: commit `e7095d2` (the code as received). It built and ran correctly be
 - **Verified:** the 4 screening + 3 admin tests give identical results to before, including the
   full text of every report page (so the "Rule needs" texts are unchanged).
   Note: no rule uses NE or IN yet; these are covered by unit tests in Phase 4.
+
+### 6. M1: Abstract `Questionnaire` class with 10 subclasses (inheritance, Template Method)
+- **Problem:** The project had no inheritance. Each test's scoring was spread over three places:
+  a private `calculateX` method in `DerivedFieldCalculator`, a line in `calculateDerivedFlags`,
+  and two `switch` statements on `Section` in `ReportService` (`scoreText`, `scoreNote`).
+- **Safety net written FIRST:** `src/test/.../questionnaire/QuestionnaireRefactorEquivalenceTest.java`
+  runs a frozen copy of the original code (`LegacyDerivedFieldCalculator`, `LegacyReportText`,
+  copied from commit e7095d2) and the new code on the same inputs (10,000 random answer sets with a
+  fixed seed, plus edge cases) and requires identical output. It was run on the old code first (pass),
+  then shown to catch a deliberate one-character change (fail), then run on the new code (pass).
+- **New package `questionnaire/`:**
+  - `Questionnaire` (abstract class): holds its `Section`; `contributeTo(facts)` is a final
+    template method (scores, then flags); abstract `computeScores`, hook `computeFlags`,
+    abstract `summary`, overridable `scoreNote`; shared helpers `sum`, `countAtLeast`, `flag`, `countYes`.
+  - 10 subclasses: `Phq9Questionnaire`, `Gad7Questionnaire`, `CssrsQuestionnaire`,
+    `Who5Questionnaire`, `Pss10Questionnaire`, `PsqiQuestionnaire`, `Phq15Questionnaire`,
+    `PcPtsdQuestionnaire`, `AsrsQuestionnaire`, `WsasQuestionnaire`.
+  - `QuestionnaireRegistry`: holds one questionnaire per section and stops the app at startup
+    if a section has none or two.
+- **Changed:** `service/DerivedFieldCalculator.java`: the 10 `if` checks and 11 private methods
+  are replaced by a loop that calls `contributeTo` on each completed questionnaire.
+- **Changed:** `service/ReportService.java`: `scoreText`, `scoreNote` and `countYes` removed; the
+  report asks the section's questionnaire for `summary(...)` and `scoreNote()`.
+- **Not changed (on purpose):** severity (mild, moderate, ...) is still decided by the rules in the
+  database, not by Java code, so admin edits to rules keep working. `Section` enum unchanged.
+- **Verified:** 9/9 before/after tests pass; the 4 screening + 3 admin tests are identical to before,
+  including the full report page text.
