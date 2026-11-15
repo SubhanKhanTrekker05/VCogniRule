@@ -87,6 +87,19 @@ class ScreeningFlowIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    @DisplayName("Crisis: engine steps (GATE-*) only in 'How the system reasoned'; crisis box and banner unchanged")
+    void gateFindingsOnlyInReasoning() throws Exception {
+        Map<String, String> a = allAnswers(false);
+        a.put("cssrs_q4", "1");
+        ScreeningReport rep = report(post(a));
+        assertThat(rep.hasCrisis()).isTrue();
+        assertThat(rep.overallKey()).isEqualTo("attention");
+        assertThat(rep.results().get(0).finding().ruleId()).isEqualTo("CSSRS-INTENT");
+        assertThat(rep.results()).extracting(fv -> fv.finding().ruleId()).noneMatch(id -> id.startsWith("GATE-"));
+        assertThat(rep.reasoning()).extracting(fv -> fv.finding().ruleId()).contains("GATE-CRISIS");
+    }
+
+    @Test
     @DisplayName("S4: Safety Check skipped → sent back to the Safety Check with an error")
     void safetyCheckIsMandatory() throws Exception {
         Map<String, String> a = allAnswers(false);

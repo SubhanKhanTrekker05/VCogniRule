@@ -45,6 +45,13 @@ class AdminIntegrationTest extends IntegrationTestBase {
         return adminService.getAllRules().stream().filter(r -> r.ruleId().equals(ruleId)).findFirst().orElseThrow();
     }
 
+    /** How many times {@code part} occurs in {@code text}. */
+    private static int count(String text, String part) {
+        int n = 0;
+        for (int i = text.indexOf(part); i >= 0; i = text.indexOf(part, i + part.length())) n++;
+        return n;
+    }
+
     private static MockHttpServletRequestBuilder form(MockHttpServletRequestBuilder b, Map<String, String> fields) {
         fields.forEach(b::param);
         return b;
@@ -193,6 +200,19 @@ class AdminIntegrationTest extends IntegrationTestBase {
             mvc.perform(post("/admin/toggle/1").param("active", "false").session(s)).andExpect(redirectedUrl("/admin/dashboard"));
             assertThat(ruleRepository.getActiveRules()).extracting(Rule::ruleId).doesNotContain("PHQ9-MINIMAL");
             mvc.perform(get("/admin/rule/1").session(s)).andExpect(status().isOk()).andExpect(view().name("admin-rule-detail"));
+        }
+
+        @Test
+        @DisplayName("Dashboard shows Active / Inactive in words; only switching OFF asks for confirmation")
+        void dashboardStatusAndConfirm() throws Exception {
+            MockHttpSession s = loginAsAdmin();
+            mvc.perform(post("/admin/toggle/1").param("active", "false").session(s));
+            String html = mvc.perform(get("/admin/dashboard").session(s)).andReturn().getResponse().getContentAsString();
+            assertThat(count(html, "class=\"status-pill is-off\">Inactive<")).isEqualTo(1);
+            assertThat(count(html, "class=\"status-pill is-on\">Active<")).isEqualTo(149);
+            assertThat(count(html, "data-confirm=\"Switch off rule ")).isEqualTo(149);   // every active rule asks first
+            assertThat(html).doesNotContain("data-confirm=\"Switch off rule PHQ9-MINIMAL");  // the inactive one does not
+            assertThat(count(html, "row-inactive")).isEqualTo(1);
         }
 
         @Test

@@ -32,34 +32,44 @@
             <span class="search-count" id="searchCount"></span>
         </div>
 
+        <!-- On small screens the table scrolls inside this box; the page itself never scrolls sideways -->
+        <div class="table-scroll">
         <table class="rule-table">
             <thead>
                 <tr>
                     <th class="sortable" data-sort="numeric" data-column="0">ID <span class="sort-indicator"></span></th>
                     <th class="sortable" data-sort="text" data-column="1">Rule ID <span class="sort-indicator"></span></th>
                     <th class="sortable" data-sort="text" data-column="2">Name <span class="sort-indicator"></span></th>
-                    <th class="sortable" data-sort="numeric" data-column="3">Lvl <span class="sort-indicator"></span></th>
+                    <th class="sortable" data-sort="numeric" data-column="3">Level <span class="sort-indicator"></span></th>
                     <th class="sortable" data-sort="text" data-column="4">Category <span class="sort-indicator"></span></th>
-                    <th class="sortable" data-sort="numeric" data-column="5">Pri <span class="sort-indicator"></span></th>
+                    <th class="sortable" data-sort="numeric" data-column="5">Priority <span class="sort-indicator"></span></th>
                     <th class="sortable" data-sort="text" data-column="6">Action <span class="sort-indicator"></span></th>
                     <th>Active</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                <tr th:each="rule : ${rules}">
+                <tr th:each="rule : ${rules}" th:classappend="${rule.isActive} ? '' : 'row-inactive'">
                     <td th:text="${rule.id}">1</td>
                     <td th:text="${rule.ruleId}">RULE</td>
                     <td><a th:href="@{'/admin/rule/' + ${rule.id}}" th:text="${rule.name}">Name</a></td>
                     <td th:text="${rule.level}">1</td>
-                    <td th:text="${rule.category}">MOOD</td>
+                    <!-- Readable words (e.g. "Cross cutting"); the exact code name is in the tooltip -->
+                    <td th:title="${rule.category}"
+                        th:text="${#strings.capitalize(#strings.toLowerCase(#strings.replace(rule.category.name(), '_', ' ')))}">Mood</td>
                     <td th:text="${rule.priority}">50</td>
-                    <td th:text="${rule.actionType}">DISPLAY_INFO</td>
-                    <td>
-                        <form th:method="post" th:action="@{'/admin/toggle/' + ${rule.id}}">
+                    <td th:title="${rule.actionType}"
+                        th:text="${#strings.capitalize(#strings.toLowerCase(#strings.replace(rule.actionType.name(), '_', ' ')))}">Display info</td>
+                    <td class="active-cell">
+                        <!-- Status in words, so it never depends on reading the button -->
+                        <span class="status-pill" th:classappend="${rule.isActive} ? 'is-on' : 'is-off'"
+                              th:text="${rule.isActive} ? 'Active' : 'Inactive'">Active</span>
+                        <!-- Switching a rule OFF asks for confirmation (admin-rules.js reads data-confirm) -->
+                        <form th:method="post" th:action="@{'/admin/toggle/' + ${rule.id}}"
+                              th:attr="data-confirm=${rule.isActive} ? 'Switch off rule ' + ${rule.ruleId} + '? The screening will stop using it until you activate it again.' : null">
                             <input type="hidden" name="active" th:value="${rule.isActive ? 'false' : 'true'}" />
-                            <button type="submit" class="btn btn-sm" th:text="${rule.isActive ? 'Deactivate' : 'Activate'}"
-                                    th:class="'btn btn-sm ' + ${rule.isActive ? 'btn-outline' : 'btn-primary'}">
+                            <button type="submit" th:text="${rule.isActive ? 'Deactivate' : 'Activate'}"
+                                    th:class="'btn btn-sm ' + ${rule.isActive ? 'btn-deactivate' : 'btn-primary'}">
                                 Toggle
                             </button>
                         </form>
@@ -70,6 +80,7 @@
                 </tr>
             </tbody>
         </table>
+        </div>
     </div>
     <footer class="footer"><p>&copy; VCogniRule 2026</p></footer>
     <script th:src="@{/js/admin-rules.js}"></script>
