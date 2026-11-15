@@ -6,7 +6,10 @@ package com.ooad.mhs.util;
  * Each operator defines how a field's actual value is compared
  * against the rule's required value.
  * 
- * Used by: ConditionEvaluator (engine layer)
+ * Each value has its own strategy class (engine.operator package), looked up
+ * through OperatorStrategyFactory.
+ *
+ * Used by: Condition (domain), OperatorStrategyFactory (engine layer)
  * Stored in: rule_condition.operator column
  */
 public enum Operator {
