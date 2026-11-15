@@ -114,11 +114,11 @@ public class AdminController {
     public String updateRule(@PathVariable Long id, @Valid @ModelAttribute("form") RuleDetails form,
                              BindingResult errors, RedirectAttributes redirectAttributes) {
         String back = "redirect:/admin/rule/" + id;
-        if (errors.hasErrors()) return withError(redirectAttributes, back, messages(errors), null);
+        if (errors.hasErrors()) return withError(redirectAttributes, back, messages(errors), form);
         try {
             adminService.updateRule(id, form);
         } catch (InvalidInputException e) {
-            return withError(redirectAttributes, back, e.getMessage(), null);
+            return withError(redirectAttributes, back, e.getMessage(), form);
         }
         return back;
     }
@@ -141,11 +141,11 @@ public class AdminController {
     public String createCondition(@PathVariable Long id, @Valid @ModelAttribute("form") ConditionDetails form,
                                   BindingResult errors, RedirectAttributes redirectAttributes) {
         String back = "redirect:/admin/rule/" + id + "/condition/new";
-        if (errors.hasErrors()) return withError(redirectAttributes, back, messages(errors), null);
+        if (errors.hasErrors()) return withError(redirectAttributes, back, messages(errors), form);
         try {
             adminService.addCondition(id, form);
         } catch (InvalidInputException e) {
-            return withError(redirectAttributes, back, e.getMessage(), null);
+            return withError(redirectAttributes, back, e.getMessage(), form);
         }
         return "redirect:/admin/rule/" + id;
     }
@@ -156,6 +156,16 @@ public class AdminController {
         model.addAttribute("conditionId", cid);
         model.addAttribute("availableFields", questionRepository.findAll());
         model.addAttribute("isNew", false);
+        // Pre-fill the form with the saved condition, unless the admin is coming back from a
+        // failed save (then "form" already holds what they typed).
+        if (!model.containsAttribute("form")) {
+            adminService.getRuleById(id).ifPresent(rule -> rule.groups().stream()
+                .flatMap(group -> group.conditions().stream())
+                .filter(c -> c.id().equals(cid))
+                .findFirst()
+                .ifPresent(c -> model.addAttribute("form", new ConditionDetails(
+                    c.fieldKey(), c.operator(), c.valueInt(), c.valueText(), c.valueMin(), c.valueMax()))));
+        }
         return "admin-condition-form";
     }
 
@@ -164,11 +174,11 @@ public class AdminController {
                                   @Valid @ModelAttribute("form") ConditionDetails form, BindingResult errors,
                                   RedirectAttributes redirectAttributes) {
         String back = "redirect:/admin/rule/" + id + "/condition/" + cid + "/edit";
-        if (errors.hasErrors()) return withError(redirectAttributes, back, messages(errors), null);
+        if (errors.hasErrors()) return withError(redirectAttributes, back, messages(errors), form);
         try {
             adminService.updateCondition(id, cid, form);
         } catch (InvalidInputException e) {
-            return withError(redirectAttributes, back, e.getMessage(), null);
+            return withError(redirectAttributes, back, e.getMessage(), form);
         }
         return "redirect:/admin/rule/" + id;
     }
@@ -203,7 +213,7 @@ public class AdminController {
 
     // ------------------------------------------------------------------ form error helpers
 
-    /** Sends the admin back to a form with a message (and, for the new-rule form, the typed values). */
+    /** Sends the admin back to a form with a message and the values they typed, so nothing has to be re-entered. */
     private static String withError(RedirectAttributes redirectAttributes, String back, String message, Object form) {
         redirectAttributes.addFlashAttribute("formError", message);
         if (form != null) redirectAttributes.addFlashAttribute("form", form);

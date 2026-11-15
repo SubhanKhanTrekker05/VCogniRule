@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VCogniRule — Condition</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" type="image/png" href="/favicon.png" />
     <link rel="stylesheet" th:href="@{/css/style.css}" />
 </head>
 <body>
@@ -14,6 +16,8 @@
         </div>
         <div th:if="${formError != null}" class="form-error" role="alert" th:text="${formError}">Error</div>
 
+        <!-- Fields are pre-filled from "form": the saved condition when editing,
+             or the values the admin typed when a save failed validation. -->
         <form th:method="post"
               th:action="${isNew ? '/admin/rule/' + ruleId + '/condition/new' : '/admin/rule/' + ruleId + '/condition/' + conditionId + '/edit'}"
               class="admin-form">
@@ -21,42 +25,43 @@
             <div class="form-row">
                 <label>Field Key</label>
                 <select name="fieldKey">
-                    <option th:each="q : ${availableFields}" th:value="${q.fieldKey}" th:text="${q.fieldKey + ' — ' + q.text}">field</option>
+                    <option th:each="q : ${availableFields}" th:value="${q.fieldKey}" th:text="${q.fieldKey + ' — ' + q.text}"
+                            th:selected="${form?.fieldKey == q.fieldKey}">field</option>
                 </select>
             </div>
 
             <div class="form-row">
                 <label>Operator</label>
                 <select name="operator">
-                    <option value="EQ">EQ (equals)</option>
-                    <option value="NE">NE (not equals)</option>
-                    <option value="GT">GT (greater than)</option>
-                    <option value="GTE">GTE (greater than or equal)</option>
-                    <option value="LT">LT (less than)</option>
-                    <option value="LTE">LTE (less than or equal)</option>
-                    <option value="BETWEEN">BETWEEN (min to max)</option>
-                    <option value="IN">IN (comma-separated values)</option>
+                    <option value="EQ" th:selected="${form?.operator?.name() == 'EQ'}">EQ (equals)</option>
+                    <option value="NE" th:selected="${form?.operator?.name() == 'NE'}">NE (not equals)</option>
+                    <option value="GT" th:selected="${form?.operator?.name() == 'GT'}">GT (greater than)</option>
+                    <option value="GTE" th:selected="${form?.operator?.name() == 'GTE'}">GTE (greater than or equal)</option>
+                    <option value="LT" th:selected="${form?.operator?.name() == 'LT'}">LT (less than)</option>
+                    <option value="LTE" th:selected="${form?.operator?.name() == 'LTE'}">LTE (less than or equal)</option>
+                    <option value="BETWEEN" th:selected="${form?.operator?.name() == 'BETWEEN'}">BETWEEN (min to max)</option>
+                    <option value="IN" th:selected="${form?.operator?.name() == 'IN'}">IN (comma-separated values)</option>
                 </select>
             </div>
 
             <div class="form-row">
                 <label>Value (for EQ, NE, GT, GTE, LT, LTE)</label>
-                <input type="number" name="valueInt" />
+                <input type="number" name="valueInt" th:value="${form?.valueInt}" />
             </div>
 
             <div class="form-row">
                 <label>Min (for BETWEEN)</label>
-                <input type="number" name="valueMin" />
+                <input type="number" name="valueMin" th:value="${form?.valueMin}" />
             </div>
 
             <div class="form-row">
                 <label>Max (for BETWEEN)</label>
-                <input type="number" name="valueMax" />
+                <input type="number" name="valueMax" th:value="${form?.valueMax}" />
             </div>
 
             <div class="form-row">
                 <label>Values (for IN, comma-separated)</label>
-                <input type="text" name="valueText" placeholder="e.g., 1,2,3" />
+                <input type="text" name="valueText" placeholder="e.g., 1,2,3" th:value="${form?.valueText}" />
             </div>
 
             <button type="submit" class="btn btn-primary" th:text="${isNew ? 'Add Condition' : 'Save Changes'}">Save</button>

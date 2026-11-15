@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VCogniRule — Error</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" type="image/png" href="/favicon.png" />
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+    <!--/*
+        Shown by Spring Boot for every error instead of the default "Whitelabel" page.
+        It only uses the status code: no exception text or stack trace is ever shown
+        (server.error.include-stacktrace / include-message = never).
+        This is a Thymeleaf parser comment: it is removed before the page is sent.
+    */-->
+    <main class="error-page" th:with="code=${status != null ? status : 500}">
+        <div class="error-code" th:text="${code}">404</div>
+
+        <th:block th:switch="${code}">
+            <th:block th:case="404">
+                <h1>Page not found</h1>
+                <p>The page you are looking for does not exist. Check the address, or start from the home page.</p>
+            </th:block>
+            <th:block th:case="403">
+                <h1>Access denied</h1>
+                <p>You do not have permission to open this page.</p>
+            </th:block>
+            <th:block th:case="400">
+                <h1>Something was wrong with the request</h1>
+                <p>Please go back and try again.</p>
+            </th:block>
+            <th:block th:case="*">
+                <h1>Something went wrong</h1>
+                <p>An unexpected error occurred on our side. Your answers were not stored. Please try again.</p>
+            </th:block>
+        </th:block>
+
+        <div class="error-actions">
+            <a href="/" class="btn btn-primary">Go to home page</a>
+            <a href="/screening" class="btn btn-outline">Start a screening</a>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; VCogniRule 2026</p>
+    </footer>
+</body>
+</html>
