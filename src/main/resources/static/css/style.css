@@ -298,6 +298,8 @@ html:not(.js) .progress { display: none; }
 .severity-undetermined,
 .severity-unclassified { background: var(--surface-alt); color: var(--text-muted); border: 1px dashed var(--info-border); }
 .severity-attention { background: var(--amber); color: #fff; }
+.report-disclaimer { background: var(--amber-bg); border: 1px solid var(--amber); border-radius: var(--radius); padding: 0.85rem 1.25rem; margin-bottom: 1.25rem; }
+.report-disclaimer p { color: var(--amber-text); font-size: 0.9rem; margin: 0; }
 .overall-note { max-width: 520px; margin: 0.6rem auto 0; font-size: 0.9rem; color: var(--text-muted); }
 .report-jump { margin-top: 0.75rem; font-size: 0.88rem; }
 .report-jump a { color: var(--primary); }

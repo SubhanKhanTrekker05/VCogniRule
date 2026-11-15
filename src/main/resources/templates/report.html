@@ -34,6 +34,13 @@
             <p style="font-size: 0.85rem; margin-top: 0.5rem;">Please reach out to one of these resources. Speaking with someone can make a difference.</p>
         </div>
 
+        <!-- Disclaimer: always shown, also in the printed / PDF report -->
+        <div class="report-disclaimer" role="note">
+            <p><strong>This is a screening result, not a medical diagnosis.</strong>
+               It shows possible warning signs based on your answers. Only a qualified doctor or
+               mental health professional can make a diagnosis. Please discuss these results with one.</p>
+        </div>
+
         <!-- Depression section missing: explain why it matters -->
         <div th:if="${report.depressionMissing}" class="card card-accent">
             <h2 th:text="${report.overallKey == 'undetermined'}
