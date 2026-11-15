@@ -88,7 +88,10 @@
                         <!-- Time (bedtime / wake time) -->
                         <div th:if="${q.kind == 'time'}" class="field-row">
                             <input type="time" th:name="${q.fieldKey}" th:value="${answers[q.fieldKey]}"
-                                   th:attr="aria-label=${q.text}" />
+                                   th:attr="aria-label=${q.text},aria-describedby=${q.fieldKey + '-example'}" />
+                            <!-- Example time, so the empty "--:--" field is clear -->
+                            <span class="unit" th:id="${q.fieldKey + '-example'}"
+                                  th:text="${q.fieldKey == 'psqi_q3'} ? 'e.g. 7:00 AM' : 'e.g. 11:30 PM'">e.g. 11:30 PM</span>
                         </div>
 
                         <!-- Number (minutes / hours) -->
