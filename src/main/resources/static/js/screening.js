@@ -17,6 +17,7 @@
     const tabs = Array.from(form.querySelectorAll('[data-tab]'));
     const panels = Array.from(form.querySelectorAll('[data-panel]'));
     const summary = form.querySelector('[data-summary]');
+    const submitAlert = form.querySelector('[data-submit-alert]');
     const dialog = document.getElementById('submit-dialog');
 
     const SAFETY = 'C-SSRS';
@@ -146,6 +147,7 @@
         strong.textContent = completeCount + ' of ' + panels.length;
         summary.append(strong, ' sections complete');
         if (!safetyDone) summary.append(' · Complete the Safety Check to submit');
+        if (safetyDone && submitAlert) submitAlert.hidden = true;   // message no longer needed
     }
 
     // ---------- navigation ----------
@@ -261,11 +263,22 @@
 
         e.preventDefault();
 
-        if (!stats(panelFor(SAFETY)).complete) {
+        const safety = stats(panelFor(SAFETY));
+        if (!safety.complete) {
+            const left = safety.total - safety.answered;
             openSection(SAFETY, firstUnanswered(panelFor(SAFETY)), true);
             const hint = panelFor(SAFETY).querySelector('[data-hint]');
             hint.textContent = 'The Safety Check is required. Please answer every question in this section before submitting.';
             hint.hidden = false;
+            // Message next to the Submit button, so the click never seems to do nothing
+            if (submitAlert) {
+                submitAlert.textContent = 'Please finish the Safety Check first: ' + left + ' of ' + safety.total
+                    + ' questions left. We have opened it for you above.';
+                submitAlert.hidden = false;
+            }
+            // Always bring the unanswered question into view (it can be below the visible area)
+            const card = cardsOf(panelFor(SAFETY)).find(c => c.classList.contains('active')) || panelFor(SAFETY);
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
         }
 
