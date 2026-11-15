@@ -137,3 +137,22 @@ Baseline: commit `e7095d2` (the code as received). It built and ran correctly be
   13 now-unused `HttpSession` parameters removed. Login uses the interceptor's constant.
 - **Verified:** all 13 protected URLs (GET and POST), when logged out, redirect to `/admin` and change
   no data; 9/9 tests, 7/7 regression tests identical, admin write-path check 8/8.
+
+### 11. S6: Invalid answers count as "not answered" instead of being replaced with made-up values
+- **Problem:** `AssessmentService` silently replaced answers it could not read with invented values
+  (hours slept "abc" → 7, any other unreadable answer → 0, a bad time → 23:00), and accepted
+  out-of-range numbers (e.g. 99 on a 0-3 scale), so a section could be scored on data the person
+  never gave.
+- **Changed:** `service/AssessmentService.java`:
+  - `filterAnswers` now keeps an answer only if it is valid for its question: one of its options
+    (radio buttons), a real `HH:MM` time, or a number inside the field's min/max (whole numbers only
+    unless the field allows decimals). The limits come from `QuestionnaireService` (one source).
+  - Invalid answers are dropped, so the section shows as "partly answered" and is not scored.
+  - `prepare` validates again, so it is safe even if a caller skips `filterAnswers`.
+  - The invented defaults and `parseTimeToMinutes` are removed; conversion now uses each question's
+    type (time / decimal / whole number) instead of hard-coded field names.
+  - Depends on `QuestionnaireService` instead of `QuestionRepository`.
+- **Kept on purpose:** the Safety Check (C-SSRS) rule from the original code: any non-blank answer
+  other than "0" counts as Yes, so an error can never hide a risk answer.
+- **Verified:** 12 wrong-input cases (text, negative, too large, bad time, decimal in a whole-number
+  field, unknown field, C-SSRS safety rule) all behave as expected; 9/9 tests; 7/7 regression identical.
