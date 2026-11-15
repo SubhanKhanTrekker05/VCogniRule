@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Loads the screening questions and calculated fields.
  *
- * Repository pattern + Dependency Inversion: services depend on this interface;
+ * Repository (Spring architecture, not a design pattern) + Dependency Inversion (SOLID): services depend on this interface;
  * the SQLite implementation is {@link JdbcQuestionRepository}.
  */
 public interface QuestionRepository {

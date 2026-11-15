@@ -7,7 +7,7 @@ import java.util.Optional;
 /**
  * Loads and saves admin accounts (passwords are stored as BCrypt hashes).
  *
- * Repository pattern + Dependency Inversion: services depend on this interface;
+ * Repository (Spring architecture, not a design pattern) + Dependency Inversion (SOLID): services depend on this interface;
  * the SQLite implementation is {@link JdbcAdminRepository}.
  */
 public interface AdminRepository {

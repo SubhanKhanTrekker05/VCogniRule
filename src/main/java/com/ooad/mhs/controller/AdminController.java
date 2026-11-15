@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  *
  * Every URL under /admin except login and logout is protected by AdminAuthInterceptor, so the
  * methods here can assume an admin is logged in. Each change is passed to AdminService and then
- * redirected (Post/Redirect/Get), so refreshing the page never repeats the change.
+ * redirected, so refreshing the page never repeats the change.
  *
  * Form input arrives as a RuleDetails / ConditionDetails object. {@code @Valid} checks its
  * validation rules first; a broken rule (or an InvalidInputException from the service) sends the
@@ -199,7 +199,7 @@ public class AdminController {
      * Undoes every CRUD change made via the admin panel - the "ultimate Ctrl+Z" for viva demos
      * when you've experimented with rules during the demo and want to restore the factory state.
      *
-     * Post/Redirect/Get pattern: flashes a toast message and redirects back to the dashboard
+     * Flashes a toast message and redirects back to the dashboard
      * so the user sees the restored rule list. The actual reset logic lives in AdminService
      * -> RuleRepository.resetKnowledgeBase().
      */
