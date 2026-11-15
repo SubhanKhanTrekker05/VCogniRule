@@ -364,10 +364,16 @@ INSERT OR IGNORE INTO rule_condition_group (id, rule_id, logic) VALUES
 (148,148,'AND'),(149,149,'AND'),(150,150,'AND');
 
 -- ========== CONDITIONS (205) ==========
+-- Fix (PHQ9-MINIMAL): the minimal band is 0-4 (Kroenke 2001), not 1-4. Remove the old
+-- 1-4 condition from databases created before the fix, so the 0-4 row below replaces it
+-- instead of being added next to it (both together would still fail for a score of 0).
+DELETE FROM rule_condition WHERE group_id = 1 AND field_key = 'phq9_total'
+    AND operator = 'BETWEEN' AND value_min = 1 AND value_max = 4;
+
 -- Format: (group_id, field_key, operator, value_int, value_text, value_min, value_max)
 INSERT OR IGNORE INTO rule_condition (group_id, field_key, operator, value_int, value_text, value_min, value_max) VALUES
 -- PHQ-9 (IDs 1-8)
-(1,'phq9_total','BETWEEN',NULL,NULL,1,4),
+(1,'phq9_total','BETWEEN',NULL,NULL,0,4),
 (2,'phq9_total','BETWEEN',NULL,NULL,5,9),
 (3,'phq9_total','BETWEEN',NULL,NULL,10,14),
 (4,'phq9_total','BETWEEN',NULL,NULL,15,19),

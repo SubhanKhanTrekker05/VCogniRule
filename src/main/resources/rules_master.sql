@@ -201,7 +201,7 @@ INSERT OR IGNORE INTO rule_condition_group (id, rule_id, logic) VALUES
 -- Format: (group_id, field_key, operator, value_int, value_text, value_min, value_max)
 INSERT OR IGNORE INTO rule_condition (group_id, field_key, operator, value_int, value_text, value_min, value_max) VALUES
 -- PHQ-9 (IDs 1-8)
-(1,'phq9_total','BETWEEN',NULL,NULL,1,4),
+(1,'phq9_total','BETWEEN',NULL,NULL,0,4),
 (2,'phq9_total','BETWEEN',NULL,NULL,5,9),
 (3,'phq9_total','BETWEEN',NULL,NULL,10,14),
 (4,'phq9_total','BETWEEN',NULL,NULL,15,19),
