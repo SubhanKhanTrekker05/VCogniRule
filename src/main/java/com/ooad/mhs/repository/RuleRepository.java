@@ -64,8 +64,13 @@ public class RuleRepository {
 
     public List<Rule> findAllIncludingInactive() { return loadRulesFromDb(false); }
 
+    /**
+     * Finds a rule by its database id, whether it is active or not.
+     * (The cache holds only active rules, so searching it made inactive rules
+     * impossible to open in the admin panel.)
+     */
     public Optional<Rule> findById(Long id) {
-        return cachedRules.stream().filter(r -> r.id().equals(id)).findFirst();
+        return loadRulesFromDb(false).stream().filter(r -> r.id().equals(id)).findFirst();
     }
 
     // === CRUD ===
