@@ -278,7 +278,7 @@
             }
             // Always bring the unanswered question into view (it can be below the visible area)
             const card = cardsOf(panelFor(SAFETY)).find(c => c.classList.contains('active')) || panelFor(SAFETY);
-            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });   // top, so the sticky bar never covers it
             return;
         }
 
