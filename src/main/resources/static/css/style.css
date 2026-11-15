@@ -70,6 +70,9 @@ h1, h2 { font-family: var(--font-display); font-weight: 700; }
 .btn-warn { background: var(--amber); color: #fff; }
 .btn-warn:hover { background: #8F5615; }
 .btn-outline { background: transparent; border-color: var(--primary); color: var(--primary); }
+/* Switching a rule off: a warning look, different from the plain Edit button */
+.btn-deactivate { background: #FBEDE7; border-color: var(--terracotta); color: var(--terracotta); }
+.btn-deactivate:hover { background: var(--terracotta); color: #fff; }
 .btn-outline:hover { background: var(--primary); color: #fff; }
 .btn-danger { background: transparent; border-color: var(--terracotta); color: var(--terracotta); }
 .btn-danger:hover { background: var(--terracotta); color: #fff; }
@@ -495,6 +498,13 @@ mark { background: var(--amber-bg); color: var(--amber-text); padding: 0 2px; bo
 .rule-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--surface); }
 .rule-table th { background: var(--primary); color: #fff; padding: 0.5rem; text-align: left; }
 .rule-table td { padding: 0.5rem; border-bottom: 1px solid var(--border); }
+/* Active column: status in words + the switch button */
+.active-cell { white-space: nowrap; }
+.active-cell form { display: inline; margin-left: 0.4rem; }
+.status-pill { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; }
+.status-pill.is-on { background: var(--fired-bg); color: #3F4F37; }
+.status-pill.is-off { background: var(--surface-alt); color: var(--text-muted); border: 1px dashed var(--info-border); }
+.rule-table tr.row-inactive td { color: var(--text-muted); background: #F7F3EE; }
 .rule-table tr:hover { background: var(--surface-alt); }
 .rule-table a { color: var(--primary); text-decoration: none; }
 .conditions-section { max-width: 600px; margin: 0 auto 2rem; padding: 1.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
