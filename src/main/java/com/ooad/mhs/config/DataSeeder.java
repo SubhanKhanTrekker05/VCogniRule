@@ -3,6 +3,8 @@ package com.ooad.mhs.config;
 import com.ooad.mhs.repository.AdminRepository;
 import jakarta.annotation.PostConstruct;
 import org.mindrot.jbcrypt.BCrypt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
@@ -17,6 +19,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class DataSeeder {
 
+    private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
+
     private final AdminRepository adminRepository;
 
     public DataSeeder(AdminRepository adminRepository) {
@@ -28,7 +32,7 @@ public class DataSeeder {
         if (adminRepository.count() == 0) {
             String hash = BCrypt.hashpw("admin123", BCrypt.gensalt());
             adminRepository.save("admin", hash);
-            System.out.println("[DataSeeder] Created default admin: admin / admin123");
+            log.info("Created default admin account: admin / admin123");
         }
     }
 }
