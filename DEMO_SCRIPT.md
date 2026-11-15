@@ -13,7 +13,7 @@ Every answer set below was checked on the final code: by an automated test
    start-dev.bat
    mvn clean package
    ```
-   Wait for `Tests run: 237, Failures: 0` and `BUILD SUCCESS` (about 30 seconds).
+   Wait for `Tests run: 253, Failures: 0` and `BUILD SUCCESS` (about 30 seconds).
    This also creates `target/vcognirule-1.0.0.jar`, your backup way to start the app (see section 6).
 2. Start the app once (`mvn spring-boot:run`), open http://localhost:8080, then stop it (Ctrl + C).
    This makes sure Maven has downloaded everything, so you do not need internet in the lab.
@@ -117,8 +117,8 @@ In the terminal (stop the app first with Ctrl + C, or open a second `start-dev.b
 ```
 mvn test
 ```
-Expected after about 30 seconds: `Tests run: 237, Failures: 0, Errors: 0, Skipped: 0` and `BUILD SUCCESS`.
-Mention: unit tests for the 8 operators, the 10 questionnaires, the Builder and validation, and
+Expected after about 30 seconds: `Tests run: 253, Failures: 0, Errors: 0, Skipped: 0` and `BUILD SUCCESS`.
+Mention: unit tests for the 8 operators, the 10 questionnaires, each design pattern and validation, and
 integration tests that start the whole app and send real requests (screening flows, admin login,
 protected pages, bad input).
 
@@ -154,4 +154,4 @@ Take these on a fresh start (after **↺ Reset KB**), at 100% zoom:
 11. Rule detail page of PHQ9-MINIMAL (conditions table).
 12. Admin form showing a validation message (BETWEEN with Min 9, Max 5).
 13. The factory reset message "Knowledge base restored to factory defaults. 150 rules reloaded."
-14. Terminal with `mvn test`: `Tests run: 237, Failures: 0` and `BUILD SUCCESS`.
+14. Terminal with `mvn test`: `Tests run: 253, Failures: 0` and `BUILD SUCCESS`.
