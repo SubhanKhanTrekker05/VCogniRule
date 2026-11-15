@@ -239,3 +239,19 @@ Each item was first confirmed unused in all Java code, HTML templates and JavaSc
   Fully written `java.util.regex` names replaced with imports.
 - **Verified:** 7/7 regression tests identical (including the full report text, so every tone, icon
   and label is unchanged), wrong-input 12/12, admin write-path 8/8, security 13/13, 9/9 tests.
+
+### 18. S8: README matches the final code
+- **Corrected numbers:** rules per level 79 / 53 / 12 / 6 (was 78 / 57 / 12 / 6, which adds up to 153);
+  209 conditions; 151 question rows = 84 shown + 67 calculated; PSQI has 17 items in this form.
+- **Corrected privacy text:** it said "no session persistence", but the last answers are kept in the
+  HTTP session (never in the database) so a section can be finished later; now stated accurately.
+- **Updated:** project structure (all 63 Java files, new packages), screening flow, admin features,
+  configuration (stack traces hidden), new "Object-Oriented Design" and "Testing" sections, a
+  "not a diagnosis" note at the top. Removed "Roadmap" from the table of contents (there was no such section).
+- **Noted as a known issue (not fixed, not in the approved list):** `start-dev.sh` has a missing
+  closing quote on line 10 (`bash -n` reports a syntax error); README tells Mac/Linux users to run
+  `mvn spring-boot:run` directly.
+
+## Found but NOT changed (waiting for a decision)
+- `start-dev.sh` line 10: missing closing `"` → the script fails on Mac/Linux. (Windows `start-dev.bat` is fine.)
+- `,gitattributes` is named with a comma instead of a dot, so Git ignores it.
