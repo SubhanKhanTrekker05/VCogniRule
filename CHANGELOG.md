@@ -115,3 +115,12 @@ Baseline: commit `e7095d2` (the code as received). It built and ran correctly be
   class; they are now `private` and not part of the interface.
 - **Verified:** build, 9/9 tests, 7/7 regression tests identical, inactive-rule check, and a new
   admin write-path check (create rule, add/edit/delete condition, edit, toggle, delete, factory reset: 8/8 pass).
+
+### 9. S2: Builder pattern for ScreeningReport
+- **Problem:** The report (12 fields) was created with one 12-argument constructor call, where two
+  lists or two booleans could be swapped without any error.
+- **Changed:** `service/ReportService.java`: `ScreeningReport` has a nested `Builder` with named,
+  grouped steps (`overall`, `crisis`, `findings`, `coverage`, `depressionMissing`, `answers`).
+  Unset lists default to empty; `build()` refuses a report without an overall result and makes all
+  lists unchangeable. `buildReport` now uses `ScreeningReport.builder()...build()`.
+- **Verified:** build, 9/9 tests, 7/7 regression tests identical.
