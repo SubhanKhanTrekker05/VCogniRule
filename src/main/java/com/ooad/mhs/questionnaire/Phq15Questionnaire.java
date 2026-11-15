@@ -13,6 +13,9 @@ import java.util.Map;
 @Component
 public class Phq15Questionnaire extends Questionnaire {
 
+    /** Answer value 2 = "Bothered a lot" (the highest answer). */
+    private static final int BOTHERED_A_LOT = 2;
+
     private static final String[] ITEMS = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o"};
 
     public Phq15Questionnaire() {
@@ -26,7 +29,7 @@ public class Phq15Questionnaire extends Questionnaire {
         for (String item : ITEMS) {
             int v = value(f, "phq15_" + item);
             total += v;
-            if (v == 2) severe++;
+            if (v == BOTHERED_A_LOT) severe++;
         }
         f.put("phq15_total", total);
         f.put("phq15_severe_count", severe);

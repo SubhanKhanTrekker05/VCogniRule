@@ -13,6 +13,17 @@ import java.util.Map;
 @Component
 public class PsqiQuestionnaire extends Questionnaire {
 
+    private static final int MINUTES_PER_DAY = 24 * 60;
+
+    // Values used when an answer is missing (as in the original scoring)
+    private static final int DEFAULT_BEDTIME = 23 * 60;          // 23:00, in minutes from midnight
+    private static final int DEFAULT_WAKE_TIME = 7 * 60;         // 07:00
+    private static final int DEFAULT_MINUTES_TO_FALL_ASLEEP = 15;
+    private static final int DEFAULT_HOURS_SLEPT = 7;
+
+    /** A global score ABOVE this means poor sleep (Buysse 1989). */
+    private static final int POOR_SLEEP_CUTOFF = 5;
+
     public PsqiQuestionnaire() {
         super(Section.PSQI);
     }
@@ -20,10 +31,12 @@ public class PsqiQuestionnaire extends Questionnaire {
     @Override
     protected void computeScores(Map<String, Integer> f) {
         // Q1=bedtime (minutes), Q2=minutes to fall asleep, Q3=wake time (minutes), Q4=hours slept
-        int bedMin = f.getOrDefault("psqi_q1", 1380);   // default 23:00
-        int wakeMin = f.getOrDefault("psqi_q3", 420);    // default 07:00
-        int sleepLatency = f.getOrDefault("psqi_q2", 15);
-        int hoursSlept = f.getOrDefault("psqi_q4", 7);
+        int bedMin = f.getOrDefault("psqi_q1", DEFAULT_BEDTIME);
+        int wakeMin = f.getOrDefault("psqi_q3", DEFAULT_WAKE_TIME);
+        int sleepLatency = f.getOrDefault("psqi_q2", DEFAULT_MINUTES_TO_FALL_ASLEEP);
+        int hoursSlept = f.getOrDefault("psqi_q4", DEFAULT_HOURS_SLEPT);
+
+        // The bands below are the official PSQI scoring tables (Buysse 1989).
 
         // Component 1: Subjective sleep quality (Q6, direct)
         f.put("psqi_c1", value(f, "psqi_q6"));
@@ -37,7 +50,7 @@ public class PsqiQuestionnaire extends Questionnaire {
         f.put("psqi_c3", hoursSlept > 7 ? 0 : hoursSlept >= 6 ? 1 : hoursSlept >= 5 ? 2 : 3);
 
         // Component 4: Sleep efficiency (hours asleep / hours in bed)
-        int bedDuration = wakeMin > bedMin ? (wakeMin - bedMin) : (1440 - bedMin + wakeMin);
+        int bedDuration = wakeMin > bedMin ? (wakeMin - bedMin) : (MINUTES_PER_DAY - bedMin + wakeMin);
         double eff = bedDuration > 0 ? (hoursSlept * 60.0 / bedDuration) * 100 : 0;
         f.put("psqi_c4", eff >= 85 ? 0 : eff >= 75 ? 1 : eff >= 65 ? 2 : 3);
 
@@ -61,7 +74,7 @@ public class PsqiQuestionnaire extends Questionnaire {
 
     @Override
     protected void computeFlags(Map<String, Integer> f) {
-        f.put("sleep_poor_any", flag(value(f, "psqi_global") > 5));
+        f.put("sleep_poor_any", flag(value(f, "psqi_global") > POOR_SLEEP_CUTOFF));
     }
 
     @Override
