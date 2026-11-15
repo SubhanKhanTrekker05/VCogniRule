@@ -167,7 +167,7 @@ These are created automatically on first startup if no admin exists. The passwor
 
 ## Project Structure
 
-63 Java source files: 46 classes (2 of them abstract), 9 records, 4 enums and 4 interfaces.
+70 Java source files: 51 classes (2 of them abstract), 9 records, 4 enums and 6 interfaces.
 
 ```
 VCogniRule/
@@ -175,6 +175,7 @@ VCogniRule/
 │   ├── MentalHealthApp.java                 # Entry point (@SpringBootApplication)
 │   ├── config/
 │   │   ├── DataSeeder.java                  # Creates the default admin on startup
+│   │   ├── OperatorTracingSwitch.java       # Demo switch for the Decorator (trace-operators)
 │   │   ├── AdminAuthInterceptor.java        # Blocks /admin/** pages unless logged in
 │   │   └── WebConfig.java                   # Registers the interceptor
 │   ├── controller/                          # MVC controllers
@@ -187,32 +188,36 @@ VCogniRule/
 │   ├── engine/
 │   │   ├── RuleEngine.java                  # 4-pass forward-chaining inference
 │   │   ├── ConditionEvaluator.java          # Evaluates one condition
-│   │   ├── FindingFactory.java              # Creates a Finding with its trace
+│   │   ├── FindingMapper.java               # Creates a Finding with its trace
 │   │   ├── ConflictResolver.java            # Sorts findings by priority
 │   │   └── operator/                        # Strategy pattern: one class per operator
 │   │       ├── OperatorStrategy.java        #   interface
 │   │       ├── SingleValueStrategy.java     #   abstract base of EQ, NE, GT, GTE, LT, LTE
 │   │       ├── EqualsStrategy.java … LessOrEqualStrategy.java, BetweenStrategy.java, InStrategy.java
-│   │       └── OperatorStrategyFactory.java #   Factory
+│   │       ├── OperatorStrategyRegistry.java #  Singleton (uses the Factory Method)
+│   │       └── TracingOperatorStrategy.java #   Decorator (logs each check)
 │   ├── questionnaire/                       # Inheritance: one subclass per instrument
-│   │   ├── Questionnaire.java               #   abstract base class (Template Method)
+│   │   ├── Questionnaire.java               #   abstract base class
 │   │   ├── Phq9Questionnaire.java … WsasQuestionnaire.java   # 10 subclasses
 │   │   └── QuestionnaireRegistry.java       #   one questionnaire per section
-│   ├── repository/                          # Repository pattern: interface + JDBC implementation
+│   ├── repository/                          # Repository (Spring architecture): interface + JDBC
 │   │   ├── RuleRepository.java / JdbcRuleRepository.java
 │   │   ├── QuestionRepository.java / JdbcQuestionRepository.java
 │   │   └── AdminRepository.java / JdbcAdminRepository.java
+│   ├── security/                            # Adapter: PasswordHasher ← BCryptPasswordHasher
 │   ├── service/
 │   │   ├── QuestionnaireService.java        # Questions + answer options for the form
 │   │   ├── AssessmentService.java           # Validates answers, finds completed sections
 │   │   ├── DerivedFieldCalculator.java      # Asks each completed questionnaire to score itself
 │   │   ├── ScreeningService.java            # Runs the rule engine on the active rules
-│   │   ├── ReportService.java               # Builds the report (ScreeningReport + Builder)
+│   │   ├── ReportService.java               # Builds the report (ScreeningReport)
 │   │   ├── FindingStyler.java               # Tone / icon / label of each finding
 │   │   ├── OverallResultResolver.java       # Overall banner
-│   │   ├── AdminService.java                # Admin operations + business-rule checks
+│   │   ├── AdminService.java                # Facade + Observer subject; admin business rules
+│   │   ├── RuleChangeListener.java          # Observer interface
+│   │   ├── RuleCacheRefresher.java / AuditLogListener.java   # the 2 observers
 │   │   └── InvalidInputException.java       # Business-rule error with a message
-│   └── util/                                # Enums: ActionType, Category, Operator, Section
+│   └── util/                                # Enums: ActionType, Category, Section, Operator (Factory Method)
 ├── src/main/resources/
 │   ├── application.properties / application-prod.properties
 │   ├── schema.sql                           # 5 tables
@@ -250,7 +255,7 @@ DerivedFieldCalculator
        ▼
 RuleEngine (4 passes, one per level)
   ConditionEvaluator → OperatorStrategy for each condition
-  fired rules → FindingFactory → Finding + trace
+  fired rules → FindingMapper → Finding + trace
   conclusions are added to the facts for the next level (forward chaining)
   ConflictResolver sorts by priority
        │
@@ -258,7 +263,7 @@ RuleEngine (4 passes, one per level)
 ReportService
   OverallResultResolver → banner;  FindingStyler → colours/icons
   plain-language "Why this appears", answers per section
-  ScreeningReport.builder()…build()
+  new ScreeningReport(overall, …, FindingGroups, Coverage, …)
        │
        ▼
 Thymeleaf renders report.html
@@ -295,13 +300,14 @@ Each rule has:
 | Composition | `Rule` → `ConditionGroup` → `Condition`; `ScreeningReport` → `FindingView` |
 | Aggregation | services → repositories; `QuestionnaireRegistry` → `Questionnaire` |
 | Encapsulation | immutable records, `private final` fields, private helpers |
-| Template Method | `Questionnaire.contributeTo`, `SingleValueStrategy.test/describe` |
-| Strategy + Factory | `OperatorStrategy` + `OperatorStrategyFactory`; `FindingFactory` |
-| Builder | `ReportService.ScreeningReport.Builder` |
-| Repository + Dependency Inversion | `repository/` interfaces with JDBC implementations |
-| MVC | controllers + Thymeleaf views + domain/service model |
-| Singleton / Dependency Injection | Spring beans (one instance each, injected through constructors) |
+| Strategy | `OperatorStrategy` + 8 operator classes |
+| Factory Method | `Operator.createStrategy()` (each enum constant creates its strategy) |
+| Singleton | `OperatorStrategyRegistry` (private constructor, `getInstance()`) |
 | Facade | `AdminService` |
+| Adapter | `PasswordHasher` ← `BCryptPasswordHasher` (adapts the jBCrypt library) |
+| Decorator | `TracingOperatorStrategy` (demo switch `vcognirule.trace-operators=true`) |
+| Observer | `RuleChangeListener` ← `RuleCacheRefresher`, `AuditLogListener`; subject `AdminService` |
+| Architecture (Spring, not design patterns) | MVC, Repository + Dependency Inversion, Dependency Injection |
 
 Severity (mild, moderate, …) is decided by the rules in the knowledge base, not by Java code, so an admin can change it without recompiling.
 
@@ -313,18 +319,20 @@ Severity (mild, moderate, …) is decided by the rules in the knowledge base, no
 mvn test
 ```
 
-Runs **237 JUnit 5 tests** in about 30 seconds (`Tests run: 237, Failures: 0`). No database or running app is needed: the integration tests start the app themselves with a fresh SQLite file in `target/`.
+Runs **253 JUnit 5 tests** in about 30 seconds (`Tests run: 253, Failures: 0`). No database or running app is needed: the integration tests start the app themselves with a fresh SQLite file in `target/`.
 
 | Test class | Type | What it checks |
 |---|---|---|
-| `OperatorStrategyTest` | Unit | each of the 8 operator strategies (incl. NE and IN) and the factory |
-| `RuleEngineTest` | Unit | AND/OR, forward chaining, overall severity, FindingFactory, sorting |
+| `OperatorStrategyTest` | Unit | each of the 8 operator strategies (incl. NE and IN), Factory Method, Singleton |
+| `RuleEngineTest` | Unit | AND/OR, forward chaining, overall severity, FindingMapper, sorting |
 | `QuestionnaireScoringTest` | Unit | scoring of all 10 questionnaires with hand-calculated examples and cut-offs |
 | `QuestionnaireRefactorEquivalenceTest` | Unit | new scoring = original scoring on 10,000 random answer sets |
-| `ReportPartsTest` | Unit | `ScreeningReport.Builder`, `OverallResultResolver`, `FindingStyler` |
+| `ReportPartsTest` | Unit | `ScreeningReport` parameter objects, `OverallResultResolver`, `FindingStyler` |
 | `AssessmentServiceTest` | Unit | answer validation (bad answers count as not answered), section completion |
 | `FormValidationTest` | Unit | Bean Validation rules of the admin forms |
-| `AdminServiceTest` | Unit | admin business rules, using in-memory fake repositories |
+| `AdminServiceTest` | Unit | admin business rules (in-memory fake repositories), Observer notifications |
+| `BCryptPasswordHasherTest` | Unit | Adapter: hash and check passwords |
+| `TracingOperatorStrategyTest` | Unit | Decorator: same results, demo switch |
 | `ScreeningFlowIntegrationTest` | Integration | the screening flow through the running app (Spring Boot Test + MockMvc) |
 | `AdminIntegrationTest` | Integration | admin login/logout, the 13 protected URLs, create/edit/delete/reset, bad input |
 

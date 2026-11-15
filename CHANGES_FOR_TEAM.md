@@ -38,16 +38,21 @@ The teacher requires inheritance, so this was the most important change.
 
 ---
 
-## c) Design patterns added
+## c) Design patterns added (only the 7 taught in the course)
 
-| Pattern | Exact class names | Why it matters |
+| Pattern (from the course) | Exact class names | Why it matters |
 |---|---|---|
-| **Strategy** | `OperatorStrategy` + the 8 operator classes | A new operator = a new class; no `switch` to edit. |
-| **Factory** | `OperatorStrategyFactory`; `FindingFactory` (was wrongly called `FindingBuilder`) | One place creates the right object. |
-| **Template Method** | `Questionnaire.contributeTo(...)`, `SingleValueStrategy.test(...)` | The base class fixes the steps; subclasses fill them in. |
-| **Builder** | `ReportService.ScreeningReport.Builder` | The report (12 parts) is built step by step with named parts instead of one 12-argument call. |
-| **Repository + Dependency Inversion** | `RuleRepository`, `QuestionRepository`, `AdminRepository` | Database code is hidden behind interfaces; tests use fake repositories. |
-| Already there (now documented) | MVC (controllers + Thymeleaf), Singleton + Dependency Injection (Spring), Facade (`AdminService`) | Good to name in the report and viva. |
+| **Strategy** | `OperatorStrategy` + 8 operator classes (`EqualsStrategy` … `InStrategy`) | A new operator = a new class; no `switch` to edit. |
+| **Factory Method** | `Operator.createStrategy()`, overridden by each of the 8 enum constants | Each operator creates its own strategy object. |
+| **Singleton** | `OperatorStrategyRegistry` (private constructor, `getInstance()`) | One shared set of strategies, made once through the Factory Method. |
+| **Facade** | `AdminService` | The admin controller talks to one class instead of 3 repositories. |
+| **Adapter** | `PasswordHasher` (target) ← `BCryptPasswordHasher` (adapter) → jBCrypt library | The app never calls BCrypt directly; the library could be swapped in one class. |
+| **Decorator** | `TracingOperatorStrategy` wraps any `OperatorStrategy` | Adds logging of each condition check without changing results. Demo switch: `vcognirule.trace-operators=true` in `application.properties`. |
+| **Observer** | `RuleChangeListener` ← `RuleCacheRefresher`, `AuditLogListener`; subject `AdminService` | After every admin change, the engine's rules are reloaded and the change is logged. |
+
+Not design patterns (called **architecture** in the code): MVC, Repository, Dependency Injection (all from Spring).
+Also used: **refactoring** (Introduce Parameter Object: `RuleDetails`, `ConditionDetails`, `FindingGroups`, `Coverage`),
+**SOLID** (Single Responsibility, Open/Closed, Dependency Inversion) and removing **code smells** (see d).
 
 **Composition / aggregation** (for the class diagram): `Rule` ◆ `ConditionGroup` ◆ `Condition` (composition);
 services → repositories and `QuestionnaireRegistry` → `Questionnaire` (aggregation).
@@ -84,9 +89,9 @@ services → repositories and `QuestionnaireRegistry` → `Questionnaire` (aggre
 
 ## f) Tests added
 
-- **Before:** 0 tests. **Now: 237 automated tests, all passing** (179 unit tests + 58 integration tests).
+- **Before:** 0 tests. **Now: 253 automated tests, all passing** (185 unit tests + 68 integration tests).
 - **Unit tests** check one class at a time: the 8 operators, the rule engine, the scoring of all
-  10 questionnaires, the Builder, wrong answers, and the admin form rules.
+  10 questionnaires, each design pattern, wrong answers, and the admin form rules.
 - **Integration tests** start the whole app with its own test database and click through it like a user:
   the screening flows, admin login and logout, protected pages, creating / editing / deleting rules,
   and wrong input.
@@ -100,10 +105,10 @@ services → repositories and `QuestionnaireRegistry` → `Questionnaire` (aggre
 mvn test
 ```
 
-After about 30 seconds you should see `Tests run: 237, Failures: 0` and `BUILD SUCCESS`.
+After about 30 seconds you should see `Tests run: 253, Failures: 0` and `BUILD SUCCESS`.
 The tests never touch the real database.
 
-Test files: 14 files in `src/test/java` (all NEW).
+Test files: 17 files in `src/test/java` (all NEW).
 
 ---
 

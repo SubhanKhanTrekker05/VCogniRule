@@ -150,7 +150,7 @@ class RuleEngineTest {
 
     @Test
     @DisplayName("FindingMapper copies the rule and builds a trace with the user's value and the rule's need")
-    void findingFactoryBuildsTrace() {
+    void findingMapperBuildsTrace() {
         Condition c1 = between("phq9_total", 10, 14);
         Condition c2 = cond("phq9_q9", Operator.GTE, 1);
         Rule r = rule("PHQ9-MODERATE", 1, 50, ActionType.SUGGEST_PROFESSIONAL, "depression_moderate", "1", group(c1, c2));
