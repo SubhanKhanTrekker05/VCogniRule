@@ -22,50 +22,50 @@
             <input type="hidden" name="ruleId" th:value="${rule.ruleId}" />
             <div class="form-row">
                 <label>Name</label>
-                <input type="text" name="name" th:value="${rule.name}" required />
+                <input type="text" name="name" th:value="${form != null ? form.name : rule.name}" required />
             </div>
             <div class="form-row">
                 <label>Level (1-4)</label>
                 <select name="level">
-                    <option value="1" th:selected="${rule.level == 1}">1 — Base</option>
-                    <option value="2" th:selected="${rule.level == 2}">2 — Composite</option>
-                    <option value="3" th:selected="${rule.level == 3}">3 — Higher-order</option>
-                    <option value="4" th:selected="${rule.level == 4}">4 — Synthesis</option>
+                    <option value="1" th:selected="${(form != null ? form.level : rule.level) == 1}">1 — Base</option>
+                    <option value="2" th:selected="${(form != null ? form.level : rule.level) == 2}">2 — Composite</option>
+                    <option value="3" th:selected="${(form != null ? form.level : rule.level) == 3}">3 — Higher-order</option>
+                    <option value="4" th:selected="${(form != null ? form.level : rule.level) == 4}">4 — Synthesis</option>
                 </select>
             </div>
             <div class="form-row">
                 <label>Category</label>
                 <select name="category">
                     <option th:each="c : ${T(com.ooad.mhs.util.Category).values()}" th:value="${c}" th:text="${c}"
-                            th:selected="${rule.category == c}">MOOD</option>
+                            th:selected="${(form != null ? form.category : rule.category) == c}">MOOD</option>
                 </select>
             </div>
             <div class="form-row">
                 <label>Priority (0-100)</label>
-                <input type="number" name="priority" th:value="${rule.priority}" min="0" max="100" />
+                <input type="number" name="priority" th:value="${form != null ? form.priority : rule.priority}" min="0" max="100" />
             </div>
             <div class="form-row">
                 <label>Action Type</label>
                 <select name="actionType">
                     <option th:each="a : ${T(com.ooad.mhs.util.ActionType).values()}" th:value="${a}" th:text="${a}"
-                            th:selected="${rule.actionType == a}">DISPLAY_INFO</option>
+                            th:selected="${(form != null ? form.actionType : rule.actionType) == a}">DISPLAY_INFO</option>
                 </select>
             </div>
             <div class="form-row">
                 <label>Explanation</label>
-                <textarea name="explanation" rows="3" th:text="${rule.explanation}"></textarea>
+                <textarea name="explanation" rows="3" th:text="${form != null ? form.explanation : rule.explanation}"></textarea>
             </div>
             <div class="form-row">
                 <label>Source Reference</label>
-                <input type="text" name="sourceRef" th:value="${rule.sourceRef}" />
+                <input type="text" name="sourceRef" th:value="${form != null ? form.sourceRef : rule.sourceRef}" />
             </div>
             <div class="form-row">
                 <label>Conclusion Key</label>
-                <input type="text" name="conclusionKey" th:value="${rule.conclusionKey}" />
+                <input type="text" name="conclusionKey" th:value="${form != null ? form.conclusionKey : rule.conclusionKey}" />
             </div>
             <div class="form-row">
                 <label>Conclusion Value</label>
-                <input type="text" name="conclusionValue" th:value="${rule.conclusionValue}" />
+                <input type="text" name="conclusionValue" th:value="${form != null ? form.conclusionValue : rule.conclusionValue}" />
             </div>
             <button type="submit" class="btn btn-primary">Save Changes</button>
         </form>
