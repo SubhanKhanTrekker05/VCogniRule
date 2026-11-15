@@ -11,18 +11,19 @@
     <div class="finding-header">
         <span class="finding-icon" th:text="${fv.icon}" aria-hidden="true">✓</span>
         <span class="finding-name" th:text="${finding.name}">Finding name</span>
-        <span class="finding-rule-id" th:text="'(' + ${finding.ruleId} + ')'">(RULE)</span>
-        <span class="finding-level-badge" th:text="'L' + ${finding.level}">L1</span>
         <span class="finding-action" th:text="${fv.action}">Action</span>
     </div>
 
     <p class="finding-explanation" th:text="${finding.explanation}">Explanation</p>
 
-    <!-- Why this appears: the answers, scores and earlier findings it was based on -->
-    <div class="trace" th:if="${!fv.basis.isEmpty()}">
+    <!-- Why this appears: which rule produced this result (rule ID + level, for the
+         explanation facility / viva), then the answers, scores and earlier findings it used -->
+    <div class="trace">
         <details>
             <summary>Why this appears</summary>
-            <ul class="basis-list">
+            <p class="trace-rule">Rule <span class="finding-rule-id" th:text="${finding.ruleId}">RULE</span>
+                · <span class="finding-level-badge" th:text="'Level ' + ${finding.level}">Level 1</span></p>
+            <ul class="basis-list" th:if="${!fv.basis.isEmpty()}">
                 <li th:each="b : ${fv.basis}" th:classappend="${b.fromEarlierFinding ? 'basis-chain' : ''}">
                     <span class="basis-label" th:text="${b.label}">Question</span>
                     <span class="basis-value">
