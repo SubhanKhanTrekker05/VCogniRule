@@ -1,6 +1,7 @@
 package com.ooad.mhs.engine;
 
 import com.ooad.mhs.domain.*;
+import com.ooad.mhs.engine.operator.OperatorStrategyFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,7 @@ public class FindingBuilder {
             .map(c -> new ConditionTrace(
                 c.fieldKey(),
                 String.valueOf(workingFacts.getOrDefault(c.fieldKey(), 0)),
-                formatRequiredValue(c),
+                OperatorStrategyFactory.forOperator(c.operator()).describe(c),
                 c.operator(),
                 true
             ))
@@ -46,18 +47,5 @@ public class FindingBuilder {
             rule.level(),
             trace
         );
-    }
-
-    private static String formatRequiredValue(Condition c) {
-        return switch (c.operator()) {
-            case EQ      -> "== " + c.valueInt();
-            case NE      -> "!= " + c.valueInt();
-            case GT      -> "> " + c.valueInt();
-            case GTE     -> ">= " + c.valueInt();
-            case LT      -> "< " + c.valueInt();
-            case LTE     -> "<= " + c.valueInt();
-            case BETWEEN -> c.valueMin() + " - " + c.valueMax();
-            case IN      -> "in [" + c.valueText() + "]";
-        };
     }
 }

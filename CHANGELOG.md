@@ -40,3 +40,23 @@ Baseline: commit `e7095d2` (the code as received). It built and ran correctly be
 - **Changed:** `application.properties`: `include-stacktrace=never`, `include-message=never`.
   Errors are still logged in full in the console.
 - **Verified:** `/admin/rule/abc` gives a plain HTTP 400 page with no stack trace.
+
+### 5. M2: Strategy + Factory pattern for condition operators
+- **Problem:** The 8 operators (EQ, NE, GT, GTE, LT, LTE, BETWEEN, IN) were handled by a `switch`
+  in two places (`ConditionEvaluator` to evaluate, `FindingBuilder` to describe). Adding an
+  operator meant editing both switches.
+- **New package `engine/operator/`:**
+  - `OperatorStrategy` (interface): `test(actual, condition)` and `describe(condition)`.
+  - `SingleValueStrategy` (abstract class, Template Method): shared logic for the six operators
+    that compare against one number; subclasses give only the comparison and symbol.
+  - `EqualsStrategy`, `NotEqualsStrategy`, `GreaterThanStrategy`, `GreaterOrEqualStrategy`,
+    `LessThanStrategy`, `LessOrEqualStrategy` (extend `SingleValueStrategy`).
+  - `BetweenStrategy`, `InStrategy` (implement `OperatorStrategy` directly).
+  - `OperatorStrategyFactory` (Factory): returns the shared strategy for each `Operator`.
+- **Changed:** `engine/ConditionEvaluator.java`: the switch is replaced by
+  `OperatorStrategyFactory.forOperator(op).test(...)`.
+- **Changed:** `engine/FindingBuilder.java`: `formatRequiredValue` switch removed, uses `describe(...)`.
+- **Changed:** `util/Operator.java`: comment updated.
+- **Verified:** the 4 screening + 3 admin tests give identical results to before, including the
+  full text of every report page (so the "Rule needs" texts are unchanged).
+  Note: no rule uses NE or IN yet; these are covered by unit tests in Phase 4.
