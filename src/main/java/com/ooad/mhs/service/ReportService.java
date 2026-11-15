@@ -217,7 +217,7 @@ public class ReportService {
                 return this;
             }
 
-            /** Whether the Depression & Mood (PHQ-9) section is missing. */
+            /** Whether the Depression and Mood (PHQ-9) section is missing. */
             public Builder depressionMissing(boolean depressionMissing) {
                 this.depressionMissing = depressionMissing;
                 return this;

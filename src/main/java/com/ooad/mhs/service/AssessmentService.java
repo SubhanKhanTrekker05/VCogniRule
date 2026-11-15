@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 /**
  * Converts raw form responses to a working_facts map with derived fields.
  *
- * Flow: HTML form (Map<String, String>) → section completion check → convertResponses
+ * Flow: HTML form ({@code Map<String, String>}) → section completion check → convertResponses
  *       → DerivedFieldCalculator → working_facts
  *
  * Only sections the user fully answered are scored. Answers from partly

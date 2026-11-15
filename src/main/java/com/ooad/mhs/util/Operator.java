@@ -14,27 +14,27 @@ package com.ooad.mhs.util;
  */
 public enum Operator {
     
-    /** Equals: actual == required */
+    /** Equals: {@code actual == required} */
     EQ,
     
-    /** Not equals: actual != required */
+    /** Not equals: {@code actual != required} */
     NE,
     
-    /** Greater than: actual > required */
+    /** Greater than: {@code actual > required} */
     GT,
     
-    /** Greater than or equal: actual >= required */
+    /** Greater than or equal: {@code actual >= required} */
     GTE,
     
-    /** Less than: actual < required */
+    /** Less than: {@code actual < required} */
     LT,
     
-    /** Less than or equal: actual <= required */
+    /** Less than or equal: {@code actual <= required} */
     LTE,
     
-    /** Between: value_min <= actual <= value_max */
+    /** Between: {@code value_min <= actual <= value_max} */
     BETWEEN,
     
-    /** In: actual is one of the values in value_text (comma-separated) */
+    /** In: {@code actual} is one of the values in {@code value_text} (comma-separated) */
     IN
 }

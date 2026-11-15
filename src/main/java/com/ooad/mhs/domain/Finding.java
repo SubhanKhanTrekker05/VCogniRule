@@ -13,7 +13,7 @@ import java.util.List;
  * - The rule's metadata (id, name, category, priority, action, explanation, source)
  * - The matched conditions (as ConditionTrace objects)
  * 
- * The report template iterates over List<Finding> and renders each as:
+ * The report template iterates over {@code List<Finding>} and renders each as:
  * 
  *   ✓ PHQ-9 Moderate Depression (PHQ9-MODERATE)
  *     Matched conditions:
