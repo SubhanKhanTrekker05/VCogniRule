@@ -426,7 +426,8 @@ a.chip-skip:hover { border-color: var(--primary); color: var(--primary); }
 .finding-header { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.25rem; }
 .finding-icon { font-size: 1.1rem; }
 .finding-name { font-weight: 600; font-size: 1rem; }
-.finding-rule-id { font-size: 0.75rem; color: var(--text-muted); }
+.finding-rule-id { font-size: 0.8rem; color: var(--text); font-family: Consolas, 'Courier New', monospace; font-weight: 600; }
+.trace-rule { font-size: 0.85rem; color: var(--text-muted); margin: 0.5rem 0 0.25rem; }
 .finding-level-badge { font-size: 0.7rem; padding: 0.1rem 0.5rem; border-radius: 3px; background: var(--border); color: var(--text-muted); }
 .finding-explanation { font-size: 0.9rem; margin: 0.5rem 0; padding-left: 1rem; }
 .finding-source { font-size: 0.8rem; color: var(--text-muted); font-style: italic; }
