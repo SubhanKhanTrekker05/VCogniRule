@@ -371,6 +371,14 @@ every step (one new test).
 - **N4** `admin-rule-list.html`: headers "Level"/"Priority"; category and action as words
   ("Crisis protocol") with the code name as a tooltip.
 
+### 38. Engine steps hidden from the user's results
+- **Problem:** internal pathway gates (e.g. "Crisis pathway unlocked (GATE-CRISIS)") appeared among
+  the user's results in a crisis report.
+- **Changed:** `service/ReportService.java` (display grouping only): findings whose conclusion ends in
+  `_unlocked` (GATE-*) or the NICE synthesis always go to the folded "How the system reasoned"
+  section. The engine, the rules, the crisis box and the banner are unchanged.
+- **Test added:** `ScreeningFlowIntegrationTest.gateFindingsOnlyInReasoning` (246 tests).
+
 ### 37. Fix made during this work
 - A shell escape put two NUL bytes into `style.css` instead of the warning-sign code in M1; found by
   checking the file type, fixed in the next commit, and every tracked text file was checked (0 NUL bytes).

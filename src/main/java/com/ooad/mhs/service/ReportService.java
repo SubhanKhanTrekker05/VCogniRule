@@ -294,8 +294,11 @@ public class ReportService {
             String conclusion = rule != null && rule.conclusionKey() != null ? rule.conclusionKey() : "";
             String source = fv.finding().sourceRef() != null ? fv.finding().sourceRef() : "";
             if (conclusion.equals(RuleEngine.OVERALL_SEVERITY_KEY)) continue;
-            if (fv.tone().equals(FindingStyler.CRISIS_TONE)) results.add(fv);
-            else if (conclusion.endsWith("_unlocked") || conclusion.equals("nice_overall")) reasoning.add(fv);
+            // Engine steps (pathway gates such as GATE-CRISIS, and the NICE synthesis) always go to
+            // "How the system reasoned", even when crisis-coloured. Display grouping only: the crisis
+            // box and banner are decided from ALL findings above, so they do not change.
+            if (conclusion.endsWith("_unlocked") || conclusion.equals("nice_overall")) reasoning.add(fv);
+            else if (fv.tone().equals(FindingStyler.CRISIS_TONE)) results.add(fv);
             else if (source.startsWith("NICE")) guidance.add(fv);
             else results.add(fv);
         }
