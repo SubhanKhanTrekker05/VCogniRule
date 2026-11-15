@@ -102,3 +102,16 @@ Baseline: commit `e7095d2` (the code as received). It built and ran correctly be
   `AdminService`, `AdminController`, both SQL files); rules per level are 79/53/12/6, not 78/57/12/6
   (`Rule.java`); `data.sql` header said 114 questions, the real number is 151.
 - **Verified:** build, 9/9 tests, 7/7 regression tests identical.
+
+### 8. S1: Repository interfaces (Dependency Inversion Principle)
+- **Problem:** Services depended directly on the concrete SQLite classes.
+- **Renamed (git mv):** `RuleRepository` → `JdbcRuleRepository`, `QuestionRepository` →
+  `JdbcQuestionRepository`, `AdminRepository` → `JdbcAdminRepository`. Each now `implements`
+  its interface and marks the implemented methods `@Override`. Class comments added/updated.
+- **New interfaces:** `RuleRepository`, `QuestionRepository`, `AdminRepository` (same names as the
+  old classes, so no service, controller or config class had to change). Spring injects the JDBC
+  implementation automatically.
+- **Encapsulation:** `refreshCache()` and `getOrCreateGroup()` were public but only used inside the
+  class; they are now `private` and not part of the interface.
+- **Verified:** build, 9/9 tests, 7/7 regression tests identical, inactive-rule check, and a new
+  admin write-path check (create rule, add/edit/delete condition, edit, toggle, delete, factory reset: 8/8 pass).
