@@ -1,16 +1,23 @@
 package com.ooad.mhs.controller;
 
 import com.ooad.mhs.config.AdminAuthInterceptor;
+import com.ooad.mhs.domain.ConditionDetails;
 import com.ooad.mhs.domain.Rule;
+import com.ooad.mhs.domain.RuleDetails;
 import com.ooad.mhs.repository.QuestionRepository;
 import com.ooad.mhs.service.AdminService;
+import com.ooad.mhs.service.InvalidInputException;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * The admin panel (knowledge acquisition): log in, list rules, create / edit / delete / switch rules
@@ -19,6 +26,10 @@ import java.util.Optional;
  * Every URL under /admin except login and logout is protected by AdminAuthInterceptor, so the
  * methods here can assume an admin is logged in. Each change is passed to AdminService and then
  * redirected (Post/Redirect/Get), so refreshing the page never repeats the change.
+ *
+ * Form input arrives as a RuleDetails / ConditionDetails object. {@code @Valid} checks its
+ * validation rules first; a broken rule (or an InvalidInputException from the service) sends the
+ * admin back to the same form with the message in "formError" instead of an error page.
  */
 @Controller
 @RequestMapping("/admin")
@@ -73,15 +84,16 @@ public class AdminController {
     }
 
     @PostMapping("/rule/new")
-    public String createRule(@RequestParam String ruleId, @RequestParam String name,
-                             @RequestParam int level, @RequestParam String category,
-                             @RequestParam int priority, @RequestParam String actionType,
-                             @RequestParam(required = false) String explanation,
-                             @RequestParam(required = false) String sourceRef,
-                             @RequestParam(required = false) String conclusionKey,
-                             @RequestParam(required = false) String conclusionValue) {
-        adminService.createRule(ruleId, name, level, category, priority, actionType,
-            explanation, sourceRef, conclusionKey, conclusionValue);
+    public String createRule(@Valid @ModelAttribute("form") RuleDetails form, BindingResult errors,
+                             RedirectAttributes redirectAttributes) {
+        String back = "redirect:/admin/rule/new";
+        if (errors.hasErrors()) return withError(redirectAttributes, back, messages(errors), form);
+        try {
+            adminService.createRule(form);
+        } catch (InvalidInputException e) {
+            return withError(redirectAttributes, back, e.getMessage(), form);
+        }
+        redirectAttributes.addFlashAttribute("toast", "Rule " + form.ruleId().trim() + " created.");
         return "redirect:/admin/dashboard";
     }
 
@@ -99,16 +111,16 @@ public class AdminController {
     }
 
     @PostMapping("/rule/{id}")
-    public String updateRule(@PathVariable Long id, @RequestParam String name,
-                             @RequestParam int level, @RequestParam String category,
-                             @RequestParam int priority, @RequestParam String actionType,
-                             @RequestParam(required = false) String explanation,
-                             @RequestParam(required = false) String sourceRef,
-                             @RequestParam(required = false) String conclusionKey,
-                             @RequestParam(required = false) String conclusionValue) {
-        adminService.updateRule(id, name, level, category, priority, actionType,
-            explanation, sourceRef, conclusionKey, conclusionValue);
-        return "redirect:/admin/rule/" + id;
+    public String updateRule(@PathVariable Long id, @Valid @ModelAttribute("form") RuleDetails form,
+                             BindingResult errors, RedirectAttributes redirectAttributes) {
+        String back = "redirect:/admin/rule/" + id;
+        if (errors.hasErrors()) return withError(redirectAttributes, back, messages(errors), null);
+        try {
+            adminService.updateRule(id, form);
+        } catch (InvalidInputException e) {
+            return withError(redirectAttributes, back, e.getMessage(), null);
+        }
+        return back;
     }
 
     @PostMapping("/rule/{id}/delete")
@@ -126,13 +138,15 @@ public class AdminController {
     }
 
     @PostMapping("/rule/{id}/condition/new")
-    public String createCondition(@PathVariable Long id, @RequestParam String fieldKey,
-                                  @RequestParam String operator,
-                                  @RequestParam(required = false) Integer valueInt,
-                                  @RequestParam(required = false) String valueText,
-                                  @RequestParam(required = false) Integer valueMin,
-                                  @RequestParam(required = false) Integer valueMax) {
-        adminService.addCondition(id, fieldKey, operator, valueInt, valueText, valueMin, valueMax);
+    public String createCondition(@PathVariable Long id, @Valid @ModelAttribute("form") ConditionDetails form,
+                                  BindingResult errors, RedirectAttributes redirectAttributes) {
+        String back = "redirect:/admin/rule/" + id + "/condition/new";
+        if (errors.hasErrors()) return withError(redirectAttributes, back, messages(errors), null);
+        try {
+            adminService.addCondition(id, form);
+        } catch (InvalidInputException e) {
+            return withError(redirectAttributes, back, e.getMessage(), null);
+        }
         return "redirect:/admin/rule/" + id;
     }
 
@@ -147,18 +161,26 @@ public class AdminController {
 
     @PostMapping("/rule/{id}/condition/{cid}/edit")
     public String updateCondition(@PathVariable Long id, @PathVariable Long cid,
-                                  @RequestParam String fieldKey, @RequestParam String operator,
-                                  @RequestParam(required = false) Integer valueInt,
-                                  @RequestParam(required = false) String valueText,
-                                  @RequestParam(required = false) Integer valueMin,
-                                  @RequestParam(required = false) Integer valueMax) {
-        adminService.updateCondition(cid, fieldKey, operator, valueInt, valueText, valueMin, valueMax);
+                                  @Valid @ModelAttribute("form") ConditionDetails form, BindingResult errors,
+                                  RedirectAttributes redirectAttributes) {
+        String back = "redirect:/admin/rule/" + id + "/condition/" + cid + "/edit";
+        if (errors.hasErrors()) return withError(redirectAttributes, back, messages(errors), null);
+        try {
+            adminService.updateCondition(id, cid, form);
+        } catch (InvalidInputException e) {
+            return withError(redirectAttributes, back, e.getMessage(), null);
+        }
         return "redirect:/admin/rule/" + id;
     }
 
     @PostMapping("/rule/{id}/condition/{cid}/delete")
-    public String deleteCondition(@PathVariable Long id, @PathVariable Long cid) {
-        adminService.deleteCondition(cid);
+    public String deleteCondition(@PathVariable Long id, @PathVariable Long cid,
+                                  RedirectAttributes redirectAttributes) {
+        try {
+            adminService.deleteCondition(id, cid);
+        } catch (InvalidInputException e) {
+            redirectAttributes.addFlashAttribute("formError", e.getMessage());
+        }
         return "redirect:/admin/rule/" + id;
     }
 
@@ -177,5 +199,24 @@ public class AdminController {
         redirectAttributes.addFlashAttribute("toast",
             "Knowledge base restored to factory defaults. " + ruleCount + " rules reloaded.");
         return "redirect:/admin/dashboard";
+    }
+
+    // ------------------------------------------------------------------ form error helpers
+
+    /** Sends the admin back to a form with a message (and, for the new-rule form, the typed values). */
+    private static String withError(RedirectAttributes redirectAttributes, String back, String message, Object form) {
+        redirectAttributes.addFlashAttribute("formError", message);
+        if (form != null) redirectAttributes.addFlashAttribute("form", form);
+        return back;
+    }
+
+    /** All validation messages as one line. A value that could not be read (e.g. "abc" as a number) names its field. */
+    private static String messages(BindingResult errors) {
+        return errors.getAllErrors().stream()
+            .map(e -> e instanceof FieldError fe && fe.isBindingFailure()
+                ? "Invalid value for " + fe.getField() + ": " + fe.getRejectedValue() + "."
+                : e.getDefaultMessage())
+            .distinct()
+            .collect(Collectors.joining(" "));
     }
 }

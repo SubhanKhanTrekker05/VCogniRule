@@ -90,22 +90,20 @@ public class JdbcRuleRepository implements RuleRepository {
 
     // === CRUD ===
     @Override
-    public void save(String ruleId, String name, int level, String category, int priority,
-                     String actionType, String explanation, String sourceRef,
-                     String conclusionKey, String conclusionValue) {
+    public void save(RuleDetails d) {
         jdbcTemplate.update(
             "INSERT INTO rule (rule_id, name, level, category, priority, action_type, explanation, source_ref, conclusion_key, conclusion_value, is_active) VALUES (?,?,?,?,?,?,?,?,?,?,1)",
-            ruleId, name, level, category, priority, actionType, explanation, sourceRef, conclusionKey, conclusionValue);
+            d.ruleId(), d.name(), d.level(), d.category().name(), d.priority(), d.actionType().name(),
+            d.explanation(), d.sourceRef(), d.conclusionKey(), d.conclusionValue());
         refreshCache();
     }
 
     @Override
-    public void updateRule(Long id, String name, int level, String category, int priority,
-                           String actionType, String explanation, String sourceRef,
-                           String conclusionKey, String conclusionValue) {
+    public void updateRule(Long id, RuleDetails d) {
         jdbcTemplate.update(
             "UPDATE rule SET name=?, level=?, category=?, priority=?, action_type=?, explanation=?, source_ref=?, conclusion_key=?, conclusion_value=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
-            name, level, category, priority, actionType, explanation, sourceRef, conclusionKey, conclusionValue, id);
+            d.name(), d.level(), d.category().name(), d.priority(), d.actionType().name(),
+            d.explanation(), d.sourceRef(), d.conclusionKey(), d.conclusionValue(), id);
         refreshCache();
     }
 
@@ -132,23 +130,21 @@ public class JdbcRuleRepository implements RuleRepository {
     }
 
     @Override
-    public void addCondition(Long ruleId, String fieldKey, String operator,
-                             Integer valueInt, String valueText, Integer valueMin, Integer valueMax) {
+    public void addCondition(Long ruleId, ConditionDetails c) {
         Long groupId = getOrCreateGroup(ruleId);
         jdbcTemplate.update(
             // OR IGNORE: an identical condition already exists (unique index uq_rule_condition)
             "INSERT OR IGNORE INTO rule_condition (group_id, field_key, operator, value_int, value_text, value_min, value_max) VALUES (?,?,?,?,?,?,?)",
-            groupId, fieldKey, operator, valueInt, valueText, valueMin, valueMax);
+            groupId, c.fieldKey(), c.operator().name(), c.valueInt(), c.valueText(), c.valueMin(), c.valueMax());
         refreshCache();
     }
 
     @Override
-    public void updateCondition(Long conditionId, String fieldKey, String operator,
-                                Integer valueInt, String valueText, Integer valueMin, Integer valueMax) {
+    public void updateCondition(Long conditionId, ConditionDetails c) {
         jdbcTemplate.update(
             // OR IGNORE: skip an edit that would duplicate another condition of the same rule
             "UPDATE OR IGNORE rule_condition SET field_key=?, operator=?, value_int=?, value_text=?, value_min=?, value_max=? WHERE id=?",
-            fieldKey, operator, valueInt, valueText, valueMin, valueMax, conditionId);
+            c.fieldKey(), c.operator().name(), c.valueInt(), c.valueText(), c.valueMin(), c.valueMax(), conditionId);
         refreshCache();
     }
 
