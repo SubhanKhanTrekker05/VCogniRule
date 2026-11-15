@@ -141,7 +141,7 @@ cd path/to/VCogniRule
 mvn spring-boot:run
 ```
 
-> Known issue: `start-dev.sh` currently has a missing closing quote on line 10, so it stops with a syntax error. Run `mvn spring-boot:run` directly as shown above.
+> `./start-dev.sh` checks that Java and Maven are installed and opens VS Code if available; `mvn spring-boot:run` also works on its own.
 
 ### 3. Open
 
@@ -223,7 +223,8 @@ VCogniRule/
 ├── src/test/java/com/ooad/mhs/              # JUnit 5 tests
 ├── database/                                # SQLite .db file created here at runtime
 ├── pom.xml, Dockerfile, start-dev.bat, start-dev.sh
-├── CHANGELOG.md, LICENSE, README.md
+├── docs/TEST_CASES.md                     # Test case table for the report
+├── CHANGELOG.md, DEMO_SCRIPT.md, LICENSE, README.md
 ```
 
 ---
@@ -312,7 +313,22 @@ Severity (mild, moderate, …) is decided by the rules in the knowledge base, no
 mvn test
 ```
 
-Runs the JUnit 5 tests in `src/test/java`, including a before/after test that compares the questionnaire scoring with a frozen copy of the original code on 10,000 random answer sets.
+Runs **237 JUnit 5 tests** in about 30 seconds (`Tests run: 237, Failures: 0`). No database or running app is needed: the integration tests start the app themselves with a fresh SQLite file in `target/`.
+
+| Test class | Type | What it checks |
+|---|---|---|
+| `OperatorStrategyTest` | Unit | each of the 8 operator strategies (incl. NE and IN) and the factory |
+| `RuleEngineTest` | Unit | AND/OR, forward chaining, overall severity, FindingFactory, sorting |
+| `QuestionnaireScoringTest` | Unit | scoring of all 10 questionnaires with hand-calculated examples and cut-offs |
+| `QuestionnaireRefactorEquivalenceTest` | Unit | new scoring = original scoring on 10,000 random answer sets |
+| `ReportPartsTest` | Unit | `ScreeningReport.Builder`, `OverallResultResolver`, `FindingStyler` |
+| `AssessmentServiceTest` | Unit | answer validation (bad answers count as not answered), section completion |
+| `FormValidationTest` | Unit | Bean Validation rules of the admin forms |
+| `AdminServiceTest` | Unit | admin business rules, using in-memory fake repositories |
+| `ScreeningFlowIntegrationTest` | Integration | the screening flow through the running app (Spring Boot Test + MockMvc) |
+| `AdminIntegrationTest` | Integration | admin login/logout, the 13 protected URLs, create/edit/delete/reset, bad input |
+
+The test case table for the report (ID, input, expected, actual, result) is in [docs/TEST_CASES.md](docs/TEST_CASES.md), and the live demo guide is [DEMO_SCRIPT.md](DEMO_SCRIPT.md).
 
 ---
 
