@@ -233,7 +233,7 @@ select:focus, input[type="number"]:focus, input[type="time"]:focus { outline: no
 
 .q-hint { margin: 0 1.5rem 0.9rem; padding: 0.7rem 1rem; font-size: 0.92rem; font-weight: 500; color: #6E2A16;
           background: #F8E6DE; border: 1px solid #D9A28C; border-left: 5px solid var(--terracotta); border-radius: var(--radius); }
-.q-hint::before { content: 'A0 A0 '; font-weight: 700; }
+.q-hint::before { content: '\26A0\00A0 '; font-weight: 700; }
 .q-nav { display: flex; justify-content: space-between; gap: 0.75rem; padding: 0 1.5rem 1.25rem; }
 
 .q-done { padding: 2rem 1.5rem; text-align: center; }
@@ -263,7 +263,7 @@ html:not(.js) .progress { display: none; }
 }
 .submit-alert { flex-basis: 100%; margin: 0; padding: 0.6rem 0.9rem; font-size: 0.92rem; font-weight: 500; color: #6E2A16;
                 background: #F8E6DE; border: 1px solid #D9A28C; border-left: 5px solid var(--terracotta); border-radius: var(--radius); }
-.submit-alert::before { content: 'A0 A0 '; font-weight: 700; }
+.submit-alert::before { content: '\26A0\00A0 '; font-weight: 700; }
 .submit-alert[hidden] { display: none; }
 .submit-summary { font-size: 0.9rem; color: var(--text-muted); }
 .submit-summary strong { color: var(--text); }
