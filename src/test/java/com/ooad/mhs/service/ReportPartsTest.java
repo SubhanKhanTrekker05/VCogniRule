@@ -23,54 +23,47 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/** Unit tests for the report parts: ScreeningReport.Builder, OverallResultResolver and FindingStyler. */
+/** Unit tests for the report parts: ScreeningReport (parameter objects), OverallResultResolver and FindingStyler. */
 class ReportPartsTest {
 
     @Nested
-    @DisplayName("ScreeningReport.Builder (Builder pattern)")
-    class BuilderTests {
+    @DisplayName("ScreeningReport (Introduce Parameter Object)")
+    class ScreeningReportTests {
+
+        private final ReportService.FindingGroups noFindings = new ReportService.FindingGroups(List.of(), List.of(), List.of());
+
+        private static OverallResultResolver.OverallResult overall(String key, String note) {
+            return new OverallResultResolver.OverallResult(key, key, note);
+        }
 
         @Test
-        @DisplayName("Builds a report from named steps")
-        void buildsReport() {
+        @DisplayName("The grouped values are reachable through the short accessors the page uses")
+        void accessorsReadTheGroups() {
             List<SectionStatus> done = List.of(new SectionStatus(Section.CSSRS, 6, 6));
-            ScreeningReport r = ScreeningReport.builder()
-                .overall("moderate", "moderate", "a note")
-                .crisis(true)
-                .coverage(done, List.of(), List.of())
-                .depressionMissing(true)
-                .build();
+            ScreeningReport r = new ScreeningReport(overall("moderate", "a note"), true, noFindings,
+                new ReportService.Coverage(done, List.of(), List.of()), true, List.of());
             assertThat(r.overallKey()).isEqualTo("moderate");
             assertThat(r.overallNote()).isEqualTo("a note");
             assertThat(r.hasCrisis()).isTrue();
             assertThat(r.depressionMissing()).isTrue();
             assertThat(r.assessed()).containsExactlyElementsOf(done);
-        }
-
-        @Test
-        @DisplayName("Lists that are not set are empty, not null")
-        void unsetListsAreEmpty() {
-            ScreeningReport r = ScreeningReport.builder().overall("minimal", "minimal", null).build();
             assertThat(r.results()).isEmpty();
-            assertThat(r.guidance()).isEmpty();
-            assertThat(r.reasoning()).isEmpty();
-            assertThat(r.answers()).isEmpty();
-            assertThat(r.hasCrisis()).isFalse();
         }
 
         @Test
-        @DisplayName("build() refuses a report without an overall result")
-        void requiresOverall() {
-            assertThatThrownBy(() -> ScreeningReport.builder().crisis(false).build())
-                .isInstanceOf(IllegalStateException.class);
+        @DisplayName("A report needs its parameter objects (no nulls)")
+        void requiresParameterObjects() {
+            assertThatThrownBy(() -> new ScreeningReport(null, false, noFindings,
+                new ReportService.Coverage(List.of(), List.of(), List.of()), false, List.of()))
+                .isInstanceOf(NullPointerException.class);
         }
 
         @Test
         @DisplayName("The finished report cannot be changed")
         void reportIsUnchangeable() {
             List<SectionStatus> list = new ArrayList<>();
-            ScreeningReport r = ScreeningReport.builder().overall("minimal", "minimal", null)
-                .coverage(list, List.of(), List.of()).build();
+            ScreeningReport r = new ScreeningReport(overall("minimal", null), false, noFindings,
+                new ReportService.Coverage(list, List.of(), List.of()), false, List.of());
             list.add(new SectionStatus(Section.PHQ9, 9, 9));        // changing the original list...
             assertThat(r.assessed()).isEmpty();                       // ...does not change the report
             assertThatThrownBy(() -> r.assessed().add(null)).isInstanceOf(UnsupportedOperationException.class);
