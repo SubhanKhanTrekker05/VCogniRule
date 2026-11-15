@@ -47,7 +47,7 @@
                 </tr>
             </thead>
             <tbody>
-                <tr th:each="rule : ${rules}">
+                <tr th:each="rule : ${rules}" th:classappend="${rule.isActive} ? '' : 'row-inactive'">
                     <td th:text="${rule.id}">1</td>
                     <td th:text="${rule.ruleId}">RULE</td>
                     <td><a th:href="@{'/admin/rule/' + ${rule.id}}" th:text="${rule.name}">Name</a></td>
@@ -55,11 +55,16 @@
                     <td th:text="${rule.category}">MOOD</td>
                     <td th:text="${rule.priority}">50</td>
                     <td th:text="${rule.actionType}">DISPLAY_INFO</td>
-                    <td>
-                        <form th:method="post" th:action="@{'/admin/toggle/' + ${rule.id}}">
+                    <td class="active-cell">
+                        <!-- Status in words, so it never depends on reading the button -->
+                        <span class="status-pill" th:classappend="${rule.isActive} ? 'is-on' : 'is-off'"
+                              th:text="${rule.isActive} ? 'Active' : 'Inactive'">Active</span>
+                        <!-- Switching a rule OFF asks for confirmation (admin-rules.js reads data-confirm) -->
+                        <form th:method="post" th:action="@{'/admin/toggle/' + ${rule.id}}"
+                              th:attr="data-confirm=${rule.isActive} ? 'Switch off rule ' + ${rule.ruleId} + '? The screening will stop using it until you activate it again.' : null">
                             <input type="hidden" name="active" th:value="${rule.isActive ? 'false' : 'true'}" />
-                            <button type="submit" class="btn btn-sm" th:text="${rule.isActive ? 'Deactivate' : 'Activate'}"
-                                    th:class="'btn btn-sm ' + ${rule.isActive ? 'btn-outline' : 'btn-primary'}">
+                            <button type="submit" th:text="${rule.isActive ? 'Deactivate' : 'Activate'}"
+                                    th:class="'btn btn-sm ' + ${rule.isActive ? 'btn-deactivate' : 'btn-primary'}">
                                 Toggle
                             </button>
                         </form>
