@@ -5,6 +5,8 @@ import com.ooad.mhs.domain.Finding;
 import com.ooad.mhs.domain.Question;
 import com.ooad.mhs.domain.Rule;
 import com.ooad.mhs.engine.RuleEngine;
+import com.ooad.mhs.questionnaire.Questionnaire;
+import com.ooad.mhs.questionnaire.QuestionnaireRegistry;
 import com.ooad.mhs.repository.QuestionRepository;
 import com.ooad.mhs.repository.RuleRepository;
 import com.ooad.mhs.service.AssessmentService.PreparedAssessment;
@@ -35,13 +37,16 @@ public class ReportService {
     private final QuestionRepository questionRepository;
     private final QuestionnaireService questionnaireService;
     private final RuleRepository ruleRepository;
+    private final QuestionnaireRegistry questionnaires;
 
     public ReportService(QuestionRepository questionRepository,
                          QuestionnaireService questionnaireService,
-                         RuleRepository ruleRepository) {
+                         RuleRepository ruleRepository,
+                         QuestionnaireRegistry questionnaires) {
         this.questionRepository = questionRepository;
         this.questionnaireService = questionnaireService;
         this.ruleRepository = ruleRepository;
+        this.questionnaires = questionnaires;
     }
 
     // ------------------------------------------------------------------ model
@@ -273,8 +278,10 @@ public class ReportService {
                 rows.add(new AnswerRow(n++, qv.text(),
                     raw == null ? "Not answered" : answerText(qv, raw), raw != null));
             }
-            String score = status.isComplete() ? scoreText(sv.section(), facts, answers) : null;
-            String scoreNote = status.isComplete() ? scoreNote(sv.section()) : null;
+            // Each questionnaire describes its own score (polymorphism, no switch on the section)
+            Questionnaire questionnaire = questionnaires.get(sv.section());
+            String score = status.isComplete() ? questionnaire.summary(facts, answers) : null;
+            String scoreNote = status.isComplete() ? questionnaire.scoreNote() : null;
             sectionAnswers.add(new SectionAnswers(status, score, scoreNote, rows));
         }
 
@@ -412,39 +419,4 @@ public class ReportService {
         };
     }
 
-    private static String scoreText(Section section, Map<String, Integer> f, Map<String, String> answers) {
-        return switch (section) {
-            case PHQ9 -> "Total score " + f.get("phq9_total") + " / 27";
-            case GAD7 -> "Total score " + f.get("gad7_total") + " / 21";
-            case PHQ15 -> "Total score " + f.get("phq15_total") + " / 30";
-            case CSSRS -> countYes(answers, "cssrs_q", 6) + " of 6 answered Yes";
-            case WHO5 -> "Wellbeing score " + f.get("who5_raw") + " / 25 (" + (f.get("who5_raw") * 4) + "%)";
-            case PSS10 -> "Total score " + f.get("pss10_total") + " / 40";
-            case PSQI -> "Global score " + f.get("psqi_global") + " / 21";
-            case WSAS -> "Total score " + f.get("wsas_total") + " / 40";
-            case ASRS -> f.get("asrs_shaded_count") + " of 6 answers in the screening range";
-            case PCPTSD -> countYes(answers, "pcptsd_q", 4) + " of 4 answered Yes";
-        };
-    }
-
-    private static String scoreNote(Section section) {
-        return switch (section) {
-            case WHO5 -> "Higher is better. 50% or below suggests low wellbeing.";
-            case PSQI -> "Lower is better. Above 5 suggests poor sleep.";
-            case CSSRS -> "Any Yes answer is followed up in the findings.";
-            case ASRS -> "4 or more suggests symptoms worth discussing with a professional.";
-            case PCPTSD -> "3 or more suggests trauma-related symptoms.";
-            default -> "Higher means more symptoms.";
-        };
-    }
-
-    /** Counts Yes answers: any answered value other than "0" (covers graded Safety Check answers). */
-    private static int countYes(Map<String, String> answers, String prefix, int count) {
-        int yes = 0;
-        for (int i = 1; i <= count; i++) {
-            String v = answers.get(prefix + i);
-            if (v != null && !"0".equals(v)) yes++;
-        }
-        return yes;
-    }
 }
