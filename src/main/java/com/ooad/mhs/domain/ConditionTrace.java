@@ -21,6 +21,5 @@ public record ConditionTrace(
     String fieldKey,        // e.g., "phq9_total"
     String actualValue,     // e.g., "14" — what the user's responses produced
     String requiredValue,   // e.g., "10 - 14" or ">= 10" — what the rule required (OperatorStrategy.describe)
-    Operator operator,      // GTE, BETWEEN, EQ, etc.
-    boolean matched         // true = condition passed, false = condition failed
+    Operator operator       // GTE, BETWEEN, EQ, etc.
 ) {}

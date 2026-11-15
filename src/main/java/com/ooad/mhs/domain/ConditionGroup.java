@@ -23,6 +23,7 @@ import java.util.List;
 public record ConditionGroup(
     Long id,
     Long ruleId,                    // FK to rule
-    String logic,                   // always "AND" in our design
+    String logic,                   // stored as "AND"; NOTE: the engine supports AND only (it does not read this
+                                    // value): all conditions in a group must match. OR = several groups.
     List<Condition> conditions      // the conditions within this group (1-4 per group)
 ) {}

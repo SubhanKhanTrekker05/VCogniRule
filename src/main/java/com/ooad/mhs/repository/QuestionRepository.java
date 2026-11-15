@@ -3,7 +3,6 @@ package com.ooad.mhs.repository;
 import com.ooad.mhs.domain.Question;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Loads the screening questions and calculated fields.
@@ -18,7 +17,4 @@ public interface QuestionRepository {
 
     /** Only the 84 questions shown to the user, in display order. */
     List<Question> findAllReal();
-
-    /** One question or calculated field by its field key, e.g. "phq9_q1". */
-    Optional<Question> findByFieldKey(String fieldKey);
 }
