@@ -25,3 +25,11 @@ Baseline: commit `e7095d2` (the code as received). It built and ran correctly be
 - **What you need to do:** nothing. The existing `database/vcognirule.db` is fixed automatically
   the next time the app starts (tested on a copy of it). A factory reset also gives the fixed rule.
 - **Verified:** all-healthy screening now also shows `PHQ9-MINIMAL`; no other result changed.
+
+### 3. M3: "Not a medical diagnosis" disclaimer on the report page
+- **Problem:** The disclaimer was on the welcome and about pages, but not on the report, which is
+  the page people read, print and share.
+- **Changed:** `templates/report.html`: new disclaimer box under the crisis alert (the crisis alert
+  stays first). It is also included when the report is printed / saved as PDF.
+- **Changed:** `static/css/style.css`: new `.report-disclaimer` style (same amber colours as the
+  welcome page disclaimer).
