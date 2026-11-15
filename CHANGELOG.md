@@ -175,3 +175,9 @@ Baseline: commit `e7095d2` (the code as received). It built and ran correctly be
 - **Kept inline on purpose:** the band limits of the official PSQI scoring tables (e.g. 15/30/60 minutes),
   with a comment, so they can be checked line by line against the published table.
 - **Verified:** 9/9 before/after tests (scoring identical), 7/7 regression identical, 12/12 wrong-input cases.
+
+### 14. N6: Javadoc
+- **Added class Javadoc** to the five classes that had none: `MentalHealthApp`, `WelcomeController`,
+  `AboutController`, `AdminController`, `AdminService`.
+- **Fixed 7 Javadoc errors** (unescaped `<`, `>` and `&` in comments) in `Operator`, `AssessmentService`,
+  `Finding`, `ReportService`. `mvn javadoc:javadoc` now reports 0 errors.

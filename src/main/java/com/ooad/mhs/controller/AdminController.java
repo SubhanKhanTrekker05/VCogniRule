@@ -12,6 +12,14 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Optional;
 
+/**
+ * The admin panel (knowledge acquisition): log in, list rules, create / edit / delete / switch rules
+ * and their conditions, and factory-reset the knowledge base.
+ *
+ * Every URL under /admin except login and logout is protected by AdminAuthInterceptor, so the
+ * methods here can assume an admin is logged in. Each change is passed to AdminService and then
+ * redirected (Post/Redirect/Get), so refreshing the page never repeats the change.
+ */
 @Controller
 @RequestMapping("/admin")
 public class AdminController {

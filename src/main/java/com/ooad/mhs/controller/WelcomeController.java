@@ -4,6 +4,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+/**
+ * Shows the home page (GET /) with the app name, short description and the disclaimer.
+ * Controller part of MVC: puts data in the Model and names the view ("welcome").
+ */
 @Controller
 public class WelcomeController {
 
