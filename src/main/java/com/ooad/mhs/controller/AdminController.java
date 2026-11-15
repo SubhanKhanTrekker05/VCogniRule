@@ -175,7 +175,7 @@ public class AdminController {
     }
 
     /**
-     * Factory reset: restores all 150 rules + 150 groups + 205 conditions to their original state.
+     * Factory reset: restores all 150 rules + 150 groups + 209 conditions to their original state.
      * Undoes every CRUD change made via the admin panel - the "ultimate Ctrl+Z" for viva demos
      * when you've experimented with rules during the demo and want to restore the factory state.
      *

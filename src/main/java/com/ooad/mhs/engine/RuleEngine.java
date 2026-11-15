@@ -124,7 +124,7 @@ public class RuleEngine {
                 }
 
                 // Build finding with trace
-                Finding finding = FindingBuilder.build(rule, matchedConditions, workingFacts);
+                Finding finding = FindingFactory.create(rule, matchedConditions, workingFacts);
                 findings.add(finding);
             }
         }

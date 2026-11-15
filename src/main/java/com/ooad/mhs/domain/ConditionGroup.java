@@ -18,7 +18,7 @@ import java.util.List;
  * rule evaluation — not through multiple groups.
  * 
  * Stored in: rule_condition_group table (150 rows)
- * Conditions loaded from: rule_condition table (205 rows)
+ * Conditions loaded from: rule_condition table (209 rows)
  */
 public record ConditionGroup(
     Long id,

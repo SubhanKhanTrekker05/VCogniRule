@@ -87,3 +87,18 @@ Baseline: commit `e7095d2` (the code as received). It built and ran correctly be
   database, not by Java code, so admin edits to rules keep working. `Section` enum unchanged.
 - **Verified:** 9/9 before/after tests pass; the 4 screening + 3 admin tests are identical to before,
   including the full report page text.
+
+### 7. M6: Correct wrong / out-of-date comments; rename FindingBuilder → FindingFactory
+- **Renamed:** `engine/FindingBuilder.java` → `engine/FindingFactory.java`, method `build` → `create`
+  (via `git mv`, history kept). It was never a Builder (one static method that creates the object);
+  its own comment said "Builder pattern conceptually". It is a static factory method.
+  Caller updated: `engine/RuleEngine.java`.
+- **`domain/ConditionTrace.java`:** removed text copied from another project ("Adopted from the IAI
+  project's trace patterns (VSecretServerAdvisor)") and its description of "may have" and not-fired
+  traces, which this system does not have. Now describes what the code really does.
+- **`repository/QuestionRepository.java`:** said FindingBuilder uses `findByFieldKey`; it never did.
+- **`util/ActionType.java`:** said ConflictResolver sorts by action type; it sorts by priority.
+- **Row counts:** conditions are 209, not 205 (`Rule`, `Condition`, `ConditionGroup`, `RuleRepository`,
+  `AdminService`, `AdminController`, both SQL files); rules per level are 79/53/12/6, not 78/57/12/6
+  (`Rule.java`); `data.sql` header said 114 questions, the real number is 151.
+- **Verified:** build, 9/9 tests, 7/7 regression tests identical.

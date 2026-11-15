@@ -16,7 +16,7 @@ import com.ooad.mhs.util.Operator;
  * - BETWEEN → use valueMin + valueMax
  * - IN → use valueText (comma-separated list)
  * 
- * Stored in: rule_condition table (205 rows)
+ * Stored in: rule_condition table (209 rows)
  */
 public record Condition(
     Long id,
