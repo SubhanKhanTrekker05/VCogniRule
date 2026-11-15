@@ -13,14 +13,20 @@ import java.util.Map;
 @Component
 public class AsrsQuestionnaire extends Questionnaire {
 
+    /** Inattention items 1-3 are in the screening range from answer 3 ("Often"). */
+    private static final int INATTENTIVE_SHADED_FROM = 3;
+
+    /** Hyperactivity items 4-6 are in the screening range from answer 2 ("Sometimes"). */
+    private static final int HYPERACTIVE_SHADED_FROM = 2;
+
     public AsrsQuestionnaire() {
         super(Section.ASRS);
     }
 
     @Override
     protected void computeScores(Map<String, Integer> f) {
-        int inattentive = countAtLeast(f, "asrs_q", 1, 3, 3);
-        int hyperactive = countAtLeast(f, "asrs_q", 4, 6, 2);
+        int inattentive = countAtLeast(f, "asrs_q", 1, 3, INATTENTIVE_SHADED_FROM);
+        int hyperactive = countAtLeast(f, "asrs_q", 4, 6, HYPERACTIVE_SHADED_FROM);
         f.put("asrs_inattentive_count", inattentive);
         f.put("asrs_hyperactive_count", hyperactive);
         f.put("asrs_shaded_count", inattentive + hyperactive);

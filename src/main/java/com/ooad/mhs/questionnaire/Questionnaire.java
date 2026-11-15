@@ -69,6 +69,18 @@ public abstract class Questionnaire {
         return "Higher means more symptoms.";
     }
 
+    /**
+     * Answer value 2 on the 0-3 frequency scale (PHQ-9, GAD-7) = "More than half the days".
+     * An item counts as a clear symptom from this value upwards.
+     */
+    protected static final int MORE_THAN_HALF_THE_DAYS = 2;
+
+    /** Total score from which PHQ-9 and GAD-7 show at least MILD symptoms (Kroenke 2001, Spitzer 2006). */
+    protected static final int MILD_CUTOFF = 5;
+
+    /** Total score from which PHQ-9 and GAD-7 show at least MODERATE symptoms. */
+    protected static final int MODERATE_CUTOFF = 10;
+
     // ------------------------------------------------------------------ helpers for subclasses
 
     /** The answer for a key, or 0 if missing. */

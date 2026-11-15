@@ -161,3 +161,17 @@ Baseline: commit `e7095d2` (the code as received). It built and ran correctly be
 - **Changed:** `config/DataSeeder.java` and `repository/JdbcRuleRepository.java`: `System.out.println`
   replaced with an SLF4J `Logger` (`log.info(...)`), so the messages appear in the normal Spring log
   with time, level and class name.
+
+### 13. N3: Named constants instead of magic numbers
+- **`engine/RuleEngine.java`:** the four copied "Pass 1..4" blocks became one loop from `FIRST_LEVEL`
+  to `LAST_LEVEL`; new constants `OVERALL_SEVERITY_KEY` and `ANY_TREATMENT_KEY`
+  (also used by `service/ReportService.java` instead of repeating the strings).
+- **`questionnaire/Questionnaire.java`:** shared cut-offs `MORE_THAN_HALF_THE_DAYS` (2), `MILD_CUTOFF` (5),
+  `MODERATE_CUTOFF` (10), used by `Phq9Questionnaire` and `Gad7Questionnaire`.
+- **Subclasses:** `Phq15Questionnaire.BOTHERED_A_LOT`, `Who5Questionnaire.MAX_ITEM_SCORE` / `PERCENT_PER_POINT`,
+  `Pss10Questionnaire.MAX_ITEM_SCORE`, `PsqiQuestionnaire` defaults (`DEFAULT_BEDTIME` = 23:00 ...),
+  `MINUTES_PER_DAY`, `POOR_SLEEP_CUTOFF`, `AsrsQuestionnaire.INATTENTIVE_SHADED_FROM` / `HYPERACTIVE_SHADED_FROM`.
+- **`service/QuestionnaireService.java`:** `MAX_MINUTES_TO_FALL_ASLEEP`, `MAX_HOURS_SLEPT`.
+- **Kept inline on purpose:** the band limits of the official PSQI scoring tables (e.g. 15/30/60 minutes),
+  with a comment, so they can be checked line by line against the published table.
+- **Verified:** 9/9 before/after tests (scoring identical), 7/7 regression identical, 12/12 wrong-input cases.

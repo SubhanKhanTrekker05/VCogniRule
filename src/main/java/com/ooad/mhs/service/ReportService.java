@@ -125,7 +125,7 @@ public class ReportService {
         Map.entry("anxiety_any", "Anxiety score of 5 or more (at least mild)"),
         Map.entry("anxiety_moderate_plus", "Anxiety score of 10 or more (moderate or higher)"),
         Map.entry("sleep_poor_any", "Sleep score above 5 (poor sleep)"),
-        Map.entry("any_treatment_recommendation", "At least one other finding recommends support or monitoring"));
+        Map.entry(RuleEngine.ANY_TREATMENT_KEY, "At least one other finding recommends support or monitoring"));
 
     /** One answered (or unanswered) question in the "Your answers" list. */
     public record AnswerRow(int number, String question, String answer, boolean answered) {}
@@ -336,7 +336,7 @@ public class ReportService {
             Rule rule = rulesById.get(fv.finding().ruleId());
             String conclusion = rule != null && rule.conclusionKey() != null ? rule.conclusionKey() : "";
             String source = fv.finding().sourceRef() != null ? fv.finding().sourceRef() : "";
-            if (conclusion.equals("overall_severity")) continue;
+            if (conclusion.equals(RuleEngine.OVERALL_SEVERITY_KEY)) continue;
             if (fv.tone().equals("crisis")) results.add(fv);
             else if (conclusion.endsWith("_unlocked") || conclusion.equals("nice_overall")) reasoning.add(fv);
             else if (source.startsWith("NICE")) guidance.add(fv);
@@ -420,7 +420,7 @@ public class ReportService {
         String key = rule != null && rule.conclusionKey() != null ? rule.conclusionKey() : "";
         String value = rule != null ? rule.conclusionValue() : null;
         boolean reassuring = REASSURING_KEY.matcher(key).matches()
-            || ("overall_severity".equals(key) && "minimal".equals(value));
+            || (RuleEngine.OVERALL_SEVERITY_KEY.equals(key) && "minimal".equals(value));
         if (reassuring) return new FindingView(f, basis, "info", "✓", "No concern");
         if (key.endsWith("_clinical") || key.equals("ptsd_single")) {
             return new FindingView(f, basis, "note", "•", "Symptom noted");

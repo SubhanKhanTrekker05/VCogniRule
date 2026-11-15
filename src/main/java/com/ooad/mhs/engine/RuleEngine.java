@@ -25,6 +25,18 @@ import java.util.*;
  */
 public class RuleEngine {
 
+    /** Lowest rule level: rules that read the user's answers and derived fields directly. */
+    public static final int FIRST_LEVEL = 1;
+
+    /** Highest rule level: synthesis rules, including the overall severity rules. */
+    public static final int LAST_LEVEL = 4;
+
+    /** Conclusion key of the Level 4 rules that set the overall severity shown in the banner. */
+    public static final String OVERALL_SEVERITY_KEY = "overall_severity";
+
+    /** Fact added after Level 1: 1 if any finding so far recommends more than information. */
+    public static final String ANY_TREATMENT_KEY = "any_treatment_recommendation";
+
     /**
      * Result of the evaluation — the findings list + overall severity
      * (null when no overall_severity rule fired).
@@ -41,22 +53,17 @@ public class RuleEngine {
         // null = no overall-severity rule fired; the caller decides how to present that
         String overallSeverity = null;
 
-        // Pass 1: Level 1 rules
-        overallSeverity = evaluatePass(rules, workingFacts, findings, 1, overallSeverity);
+        // One pass per level, lowest first, so each level can read the conclusions of the levels before it
+        for (int level = FIRST_LEVEL; level <= LAST_LEVEL; level++) {
+            overallSeverity = evaluatePass(rules, workingFacts, findings, level, overallSeverity);
 
-        // Compute any_treatment_recommendation after Level 1
-        boolean anyTreatment = findings.stream()
-            .anyMatch(f -> f.actionType() != ActionType.DISPLAY_INFO);
-        workingFacts.put("any_treatment_recommendation", anyTreatment ? 1 : 0);
-
-        // Pass 2: Level 2 rules
-        overallSeverity = evaluatePass(rules, workingFacts, findings, 2, overallSeverity);
-
-        // Pass 3: Level 3 rules
-        overallSeverity = evaluatePass(rules, workingFacts, findings, 3, overallSeverity);
-
-        // Pass 4: Level 4 rules
-        overallSeverity = evaluatePass(rules, workingFacts, findings, 4, overallSeverity);
+            // After Level 1: does any finding recommend more than information? (read by NICE monitoring rules)
+            if (level == FIRST_LEVEL) {
+                boolean anyTreatment = findings.stream()
+                    .anyMatch(f -> f.actionType() != ActionType.DISPLAY_INFO);
+                workingFacts.put(ANY_TREATMENT_KEY, anyTreatment ? 1 : 0);
+            }
+        }
 
         // Conflict resolution: sort by priority
         List<Finding> resolved = ConflictResolver.resolve(findings);
@@ -118,8 +125,8 @@ public class RuleEngine {
                 // Rules are visited highest priority first, so the first one that
                 // fires wins (a later "mild" must not overwrite an earlier "critical").
                 // Other Level 4 rules (e.g. NICE-OVERALL) do not set the severity.
-                if (rule.level() == 4 && severity == null
-                        && "overall_severity".equals(rule.conclusionKey())) {
+                if (rule.level() == LAST_LEVEL && severity == null
+                        && OVERALL_SEVERITY_KEY.equals(rule.conclusionKey())) {
                     severity = rule.conclusionValue();
                 }
 

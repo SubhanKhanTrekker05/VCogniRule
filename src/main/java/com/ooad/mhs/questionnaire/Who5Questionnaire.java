@@ -13,6 +13,12 @@ import java.util.Map;
 @Component
 public class Who5Questionnaire extends Questionnaire {
 
+    /** Highest answer per item ("All of the time"); also used for a missing answer, as in the original scoring. */
+    private static final int MAX_ITEM_SCORE = 5;
+
+    /** The raw score (0-25) times 4 gives the WHO-5 percentage score (0-100). */
+    private static final int PERCENT_PER_POINT = 4;
+
     public Who5Questionnaire() {
         super(Section.WHO5);
     }
@@ -20,13 +26,13 @@ public class Who5Questionnaire extends Questionnaire {
     @Override
     protected void computeScores(Map<String, Integer> f) {
         int total = 0;
-        for (int i = 1; i <= 5; i++) total += f.getOrDefault("who5_q" + i, 5);
+        for (int i = 1; i <= 5; i++) total += f.getOrDefault("who5_q" + i, MAX_ITEM_SCORE);
         f.put("who5_raw", total);
     }
 
     @Override
     public String summary(Map<String, Integer> f, Map<String, String> answers) {
-        return "Wellbeing score " + f.get("who5_raw") + " / 25 (" + (f.get("who5_raw") * 4) + "%)";
+        return "Wellbeing score " + f.get("who5_raw") + " / 25 (" + (f.get("who5_raw") * PERCENT_PER_POINT) + "%)";
     }
 
     @Override

@@ -13,6 +13,9 @@ import java.util.Map;
 @Component
 public class Pss10Questionnaire extends Questionnaire {
 
+    /** Highest answer per item ("Very often"); reverse score = MAX_ITEM_SCORE - answer. */
+    private static final int MAX_ITEM_SCORE = 4;
+
     public Pss10Questionnaire() {
         super(Section.PSS10);
     }
@@ -25,8 +28,8 @@ public class Pss10Questionnaire extends Questionnaire {
         f.put("pss10_helplessness", helpless);
 
         // Efficacy: q4, q5, q7, q8 (reverse-scored: 4 - answer)
-        int efficacy = (4 - value(f, "pss10_q4")) + (4 - value(f, "pss10_q5"))
-            + (4 - value(f, "pss10_q7")) + (4 - value(f, "pss10_q8"));
+        int efficacy = (MAX_ITEM_SCORE - value(f, "pss10_q4")) + (MAX_ITEM_SCORE - value(f, "pss10_q5"))
+            + (MAX_ITEM_SCORE - value(f, "pss10_q7")) + (MAX_ITEM_SCORE - value(f, "pss10_q8"));
         f.put("pss10_efficacy", efficacy);
 
         f.put("pss10_total", helpless + efficacy);
