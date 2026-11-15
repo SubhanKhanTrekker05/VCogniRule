@@ -124,3 +124,16 @@ Baseline: commit `e7095d2` (the code as received). It built and ran correctly be
   Unset lists default to empty; `build()` refuses a report without an overall result and makes all
   lists unchangeable. `buildReport` now uses `ScreeningReport.builder()...build()`.
 - **Verified:** build, 9/9 tests, 7/7 regression tests identical.
+
+### 10. S3: Admin login check moved into an interceptor (DRY)
+- **Problem:** The line `if (!isLoggedIn(session)) return "redirect:/admin";` was repeated in
+  13 `AdminController` methods. Forgetting it in a new method would leave that page unprotected.
+- **New:** `config/AdminAuthInterceptor.java` (implements Spring's `HandlerInterceptor`): runs before
+  every `/admin/**` request and redirects to the login page when nobody is logged in. Holds the
+  session attribute name as a constant.
+- **New:** `config/WebConfig.java` (implements `WebMvcConfigurer`): registers the interceptor for
+  `/admin/**`, except `/admin` (login page), `/admin/login` and `/admin/logout`.
+- **Changed:** `controller/AdminController.java`: the 13 checks, the private `isLoggedIn` method and
+  13 now-unused `HttpSession` parameters removed. Login uses the interceptor's constant.
+- **Verified:** all 13 protected URLs (GET and POST), when logged out, redirect to `/admin` and change
+  no data; 9/9 tests, 7/7 regression tests identical, admin write-path check 8/8.

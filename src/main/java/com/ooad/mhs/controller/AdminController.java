@@ -1,5 +1,6 @@
 package com.ooad.mhs.controller;
 
+import com.ooad.mhs.config.AdminAuthInterceptor;
 import com.ooad.mhs.domain.Rule;
 import com.ooad.mhs.repository.QuestionRepository;
 import com.ooad.mhs.service.AdminService;
@@ -23,13 +24,9 @@ public class AdminController {
         this.questionRepository = questionRepository;
     }
 
-    private boolean isLoggedIn(HttpSession session) {
-        return session.getAttribute("admin") != null;
-    }
-
     @GetMapping
     public String showLoginPage(HttpSession session) {
-        if (isLoggedIn(session)) return "redirect:/admin/dashboard";
+        if (AdminAuthInterceptor.isLoggedIn(session)) return "redirect:/admin/dashboard";
         return "admin-login";
     }
 
@@ -37,7 +34,7 @@ public class AdminController {
     public String login(@RequestParam String username, @RequestParam String password,
                         HttpSession session, Model model) {
         if (adminService.authenticate(username, password)) {
-            session.setAttribute("admin", username);
+            session.setAttribute(AdminAuthInterceptor.SESSION_ATTRIBUTE, username);
             return "redirect:/admin/dashboard";
         }
         model.addAttribute("error", "Invalid username or password");
@@ -51,22 +48,19 @@ public class AdminController {
     }
 
     @GetMapping("/dashboard")
-    public String dashboard(HttpSession session, Model model) {
-        if (!isLoggedIn(session)) return "redirect:/admin";
+    public String dashboard(Model model) {
         model.addAttribute("rules", adminService.getAllRules());
         return "admin-rule-list";
     }
 
     @PostMapping("/toggle/{id}")
-    public String toggle(@PathVariable Long id, @RequestParam boolean active, HttpSession session) {
-        if (!isLoggedIn(session)) return "redirect:/admin";
+    public String toggle(@PathVariable Long id, @RequestParam boolean active) {
         adminService.toggleRuleActive(id, active);
         return "redirect:/admin/dashboard";
     }
 
     @GetMapping("/rule/new")
-    public String newRuleForm(HttpSession session, Model model) {
-        if (!isLoggedIn(session)) return "redirect:/admin";
+    public String newRuleForm(Model model) {
         return "admin-rule-new";
     }
 
@@ -77,18 +71,15 @@ public class AdminController {
                              @RequestParam(required = false) String explanation,
                              @RequestParam(required = false) String sourceRef,
                              @RequestParam(required = false) String conclusionKey,
-                             @RequestParam(required = false) String conclusionValue,
-                             HttpSession session) {
-        if (!isLoggedIn(session)) return "redirect:/admin";
+                             @RequestParam(required = false) String conclusionValue) {
         adminService.createRule(ruleId, name, level, category, priority, actionType,
             explanation, sourceRef, conclusionKey, conclusionValue);
         return "redirect:/admin/dashboard";
     }
 
     @GetMapping("/rule/{id}")
-    public String ruleDetail(@PathVariable Long id, HttpSession session, Model model,
+    public String ruleDetail(@PathVariable Long id, Model model,
                              RedirectAttributes redirectAttributes) {
-        if (!isLoggedIn(session)) return "redirect:/admin";
         Optional<Rule> rule = adminService.getRuleById(id);
         if (rule.isEmpty()) {
             redirectAttributes.addFlashAttribute("toast", "Rule " + id + " was not found.");
@@ -106,24 +97,20 @@ public class AdminController {
                              @RequestParam(required = false) String explanation,
                              @RequestParam(required = false) String sourceRef,
                              @RequestParam(required = false) String conclusionKey,
-                             @RequestParam(required = false) String conclusionValue,
-                             HttpSession session) {
-        if (!isLoggedIn(session)) return "redirect:/admin";
+                             @RequestParam(required = false) String conclusionValue) {
         adminService.updateRule(id, name, level, category, priority, actionType,
             explanation, sourceRef, conclusionKey, conclusionValue);
         return "redirect:/admin/rule/" + id;
     }
 
     @PostMapping("/rule/{id}/delete")
-    public String deleteRule(@PathVariable Long id, HttpSession session) {
-        if (!isLoggedIn(session)) return "redirect:/admin";
+    public String deleteRule(@PathVariable Long id) {
         adminService.deleteRule(id);
         return "redirect:/admin/dashboard";
     }
 
     @GetMapping("/rule/{id}/condition/new")
-    public String newConditionForm(@PathVariable Long id, HttpSession session, Model model) {
-        if (!isLoggedIn(session)) return "redirect:/admin";
+    public String newConditionForm(@PathVariable Long id, Model model) {
         model.addAttribute("ruleId", id);
         model.addAttribute("availableFields", questionRepository.findAll());
         model.addAttribute("isNew", true);
@@ -136,17 +123,13 @@ public class AdminController {
                                   @RequestParam(required = false) Integer valueInt,
                                   @RequestParam(required = false) String valueText,
                                   @RequestParam(required = false) Integer valueMin,
-                                  @RequestParam(required = false) Integer valueMax,
-                                  HttpSession session) {
-        if (!isLoggedIn(session)) return "redirect:/admin";
+                                  @RequestParam(required = false) Integer valueMax) {
         adminService.addCondition(id, fieldKey, operator, valueInt, valueText, valueMin, valueMax);
         return "redirect:/admin/rule/" + id;
     }
 
     @GetMapping("/rule/{id}/condition/{cid}/edit")
-    public String editConditionForm(@PathVariable Long id, @PathVariable Long cid,
-                                    HttpSession session, Model model) {
-        if (!isLoggedIn(session)) return "redirect:/admin";
+    public String editConditionForm(@PathVariable Long id, @PathVariable Long cid, Model model) {
         model.addAttribute("ruleId", id);
         model.addAttribute("conditionId", cid);
         model.addAttribute("availableFields", questionRepository.findAll());
@@ -160,16 +143,13 @@ public class AdminController {
                                   @RequestParam(required = false) Integer valueInt,
                                   @RequestParam(required = false) String valueText,
                                   @RequestParam(required = false) Integer valueMin,
-                                  @RequestParam(required = false) Integer valueMax,
-                                  HttpSession session) {
-        if (!isLoggedIn(session)) return "redirect:/admin";
+                                  @RequestParam(required = false) Integer valueMax) {
         adminService.updateCondition(cid, fieldKey, operator, valueInt, valueText, valueMin, valueMax);
         return "redirect:/admin/rule/" + id;
     }
 
     @PostMapping("/rule/{id}/condition/{cid}/delete")
-    public String deleteCondition(@PathVariable Long id, @PathVariable Long cid, HttpSession session) {
-        if (!isLoggedIn(session)) return "redirect:/admin";
+    public String deleteCondition(@PathVariable Long id, @PathVariable Long cid) {
         adminService.deleteCondition(cid);
         return "redirect:/admin/rule/" + id;
     }
@@ -184,8 +164,7 @@ public class AdminController {
      * -> RuleRepository.resetKnowledgeBase().
      */
     @PostMapping("/reset")
-    public String resetKnowledgeBase(HttpSession session, RedirectAttributes redirectAttributes) {
-        if (!isLoggedIn(session)) return "redirect:/admin";
+    public String resetKnowledgeBase(RedirectAttributes redirectAttributes) {
         int ruleCount = adminService.resetKnowledgeBase();
         redirectAttributes.addFlashAttribute("toast",
             "Knowledge base restored to factory defaults. " + ruleCount + " rules reloaded.");
