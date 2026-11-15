@@ -18,13 +18,13 @@
             <p class="tagline">Rule-Based Early Mental Health Screening System</p>
 
             <h2>What is VCogniRule?</h2>
-            <p>VCogniRule is a rule-based expert system designed for early mental health screening. It evaluates user responses across 10 validated clinical instruments using a 4-level forward-chaining inference engine with 150 rules, producing a screening report with traceable findings, comorbid pattern detection, and treatment recommendations based on NICE NG222 clinical guidelines.</p>
+            <p>VCogniRule is a rule-based expert system <span class="term-explain">(a program that makes decisions with written "if … then …" rules, the way an expert would follow a checklist)</span> designed for early mental health screening. It evaluates user responses across 10 validated clinical instruments <span class="term-explain">(questionnaires that doctors and researchers have tested and trust)</span> using a 4-level forward-chaining inference engine <span class="term-explain">(the part that applies the rules in 4 rounds, each round building on the conclusions of the round before)</span> with 150 rules, producing a screening report with traceable findings <span class="term-explain">(every result shows which answers led to it)</span>, comorbid pattern detection <span class="term-explain">(spotting when two problems, such as depression and anxiety, appear together)</span>, and treatment recommendations based on NICE NG222 clinical guidelines <span class="term-explain">(the UK's official guideline for treating depression in adults)</span>.</p>
 
             <h2>Who is it for?</h2>
             <p>VCogniRule is designed for anyone who may be experiencing mental health concerns and wants a confidential, anonymous screening. It is particularly suited for university students and young adults who may be hesitant to seek in-person help initially. The system does not require login, accounts, or personal information — screenings are completely anonymous.</p>
 
             <h2>What does it screen for?</h2>
-            <p>The system screens across 7 clinical domains using 10 validated instruments:</p>
+            <p>The system screens across 7 clinical domains <span class="term-explain">(7 areas of mental health)</span> using 10 validated instruments:</p>
             <ul>
                 <li><strong>Depression &amp; Mood</strong> — PHQ-9 (Patient Health Questionnaire-9)</li>
                 <li><strong>Anxiety</strong> — GAD-7 (Generalized Anxiety Disorder-7)</li>
@@ -41,11 +41,11 @@
             <h2>How does it work?</h2>
             <p>The system follows the classic expert-system architecture with 5 components:</p>
             <ul>
-                <li><strong>Knowledge Base</strong> — 150 rules stored in a SQLite database, editable without recompiling</li>
-                <li><strong>Inference Engine</strong> — Multi-pass forward-chaining DAG with 4 levels of reasoning</li>
+                <li><strong>Knowledge Base</strong> <span class="term-explain">(everything the system "knows")</span> — 150 rules stored in a SQLite database <span class="term-explain">(a small database kept in one file)</span>, editable without recompiling <span class="term-explain">(rules can be changed without rebuilding the program)</span></li>
+                <li><strong>Inference Engine</strong> <span class="term-explain">(the "thinking" part that applies the rules)</span> — Multi-pass forward-chaining DAG with 4 levels of reasoning <span class="term-explain">(the rules run level by level; a later rule can use an earlier rule's result, never the other way round, so the reasoning cannot go in circles)</span></li>
                 <li><strong>User Interface</strong> — Web-based screening form and report</li>
-                <li><strong>Knowledge Acquisition Module</strong> — Admin panel for adding, editing, and managing rules</li>
-                <li><strong>Explanation Facility</strong> — Trace showing which rules fired and why</li>
+                <li><strong>Knowledge Acquisition Module</strong> <span class="term-explain">(how new knowledge gets into the system)</span> — Admin panel for adding, editing, and managing rules</li>
+                <li><strong>Explanation Facility</strong> <span class="term-explain">(how the system explains itself)</span> — Trace showing which rules fired <span class="term-explain">(a rule "fires" when all of its conditions are true)</span> and why</li>
             </ul>
 
             <h2>Is it a diagnosis?</h2>
@@ -55,7 +55,7 @@
             <p>Your answers are never saved to the database or any file. While you are using the screening, they are kept temporarily in the server's memory, linked to your browser session, so you can go back from the report and finish a section without re-entering anything. They are deleted when you start a new screening, and automatically when the session expires (after about 30 minutes of inactivity). Only the knowledge base (rules and questions) and admin accounts are stored in the database.</p>
 
             <h2>Technology</h2>
-            <p>Built with Java 21, Spring Boot 4.1.2, Thymeleaf, SQLite, and JdbcTemplate. The inference engine is framework-independent plain Java, fully unit-testable in isolation.</p>
+            <p>Built with Java 21, Spring Boot 4.1.2 <span class="term-explain">(the web framework that runs the app)</span>, Thymeleaf <span class="term-explain">(builds the web pages)</span>, SQLite, and JdbcTemplate <span class="term-explain">(Spring's helper for reading and writing the database)</span>. The inference engine is framework-independent plain Java <span class="term-explain">(it does not depend on Spring)</span>, fully unit-testable in isolation <span class="term-explain">(automatic tests can check it on its own)</span>.</p>
 
             <h2>Credits</h2>
             <p>All screening instruments are validated, peer-reviewed tools used freely for non-commercial educational purposes:</p>

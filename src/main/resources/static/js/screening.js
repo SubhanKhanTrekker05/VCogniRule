@@ -17,6 +17,7 @@
     const tabs = Array.from(form.querySelectorAll('[data-tab]'));
     const panels = Array.from(form.querySelectorAll('[data-panel]'));
     const summary = form.querySelector('[data-summary]');
+    const submitAlert = form.querySelector('[data-submit-alert]');
     const dialog = document.getElementById('submit-dialog');
 
     const SAFETY = 'C-SSRS';
@@ -76,8 +77,24 @@
                 ? panel.querySelector('[data-next-section]')
                 : (cards[index].querySelector('input:checked') || cards[index].querySelector('input'));
             if (target) target.focus({ preventScroll: true });
+            revealActive(panel, done ? panel.querySelector('[data-done]') : cards[index]);
         }
         updateStatus();
+    }
+
+    /**
+     * Makes sure the current question (or the "section complete" screen) is fully visible
+     * above the sticky submit bar, so the user never has to scroll to find the answers.
+     * Shows the section heading too when everything fits; otherwise just the question.
+     * Does nothing when the question is already fully visible.
+     */
+    function revealActive(panel, target) {
+        if (!target) return;
+        const barTop = form.querySelector('.submit-bar').getBoundingClientRect().top;
+        const t = target.getBoundingClientRect();
+        if (t.top >= 0 && t.bottom <= barTop) return;
+        const fitsWithHeading = t.bottom - panel.getBoundingClientRect().top <= barTop - 16;
+        (fitsWithHeading ? panel : target).scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function openSection(code, index, moveFocus) {
@@ -98,11 +115,13 @@
         }
         showCard(panel, start, moveFocus);
 
+        // Keep the chosen tab visible in the tab row (phones), without moving the page.
+        // Page scrolling to the question is done by revealActive() inside showCard().
         const tab = tabFor(code);
-        if (tab && tab.scrollIntoView) tab.scrollIntoView({ block: 'nearest', inline: 'center' });
-        const top = panel.getBoundingClientRect().top;
-        if (moveFocus && (top < 0 || top > window.innerHeight * 0.6)) {
-            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const bar = tab && tab.parentElement;
+        if (bar && bar.scrollWidth > bar.clientWidth) {
+            const offset = tab.getBoundingClientRect().left - bar.getBoundingClientRect().left + bar.scrollLeft;
+            bar.scrollTo({ left: offset - (bar.clientWidth - tab.offsetWidth) / 2, behavior: 'smooth' });
         }
     }
 
@@ -146,6 +165,7 @@
         strong.textContent = completeCount + ' of ' + panels.length;
         summary.append(strong, ' sections complete');
         if (!safetyDone) summary.append(' · Complete the Safety Check to submit');
+        if (safetyDone && submitAlert) submitAlert.hidden = true;   // message no longer needed
     }
 
     // ---------- navigation ----------
@@ -261,11 +281,22 @@
 
         e.preventDefault();
 
-        if (!stats(panelFor(SAFETY)).complete) {
+        const safety = stats(panelFor(SAFETY));
+        if (!safety.complete) {
+            const left = safety.total - safety.answered;
             openSection(SAFETY, firstUnanswered(panelFor(SAFETY)), true);
             const hint = panelFor(SAFETY).querySelector('[data-hint]');
             hint.textContent = 'The Safety Check is required. Please answer every question in this section before submitting.';
             hint.hidden = false;
+            // Message next to the Submit button, so the click never seems to do nothing
+            if (submitAlert) {
+                submitAlert.textContent = 'Please finish the Safety Check first: ' + left + ' of ' + safety.total
+                    + ' questions left. We have opened it for you above.';
+                submitAlert.hidden = false;
+            }
+            // Always bring the unanswered question into view (it can be below the visible area)
+            const card = cardsOf(panelFor(SAFETY)).find(c => c.classList.contains('active')) || panelFor(SAFETY);
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });   // top, so the sticky bar never covers it
             return;
         }
 

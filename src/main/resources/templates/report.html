@@ -17,6 +17,15 @@
             <span class="overall-label">Overall result</span>
             <span th:text="${#strings.toUpperCase(report.overallLabel)}"
                   th:class="'severity-banner severity-' + ${report.overallKey}">MODERATE</span>
+            <!-- One plain sentence for each severity, so the one-word banner is understood at a glance.
+                 (Needs attention / Not determined / Not classified already have their own note below.) -->
+            <p class="overall-meaning" th:switch="${report.overallKey}">
+                <span th:case="'minimal'">Your answers show few or no signs of concern.</span>
+                <span th:case="'mild'">Your answers show some mild signs. Keep an eye on how you feel, and talk to someone you trust if it continues.</span>
+                <span th:case="'moderate'">Your answers show signs that are worth talking about with a doctor or counsellor.</span>
+                <span th:case="'severe'">Your answers show strong signs. Please speak to a doctor or mental health professional soon.</span>
+                <span th:case="'critical'">Your answers show a serious concern. Please contact a helpline or emergency services now.</span>
+            </p>
             <p th:if="${report.overallNote != null}" class="overall-note" th:text="${report.overallNote}">Note</p>
             <p class="report-jump no-print">
                 <a href="#findings">Results</a> · <a href="#your-answers">Your answers</a>
@@ -28,8 +37,12 @@
             <h3>We've identified a concern that needs attention</h3>
             <p>You are not alone. Help is available right now.</p>
             <ul>
-                <li>Pakistan: 1166 (Umang Helpline) | 042-35761999</li>
-                <li>International: findahelpline.com</li>
+                <!-- Numbers are tel: links, so on a phone one tap starts the call -->
+                <li>Pakistan (Umang Helpline):
+                    <a href="tel:1166" class="helpline-link">1166</a>
+                    or <a href="tel:+924235761999" class="helpline-link">042-35761999</a></li>
+                <li>International:
+                    <a href="https://findahelpline.com" class="helpline-link" target="_blank" rel="noopener">findahelpline.com</a></li>
             </ul>
             <p style="font-size: 0.85rem; margin-top: 0.5rem;">Please reach out to one of these resources. Speaking with someone can make a difference.</p>
         </div>
@@ -170,7 +183,7 @@
         <div class="report-actions no-print">
             <button class="btn btn-outline" onclick="window.print()">Save as PDF</button>
             <a th:href="@{/screening(resume='')}" class="btn btn-outline">Edit my answers</a>
-            <a href="/screening" class="btn btn-outline">Start a new screening</a>
+            <a href="/screening" class="btn btn-primary">Start a new screening</a>
             <a href="/" class="btn btn-outline">Exit</a>
         </div>
     </div>
