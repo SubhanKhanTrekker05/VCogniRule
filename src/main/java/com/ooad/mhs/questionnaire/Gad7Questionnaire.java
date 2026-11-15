@@ -18,13 +18,11 @@ public class Gad7Questionnaire extends Questionnaire {
     }
 
     @Override
-    protected void computeScores(Map<String, Integer> f) {
+    public void score(Map<String, Integer> f) {
         f.put("gad7_total", sum(f, "gad7_q", 1, 7));
         f.put("gad7_symptom_count", countAtLeast(f, "gad7_q", 2, 7, MORE_THAN_HALF_THE_DAYS));
-    }
 
-    @Override
-    protected void computeFlags(Map<String, Integer> f) {
+        // Flags read by combined rules
         f.put("anxiety_any", flag(value(f, "gad7_total") >= MILD_CUTOFF));
         f.put("anxiety_moderate_plus", flag(value(f, "gad7_total") >= MODERATE_CUTOFF));
     }

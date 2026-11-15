@@ -23,7 +23,7 @@ public class Phq15Questionnaire extends Questionnaire {
     }
 
     @Override
-    protected void computeScores(Map<String, Integer> f) {
+    public void score(Map<String, Integer> f) {
         int total = 0;
         int severe = 0;
         for (String item : ITEMS) {
@@ -33,10 +33,8 @@ public class Phq15Questionnaire extends Questionnaire {
         }
         f.put("phq15_total", total);
         f.put("phq15_severe_count", severe);
-    }
 
-    @Override
-    protected void computeFlags(Map<String, Integer> f) {
+        // Flags read by combined rules
         f.put("panic_physical_symptom", flag(value(f, "phq15_i") >= 1 || value(f, "phq15_j") >= 1));
     }
 

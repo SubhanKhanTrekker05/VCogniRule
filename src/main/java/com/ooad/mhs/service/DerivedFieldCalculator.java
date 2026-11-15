@@ -40,7 +40,7 @@ public class DerivedFieldCalculator {
         Map<String, Integer> facts = new HashMap<>(responses);
         for (Questionnaire questionnaire : questionnaires.all()) {
             if (completed.contains(questionnaire.getSection())) {
-                questionnaire.contributeTo(facts);
+                questionnaire.score(facts);
             }
         }
         return facts;

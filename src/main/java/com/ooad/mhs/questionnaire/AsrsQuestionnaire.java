@@ -24,7 +24,7 @@ public class AsrsQuestionnaire extends Questionnaire {
     }
 
     @Override
-    protected void computeScores(Map<String, Integer> f) {
+    public void score(Map<String, Integer> f) {
         int inattentive = countAtLeast(f, "asrs_q", 1, 3, INATTENTIVE_SHADED_FROM);
         int hyperactive = countAtLeast(f, "asrs_q", 4, 6, HYPERACTIVE_SHADED_FROM);
         f.put("asrs_inattentive_count", inattentive);

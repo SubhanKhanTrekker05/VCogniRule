@@ -19,7 +19,7 @@ public class CssrsQuestionnaire extends Questionnaire {
     }
 
     @Override
-    protected void computeScores(Map<String, Integer> f) {
+    public void score(Map<String, Integer> f) {
         boolean q1 = value(f, "cssrs_q1") == 1;
         boolean q2 = value(f, "cssrs_q2") == 1;
         boolean q3 = value(f, "cssrs_q3") == 1;
