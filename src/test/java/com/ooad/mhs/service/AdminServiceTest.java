@@ -9,7 +9,8 @@ import com.ooad.mhs.util.Operator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mindrot.jbcrypt.BCrypt;
+import com.ooad.mhs.security.BCryptPasswordHasher;
+import com.ooad.mhs.security.PasswordHasher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -23,9 +24,10 @@ class AdminServiceTest {
     @BeforeEach
     void setUp() {
         Fakes.FakeAdminRepository admins = new Fakes.FakeAdminRepository();
-        admins.save("admin", BCrypt.hashpw("admin123", BCrypt.gensalt(4)));
+        PasswordHasher hasher = new BCryptPasswordHasher();
+        admins.save("admin", hasher.hash("admin123"));
         rules = new Fakes.FakeRuleRepository();
-        service = new AdminService(admins, rules, new Fakes.FakeQuestionRepository());
+        service = new AdminService(admins, rules, new Fakes.FakeQuestionRepository(), hasher);
     }
 
     private static RuleDetails details(String ruleId) {

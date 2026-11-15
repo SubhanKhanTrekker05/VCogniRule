@@ -2,7 +2,7 @@ package com.ooad.mhs.config;
 
 import com.ooad.mhs.repository.AdminRepository;
 import jakarta.annotation.PostConstruct;
-import org.mindrot.jbcrypt.BCrypt;
+import com.ooad.mhs.security.PasswordHasher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -22,15 +22,17 @@ public class DataSeeder {
     private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
 
     private final AdminRepository adminRepository;
+    private final PasswordHasher passwordHasher;
 
-    public DataSeeder(AdminRepository adminRepository) {
+    public DataSeeder(AdminRepository adminRepository, PasswordHasher passwordHasher) {
         this.adminRepository = adminRepository;
+        this.passwordHasher = passwordHasher;
     }
 
     @PostConstruct
     public void createDefaultAdminIfNoneExists() {
         if (adminRepository.count() == 0) {
-            String hash = BCrypt.hashpw("admin123", BCrypt.gensalt());
+            String hash = passwordHasher.hash("admin123");
             adminRepository.save("admin", hash);
             log.info("Created default admin account: admin / admin123");
         }
