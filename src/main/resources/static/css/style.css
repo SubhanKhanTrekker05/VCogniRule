@@ -436,6 +436,8 @@ a.chip-skip:hover { border-color: var(--primary); color: var(--primary); }
 .back-link { color: var(--text-muted); text-decoration: none; font-size: 0.9rem; margin-bottom: 1rem; display: inline-block; }
 .back-link:hover { color: var(--primary); }
 .about-content { flex: 1; }
+/* Plain-language explanation shown right after a technical term */
+.term-explain { color: var(--text-muted); font-style: italic; }
 .about-logo { font-size: 3rem; text-align: center; margin-bottom: 0.5rem; }
 .about-content h1 { text-align: center; color: var(--primary); font-size: 2.2rem; }
 .about-content .tagline { text-align: center; color: var(--text-muted); font-size: 1.1rem; margin-bottom: 2rem; }
