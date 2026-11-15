@@ -225,3 +225,17 @@ Each item was first confirmed unused in all Java code, HTML templates and JavaSc
   (error message). `style.css`: `.form-error`.
 - **Verified:** 12 bad admin inputs are all refused with a message (no 500) and screenings keep
   working; admin write-path 8/8; security 13/13; 7/7 regression identical; wrong-input 12/12; 9/9 tests.
+
+### 17. S5: ReportService split (Single Responsibility)
+- **Problem:** `ReportService` (516 lines after the earlier steps) did everything for the report:
+  the overall banner, the colour/icon of each finding, grouping, plain-language text and the answers list.
+- **New:** `service/FindingStyler.java`: how a finding looks (tone, icon, action label), which facts
+  count as safety signals, which info findings are "reassuring", and the most-serious-first order.
+  Returns a small `Style` record.
+- **New:** `service/OverallResultResolver.java`: the overall banner (Needs attention / severity /
+  Not determined / Not classified, and its note). Returns a small `OverallResult` record.
+- **Changed:** `service/ReportService.java`: uses the two classes (constructor injection) instead of
+  its own private methods and constants (516 → 428 lines). The logic itself is unchanged.
+  Fully written `java.util.regex` names replaced with imports.
+- **Verified:** 7/7 regression tests identical (including the full report text, so every tone, icon
+  and label is unchanged), wrong-input 12/12, admin write-path 8/8, security 13/13, 9/9 tests.
