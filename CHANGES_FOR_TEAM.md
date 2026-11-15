@@ -2,7 +2,7 @@
 
 **Project:** Mental Health Early-Detection Screening System (CT-263 OOAD, NED University)
 
-All changes are on the Git branch **`ooad-review`** (23 commits, one per change).
+All changes are on the Git branch **`ooad-review`** (24 commits).
 The full technical log is in `CHANGELOG.md`. This page is the short, simple version.
 
 - **NEW file** = a file that did not exist before.
