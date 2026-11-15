@@ -18,7 +18,7 @@ import java.util.Optional;
 /**
  * Business operations of the admin panel.
  *
- * Facade: the controller talks only to this class, which hides the two repositories behind it
+ * Facade pattern: the controller talks only to this class, which hides the repositories behind it
  * (AdminRepository for login, RuleRepository for the knowledge base). Passwords are checked with
  * BCrypt, so the plain password is never stored or compared directly.
  *

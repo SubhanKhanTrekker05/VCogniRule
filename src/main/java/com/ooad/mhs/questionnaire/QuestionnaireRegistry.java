@@ -12,7 +12,7 @@ import java.util.*;
  * list. The registry checks that every section has exactly one, so a missing or duplicate
  * questionnaire stops the app at startup instead of silently skipping a section.
  *
- * Aggregation: the registry refers to the questionnaires but does not create them.
+ * Aggregation (not a design pattern): it refers to the questionnaires but does not create them.
  */
 @Component
 public class QuestionnaireRegistry {
