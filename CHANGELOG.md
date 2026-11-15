@@ -252,6 +252,44 @@ Each item was first confirmed unused in all Java code, HTML templates and JavaSc
   closing quote on line 10 (`bash -n` reports a syntax error); README tells Mac/Linux users to run
   `mvn spring-boot:run` directly.
 
-## Found but NOT changed (waiting for a decision)
-- `start-dev.sh` line 10: missing closing `"` → the script fails on Mac/Linux. (Windows `start-dev.bat` is fine.)
-- `,gitattributes` is named with a comma instead of a dot, so Git ignores it.
+## Small fixes after Phase 3 (approved separately)
+
+### 19. Fix missing closing quote in start-dev.sh
+- Line 10 had an unterminated string, so the Mac/Linux launcher stopped with a syntax error.
+  `bash -n start-dev.sh` now passes.
+
+### 20. Rename `,gitattributes` to `.gitattributes`
+- The name started with a comma, so Git ignored the file. Its line-ending rules (LF for `.sh`,
+  CRLF for `.bat`, binary for images) are now active. No stored file needed renormalizing.
+
+## Phase 4: Testing and trial runs
+
+### 21. Bug fix found by the browser trial run: new rule with the form's default values
+- **Problem:** the new-rule form fills in Conclusion Value = "1" by default and leaves the Conclusion Key
+  empty. The validation added in S4 required key and value together, so **every rule without a
+  conclusion was refused** unless the admin first cleared the "1". The S4 tests missed it because their
+  test rule always had a conclusion key.
+- **Changed:** `domain/RuleDetails.java`: an empty key now means "no conclusion" and the value is ignored
+  (stored as null). A key without a value is still refused ("A conclusion key needs a conclusion value.").
+- **Tests added:** `FormValidationTest.defaultValueWithoutKeyIsAllowed`,
+  `AdminIntegrationTest.createRuleWithFormDefaults`.
+
+### 22. JUnit 5 test suite (237 tests, all passing)
+- **Unit tests:** `OperatorStrategyTest` (8 strategies incl. NE and IN, factory), `RuleEngineTest`,
+  `QuestionnaireScoringTest` (all 10 questionnaires), `ReportPartsTest` (Builder, OverallResultResolver,
+  FindingStyler), `AssessmentServiceTest` (bad answers), `FormValidationTest` (admin forms),
+  `AdminServiceTest` (business rules with in-memory fake repositories in `Fakes.java`).
+- **Integration tests** (Spring Boot Test + MockMvc, each run on a fresh SQLite file in `target/`):
+  `ScreeningFlowIntegrationTest` (4 original screening flows, demo answer sets, wrong input, resume)
+  and `AdminIntegrationTest` (login/logout, 13 protected URLs, create/edit/delete/reset, 14 bad inputs).
+  Shared setup in the abstract class `IntegrationTestBase`.
+- No `pom.xml` change: MockMvc is built from the application context (`MockMvcBuilders.webAppContextSetup`).
+- Checked that the tests really catch mistakes: registering the admin interceptor on the wrong URLs made
+  15 tests fail.
+
+### 23. Documents
+- `docs/TEST_CASES.md`: test case table (52 automated rows generated from the real JUnit results,
+  8 manual browser rows).
+- `DEMO_SCRIPT.md`: live demo guide with verified answer sets for MINIMAL / MILD / MODERATE /
+  NEEDS ATTENTION, the admin demo, troubleshooting, and the screenshot list.
+- `README.md`: Testing section, project structure, start-dev.sh note updated.
