@@ -141,6 +141,8 @@ public class ReportService {
      * @param overallLabel text shown in the overall banner
      * @param overallNote  explanation under the banner, or null
      * @param depressionMissing true when the PHQ-9 (Depression) section was not completed
+     *
+     * Create it with {@link #builder()} rather than the 12-argument constructor.
      */
     public record ScreeningReport(
         List<FindingView> results,      // about the user; safety-related always here, most serious first
@@ -155,7 +157,93 @@ public class ReportService {
         List<SectionStatus> notStarted,
         boolean depressionMissing,
         List<SectionAnswers> answers
-    ) {}
+    ) {
+        /** Starts building a report. */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /**
+         * Builder pattern: sets the report's 12 parts by name, step by step, instead of one
+         * 12-argument constructor call where two lists or two booleans could easily be swapped.
+         * Lists that are not set are empty; {@link #build()} checks the overall result is set.
+         */
+        public static final class Builder {
+            private List<FindingView> results = List.of();
+            private List<FindingView> guidance = List.of();
+            private List<FindingView> reasoning = List.of();
+            private String overallKey;
+            private String overallLabel;
+            private String overallNote;
+            private boolean hasCrisis;
+            private List<SectionStatus> assessed = List.of();
+            private List<SectionStatus> partial = List.of();
+            private List<SectionStatus> notStarted = List.of();
+            private boolean depressionMissing;
+            private List<SectionAnswers> answers = List.of();
+
+            private Builder() {
+            }
+
+            /** The three groups of finding cards. */
+            public Builder findings(List<FindingView> results, List<FindingView> guidance,
+                                    List<FindingView> reasoning) {
+                this.results = results;
+                this.guidance = guidance;
+                this.reasoning = reasoning;
+                return this;
+            }
+
+            /** The overall banner: state key, label and optional note (may be null). */
+            public Builder overall(String key, String label, String note) {
+                this.overallKey = key;
+                this.overallLabel = label;
+                this.overallNote = note;
+                return this;
+            }
+
+            /** Whether a crisis rule fired (shows the helpline box). */
+            public Builder crisis(boolean hasCrisis) {
+                this.hasCrisis = hasCrisis;
+                return this;
+            }
+
+            /** Which sections were completed, partly answered, or not started. */
+            public Builder coverage(List<SectionStatus> assessed, List<SectionStatus> partial,
+                                    List<SectionStatus> notStarted) {
+                this.assessed = assessed;
+                this.partial = partial;
+                this.notStarted = notStarted;
+                return this;
+            }
+
+            /** Whether the Depression & Mood (PHQ-9) section is missing. */
+            public Builder depressionMissing(boolean depressionMissing) {
+                this.depressionMissing = depressionMissing;
+                return this;
+            }
+
+            /** The "Your answers" list. */
+            public Builder answers(List<SectionAnswers> answers) {
+                this.answers = answers;
+                return this;
+            }
+
+            /**
+             * @return the finished, unchangeable report
+             * @throws IllegalStateException if the overall result was not set
+             */
+            public ScreeningReport build() {
+                if (overallKey == null || overallLabel == null) {
+                    throw new IllegalStateException("The overall result must be set before build()");
+                }
+                return new ScreeningReport(List.copyOf(results), List.copyOf(guidance), List.copyOf(reasoning),
+                    overallKey, overallLabel, overallNote, hasCrisis,
+                    List.copyOf(assessed), List.copyOf(partial), List.copyOf(notStarted),
+                    depressionMissing, List.copyOf(answers));
+            }
+        }
+    }
 
     // ------------------------------------------------------------------ build
 
@@ -285,8 +373,14 @@ public class ReportService {
             sectionAnswers.add(new SectionAnswers(status, score, scoreNote, rows));
         }
 
-        return new ScreeningReport(results, guidance, reasoning, key, label, note, hasCrisis,
-            assessed, partial, notStarted, !depressionComplete, sectionAnswers);
+        return ScreeningReport.builder()
+            .overall(key, label, note)
+            .crisis(hasCrisis)
+            .findings(results, guidance, reasoning)
+            .coverage(assessed, partial, notStarted)
+            .depressionMissing(!depressionComplete)
+            .answers(sectionAnswers)
+            .build();
     }
 
     // ------------------------------------------------------------------ helpers
