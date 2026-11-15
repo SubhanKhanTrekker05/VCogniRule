@@ -1,6 +1,8 @@
 package com.ooad.mhs.repository;
 
+import com.ooad.mhs.domain.ConditionDetails;
 import com.ooad.mhs.domain.Rule;
+import com.ooad.mhs.domain.RuleDetails;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,14 +26,10 @@ public interface RuleRepository {
     Optional<Rule> findById(Long id);
 
     /** Adds a new, active rule (without conditions). */
-    void save(String ruleId, String name, int level, String category, int priority,
-              String actionType, String explanation, String sourceRef,
-              String conclusionKey, String conclusionValue);
+    void save(RuleDetails details);
 
-    /** Changes the details of an existing rule. */
-    void updateRule(Long id, String name, int level, String category, int priority,
-                    String actionType, String explanation, String sourceRef,
-                    String conclusionKey, String conclusionValue);
+    /** Changes the details of an existing rule (its rule ID stays the same). */
+    void updateRule(Long id, RuleDetails details);
 
     /** Deletes a rule. */
     void deleteById(Long id);
@@ -40,12 +38,10 @@ public interface RuleRepository {
     void toggleActive(Long id, boolean active);
 
     /** Adds a condition to a rule's (first) condition group. */
-    void addCondition(Long ruleId, String fieldKey, String operator,
-                      Integer valueInt, String valueText, Integer valueMin, Integer valueMax);
+    void addCondition(Long ruleId, ConditionDetails condition);
 
     /** Changes an existing condition. */
-    void updateCondition(Long conditionId, String fieldKey, String operator,
-                         Integer valueInt, String valueText, Integer valueMin, Integer valueMax);
+    void updateCondition(Long conditionId, ConditionDetails condition);
 
     /** Deletes a condition. */
     void deleteCondition(Long conditionId);

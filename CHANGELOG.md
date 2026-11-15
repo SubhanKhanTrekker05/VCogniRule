@@ -194,3 +194,34 @@ Each item was first confirmed unused in all Java code, HTML templates and JavaSc
   and does not read this value; OR is expressed with several groups.
 - **Not touched:** the frozen test copy `LegacyDerivedFieldCalculator` (it must stay identical to the original).
 - **Verified:** build, 9/9 tests, 7/7 regression identical, admin write-path 8/8, wrong-input 12/12.
+
+### 16. S4: Form objects and server-side validation for the admin panel
+- **Problems found (shown before fixing):**
+  - A duplicate rule ID, priority 150, level 7, an unknown category or priority -5 gave an HTTP 500
+    error page (database constraint errors).
+  - An empty name, BETWEEN without Min/Max, BETWEEN with Min > Max, GTE without a value and an
+    unknown field were saved silently and could never fire.
+  - **Serious:** an IN condition with text such as `a,b` was saved, and from then on **every
+    screening crashed** (HTTP 500, `NumberFormatException`) until a factory reset.
+  - Rules were passed through controller, service and repository as 10 separate parameters,
+    conditions as 7.
+- **New:** `domain/RuleDetails.java` and `domain/ConditionDetails.java` (records) carry a rule's /
+  condition's form values in one object, with Jakarta Bean Validation rules matching the database
+  constraints, plus cross-field checks (`isConclusionComplete`, `isValueSuitableForOperator`) and
+  `normalized()` (blank → null; a condition keeps only the values its operator uses).
+- **New:** `service/InvalidInputException.java` (extends `RuntimeException`) for business-rule errors.
+- **Changed:** `service/AdminService.java`: takes the new objects; checks that a new rule ID is
+  given and unique, the rule exists, the condition field exists, and a condition being edited or
+  deleted belongs to that rule. Now also uses `QuestionRepository`.
+- **Changed:** `repository/RuleRepository.java` + `JdbcRuleRepository.java`: `save`, `updateRule`,
+  `addCondition`, `updateCondition` take the new objects (10 and 7 parameters → 1 or 2).
+- **Changed:** `controller/AdminController.java`: `@Valid @ModelAttribute` + `BindingResult`;
+  on an error the admin goes back to the same form with a message; the new-rule form keeps what
+  was typed. A successful create shows "Rule X created."
+- **Changed:** `engine/operator/InStrategy.java`: a non-number in an IN list (old bad data) no
+  longer crashes the screening; it simply never matches.
+- **Changed templates:** `admin-rule-new.html` (error message, keeps typed values, category and
+  action-type lists built from the enums), `admin-rule-detail.html`, `admin-condition-form.html`
+  (error message). `style.css`: `.form-error`.
+- **Verified:** 12 bad admin inputs are all refused with a message (no 500) and screenings keep
+  working; admin write-path 8/8; security 13/13; 7/7 regression identical; wrong-input 12/12; 9/9 tests.

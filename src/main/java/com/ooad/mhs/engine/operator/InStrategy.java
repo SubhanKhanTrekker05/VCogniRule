@@ -9,7 +9,12 @@ public class InStrategy implements OperatorStrategy {
     public boolean test(int actual, Condition condition) {
         if (condition.valueText() == null) return false;
         for (String s : condition.valueText().split(",")) {
-            if (actual == Integer.parseInt(s.trim())) return true;
+            try {
+                if (actual == Integer.parseInt(s.trim())) return true;
+            } catch (NumberFormatException e) {
+                // Not a number (bad data saved before validation existed): it can never match.
+                // Skipping it keeps one bad condition from breaking every screening.
+            }
         }
         return false;
     }

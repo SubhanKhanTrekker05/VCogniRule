@@ -16,6 +16,7 @@
                 <a href="/admin/dashboard" class="btn btn-outline btn-sm">← Back</a>
             </div>
         </div>
+        <div th:if="${formError != null}" class="form-error" role="alert" th:text="${formError}">Error</div>
 
         <form th:method="post" th:action="@{'/admin/rule/' + ${rule.id}}" class="admin-form">
             <input type="hidden" name="ruleId" th:value="${rule.ruleId}" />
