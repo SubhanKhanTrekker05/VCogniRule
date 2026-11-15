@@ -156,3 +156,8 @@ Baseline: commit `e7095d2` (the code as received). It built and ran correctly be
   other than "0" counts as Yes, so an error can never hide a risk answer.
 - **Verified:** 12 wrong-input cases (text, negative, too large, bad time, decimal in a whole-number
   field, unknown field, C-SSRS safety rule) all behave as expected; 9/9 tests; 7/7 regression identical.
+
+### 12. N2: Logger instead of System.out
+- **Changed:** `config/DataSeeder.java` and `repository/JdbcRuleRepository.java`: `System.out.println`
+  replaced with an SLF4J `Logger` (`log.info(...)`), so the messages appear in the normal Spring log
+  with time, level and class name.

@@ -3,6 +3,8 @@ package com.ooad.mhs.repository;
 import com.ooad.mhs.domain.*;
 import com.ooad.mhs.util.*;
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -21,6 +23,8 @@ import java.util.stream.Collectors;
  */
 @Repository
 public class JdbcRuleRepository implements RuleRepository {
+
+    private static final Logger log = LoggerFactory.getLogger(JdbcRuleRepository.class);
 
     private final JdbcTemplate jdbcTemplate;
     private List<Rule> cachedRules;
@@ -61,7 +65,7 @@ public class JdbcRuleRepository implements RuleRepository {
     @PostConstruct
     public void loadRulesIntoMemory() {
         cachedRules = loadRulesFromDb(true);
-        System.out.println("[RuleRepository] Loaded " + cachedRules.size() + " active rules");
+        log.info("Loaded {} active rules", cachedRules.size());
     }
 
     @Override
