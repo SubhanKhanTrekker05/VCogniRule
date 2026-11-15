@@ -181,3 +181,16 @@ Baseline: commit `e7095d2` (the code as received). It built and ran correctly be
   `AboutController`, `AdminController`, `AdminService`.
 - **Fixed 7 Javadoc errors** (unescaped `<`, `>` and `&` in comments) in `Operator`, `AssessmentService`,
   `Finding`, `ReportService`. `mvn javadoc:javadoc` now reports 0 errors.
+
+### 15. N1: Remove unused code (approved item by item)
+Each item was first confirmed unused in all Java code, HTML templates and JavaScript.
+- **`domain/ConditionTrace.java`:** removed `matched`. It was always `true` (only rules that fired get
+  a trace) and was never read. `engine/FindingFactory.java` no longer passes it.
+- **`service/DerivedFieldCalculator.java`:** removed the one-argument `calculate(Map)`; never called.
+- **`repository/QuestionRepository.java` + `JdbcQuestionRepository.java`:** removed `findByFieldKey`; never called.
+- **`domain/Question.java` + `JdbcQuestionRepository.java`:** removed `defaultValue`; never read.
+  The `default_value` database column is left as it is (no schema change).
+- **Kept:** `ConditionGroup.logic`, with a new comment: the engine supports AND only inside a group
+  and does not read this value; OR is expressed with several groups.
+- **Not touched:** the frozen test copy `LegacyDerivedFieldCalculator` (it must stay identical to the original).
+- **Verified:** build, 9/9 tests, 7/7 regression identical, admin write-path 8/8, wrong-input 12/12.

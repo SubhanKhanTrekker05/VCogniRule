@@ -31,8 +31,7 @@ public class FindingFactory {
                 c.fieldKey(),
                 String.valueOf(workingFacts.getOrDefault(c.fieldKey(), 0)),
                 OperatorStrategyFactory.forOperator(c.operator()).describe(c),
-                c.operator(),
-                true
+                c.operator()
             ))
             .toList();
 

@@ -7,7 +7,6 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * SQLite (JDBC) implementation of {@link QuestionRepository}: loads questions from the question table.
@@ -31,8 +30,7 @@ public class JdbcQuestionRepository implements QuestionRepository {
         Category.valueOf(rs.getString("category")),
         rs.getInt("display_order"),
         rs.getString("instrument"),
-        rs.getString("scale_type"),
-        rs.getInt("default_value")
+        rs.getString("scale_type")
     );
 
     public JdbcQuestionRepository(JdbcTemplate jdbcTemplate) {
@@ -52,13 +50,5 @@ public class JdbcQuestionRepository implements QuestionRepository {
         return jdbcTemplate.query(
             "SELECT * FROM question WHERE instrument != 'CALCULATED' ORDER BY display_order",
             MAPPER);
-    }
-
-    /** Look up a single question by field_key (for trace labels). */
-    @Override
-    public Optional<Question> findByFieldKey(String fieldKey) {
-        List<Question> results = jdbcTemplate.query(
-            "SELECT * FROM question WHERE field_key = ?", MAPPER, fieldKey);
-        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
     }
 }
