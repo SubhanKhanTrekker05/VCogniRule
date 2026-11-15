@@ -11,7 +11,7 @@ import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** Unit tests for the inference engine, ConditionEvaluator, FindingFactory and ConflictResolver. */
+/** Unit tests for the inference engine, ConditionEvaluator, FindingMapper and ConflictResolver. */
 class RuleEngineTest {
 
     private long nextId = 1;
@@ -146,15 +146,15 @@ class RuleEngineTest {
         assertThat(ids(new RuleEngine().evaluate(List.of(low, mid, high), facts("a", 1)))).containsExactly("HIGH", "MID", "LOW");
     }
 
-    // ------------------------------------------------------------------ FindingFactory
+    // ------------------------------------------------------------------ FindingMapper
 
     @Test
-    @DisplayName("FindingFactory copies the rule and builds a trace with the user's value and the rule's need")
+    @DisplayName("FindingMapper copies the rule and builds a trace with the user's value and the rule's need")
     void findingFactoryBuildsTrace() {
         Condition c1 = between("phq9_total", 10, 14);
         Condition c2 = cond("phq9_q9", Operator.GTE, 1);
         Rule r = rule("PHQ9-MODERATE", 1, 50, ActionType.SUGGEST_PROFESSIONAL, "depression_moderate", "1", group(c1, c2));
-        Finding f = FindingFactory.create(r, List.of(c1, c2), facts("phq9_total", 12));
+        Finding f = FindingMapper.toFinding(r, List.of(c1, c2), facts("phq9_total", 12));
         assertThat(f.ruleId()).isEqualTo("PHQ9-MODERATE");
         assertThat(f.actionType()).isEqualTo(ActionType.SUGGEST_PROFESSIONAL);
         assertThat(f.priority()).isEqualTo(50);

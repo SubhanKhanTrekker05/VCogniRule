@@ -7,7 +7,7 @@ package com.ooad.mhs.util;
  * ReportService uses it to choose each finding's colour, icon and action label.
  * (Findings are SORTED by rule priority in ConflictResolver, not by action type.)
  *
- * Used by: Rule, Finding (domain), RuleEngine, FindingFactory (engine), ReportService (service)
+ * Used by: Rule, Finding (domain), RuleEngine, FindingMapper (engine), ReportService (service)
  * Stored in: rule.action_type column
  */
 public enum ActionType {
