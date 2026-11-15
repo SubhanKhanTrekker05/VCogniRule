@@ -27,7 +27,7 @@ class OperatorStrategyTest {
     }
 
     private static boolean test(Condition c, int actual) {
-        return OperatorStrategyFactory.forOperator(c.operator()).test(actual, c);
+        return OperatorStrategyRegistry.getInstance().strategyFor(c.operator()).test(actual, c);
     }
 
     // ------------------------------------------------------------------ six single-value operators
@@ -57,17 +57,17 @@ class OperatorStrategyTest {
     @ParameterizedTest(name = "{0} -> \"{1}\"")
     @CsvSource({"EQ, == 10", "NE, != 10", "GT, > 10", "GTE, >= 10", "LT, < 10", "LTE, <= 10"})
     void singleValueDescribe(Operator op, String expected) {
-        assertThat(OperatorStrategyFactory.forOperator(op).describe(single(op, 10))).isEqualTo(expected);
+        assertThat(OperatorStrategyRegistry.getInstance().strategyFor(op).describe(single(op, 10))).isEqualTo(expected);
     }
 
     @Test
     @DisplayName("The six single-value strategies share the abstract base class SingleValueStrategy")
     void singleValueStrategiesExtendBaseClass() {
         for (Operator op : new Operator[]{Operator.EQ, Operator.NE, Operator.GT, Operator.GTE, Operator.LT, Operator.LTE}) {
-            assertThat(OperatorStrategyFactory.forOperator(op)).isInstanceOf(SingleValueStrategy.class);
+            assertThat(OperatorStrategyRegistry.getInstance().strategyFor(op)).isInstanceOf(SingleValueStrategy.class);
         }
-        assertThat(OperatorStrategyFactory.forOperator(Operator.BETWEEN)).isNotInstanceOf(SingleValueStrategy.class);
-        assertThat(OperatorStrategyFactory.forOperator(Operator.IN)).isNotInstanceOf(SingleValueStrategy.class);
+        assertThat(OperatorStrategyRegistry.getInstance().strategyFor(Operator.BETWEEN)).isNotInstanceOf(SingleValueStrategy.class);
+        assertThat(OperatorStrategyRegistry.getInstance().strategyFor(Operator.IN)).isNotInstanceOf(SingleValueStrategy.class);
     }
 
     // ------------------------------------------------------------------ BETWEEN
@@ -127,24 +127,43 @@ class OperatorStrategyTest {
 
     // ------------------------------------------------------------------ factory
 
-    @DisplayName("The factory has a strategy for every operator")
+    @DisplayName("The registry has a strategy for every operator")
     @ParameterizedTest
     @EnumSource(Operator.class)
     void factoryCoversEveryOperator(Operator op) {
-        assertThat(OperatorStrategyFactory.forOperator(op)).isNotNull();
+        assertThat(OperatorStrategyRegistry.getInstance().strategyFor(op)).isNotNull();
     }
 
     @Test
-    @DisplayName("The factory returns the right class and reuses one shared object per operator")
+    @DisplayName("The registry returns the right class and reuses one shared object per operator")
     void factoryReturnsSharedInstances() {
-        assertThat(OperatorStrategyFactory.forOperator(Operator.EQ)).isInstanceOf(EqualsStrategy.class);
-        assertThat(OperatorStrategyFactory.forOperator(Operator.NE)).isInstanceOf(NotEqualsStrategy.class);
-        assertThat(OperatorStrategyFactory.forOperator(Operator.GT)).isInstanceOf(GreaterThanStrategy.class);
-        assertThat(OperatorStrategyFactory.forOperator(Operator.GTE)).isInstanceOf(GreaterOrEqualStrategy.class);
-        assertThat(OperatorStrategyFactory.forOperator(Operator.LT)).isInstanceOf(LessThanStrategy.class);
-        assertThat(OperatorStrategyFactory.forOperator(Operator.LTE)).isInstanceOf(LessOrEqualStrategy.class);
-        assertThat(OperatorStrategyFactory.forOperator(Operator.BETWEEN)).isInstanceOf(BetweenStrategy.class);
-        assertThat(OperatorStrategyFactory.forOperator(Operator.IN)).isInstanceOf(InStrategy.class);
-        assertThat(OperatorStrategyFactory.forOperator(Operator.GTE)).isSameAs(OperatorStrategyFactory.forOperator(Operator.GTE));
+        assertThat(OperatorStrategyRegistry.getInstance().strategyFor(Operator.EQ)).isInstanceOf(EqualsStrategy.class);
+        assertThat(OperatorStrategyRegistry.getInstance().strategyFor(Operator.NE)).isInstanceOf(NotEqualsStrategy.class);
+        assertThat(OperatorStrategyRegistry.getInstance().strategyFor(Operator.GT)).isInstanceOf(GreaterThanStrategy.class);
+        assertThat(OperatorStrategyRegistry.getInstance().strategyFor(Operator.GTE)).isInstanceOf(GreaterOrEqualStrategy.class);
+        assertThat(OperatorStrategyRegistry.getInstance().strategyFor(Operator.LT)).isInstanceOf(LessThanStrategy.class);
+        assertThat(OperatorStrategyRegistry.getInstance().strategyFor(Operator.LTE)).isInstanceOf(LessOrEqualStrategy.class);
+        assertThat(OperatorStrategyRegistry.getInstance().strategyFor(Operator.BETWEEN)).isInstanceOf(BetweenStrategy.class);
+        assertThat(OperatorStrategyRegistry.getInstance().strategyFor(Operator.IN)).isInstanceOf(InStrategy.class);
+        assertThat(OperatorStrategyRegistry.getInstance().strategyFor(Operator.GTE)).isSameAs(OperatorStrategyRegistry.getInstance().strategyFor(Operator.GTE));
+    }
+
+    // ------------------------------------------------------------------ Factory Method + Singleton
+
+    @Test
+    @DisplayName("Factory Method: each Operator constant creates its own, NEW strategy object")
+    void factoryMethodCreatesNewProducts() {
+        assertThat(Operator.BETWEEN.createStrategy()).isInstanceOf(BetweenStrategy.class);
+        assertThat(Operator.IN.createStrategy()).isInstanceOf(InStrategy.class);
+        assertThat(Operator.EQ.createStrategy()).isNotSameAs(Operator.EQ.createStrategy());
+    }
+
+    @Test
+    @DisplayName("Singleton: one instance, private constructor, class cannot be extended")
+    void registryIsTextbookSingleton() throws Exception {
+        assertThat(OperatorStrategyRegistry.getInstance()).isSameAs(OperatorStrategyRegistry.getInstance());
+        var ctor = OperatorStrategyRegistry.class.getDeclaredConstructor();
+        assertThat(java.lang.reflect.Modifier.isPrivate(ctor.getModifiers())).isTrue();
+        assertThat(java.lang.reflect.Modifier.isFinal(OperatorStrategyRegistry.class.getModifiers())).isTrue();
     }
 }
