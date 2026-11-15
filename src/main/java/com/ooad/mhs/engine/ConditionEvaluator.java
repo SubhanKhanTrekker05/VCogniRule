@@ -1,7 +1,7 @@
 package com.ooad.mhs.engine;
 
 import com.ooad.mhs.domain.Condition;
-import com.ooad.mhs.engine.operator.OperatorStrategyFactory;
+import com.ooad.mhs.engine.operator.OperatorStrategyRegistry;
 
 import java.util.Map;
 
@@ -32,6 +32,6 @@ public class ConditionEvaluator {
 
         int actual = workingFacts.get(fieldKey);
 
-        return OperatorStrategyFactory.forOperator(condition.operator()).test(actual, condition);
+        return OperatorStrategyRegistry.getInstance().strategyFor(condition.operator()).test(actual, condition);
     }
 }

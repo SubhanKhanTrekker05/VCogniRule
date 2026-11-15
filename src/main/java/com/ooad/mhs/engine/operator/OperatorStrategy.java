@@ -7,7 +7,9 @@ import com.ooad.mhs.domain.Condition;
  *
  * Each operator is its own class behind this interface, so the engine never needs a
  * switch on the operator. Adding an operator means adding a class (Open/Closed Principle).
- * Instances are obtained from {@link OperatorStrategyFactory}.
+ * Instances are created by the Factory Method Operator.createStrategy() and shared
+ * through the Singleton {@link OperatorStrategyRegistry}; the Decorator
+ * {@link TracingOperatorStrategy} can wrap any of them (demo switch).
  */
 public interface OperatorStrategy {
 

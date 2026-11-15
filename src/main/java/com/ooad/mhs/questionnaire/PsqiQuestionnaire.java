@@ -29,7 +29,7 @@ public class PsqiQuestionnaire extends Questionnaire {
     }
 
     @Override
-    protected void computeScores(Map<String, Integer> f) {
+    public void score(Map<String, Integer> f) {
         // Q1=bedtime (minutes), Q2=minutes to fall asleep, Q3=wake time (minutes), Q4=hours slept
         int bedMin = f.getOrDefault("psqi_q1", DEFAULT_BEDTIME);
         int wakeMin = f.getOrDefault("psqi_q3", DEFAULT_WAKE_TIME);
@@ -70,10 +70,8 @@ public class PsqiQuestionnaire extends Questionnaire {
         int global = f.get("psqi_c1") + f.get("psqi_c2") + f.get("psqi_c3")
             + f.get("psqi_c4") + f.get("psqi_c5") + f.get("psqi_c6") + f.get("psqi_c7");
         f.put("psqi_global", global);
-    }
 
-    @Override
-    protected void computeFlags(Map<String, Integer> f) {
+        // Flags read by combined rules
         f.put("sleep_poor_any", flag(value(f, "psqi_global") > POOR_SLEEP_CUTOFF));
     }
 

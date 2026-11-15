@@ -24,7 +24,7 @@ public class Who5Questionnaire extends Questionnaire {
     }
 
     @Override
-    protected void computeScores(Map<String, Integer> f) {
+    public void score(Map<String, Integer> f) {
         int total = 0;
         for (int i = 1; i <= 5; i++) total += f.getOrDefault("who5_q" + i, MAX_ITEM_SCORE);
         f.put("who5_raw", total);

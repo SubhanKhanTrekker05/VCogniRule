@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * The output of a fired rule. This is what the report displays.
  * 
- * When the RuleEngine evaluates a rule and it fires, the FindingFactory
+ * When the RuleEngine evaluates a rule and it fires, the FindingMapper
  * assembles a Finding from:
  * - The rule's metadata (id, name, category, priority, action, explanation, source)
  * - The matched conditions (as ConditionTrace objects)

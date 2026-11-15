@@ -10,14 +10,17 @@ import java.util.Optional;
 /**
  * Stores and loads the rules of the knowledge base (rules, their condition groups and conditions).
  *
- * Repository pattern + Dependency Inversion: services depend on this interface, not on the
+ * Repository (Spring architecture, not a design pattern) + Dependency Inversion (SOLID): services depend on this interface, not on the
  * database code. The SQLite implementation is {@link JdbcRuleRepository}; another database,
  * or an in-memory fake in tests, could be used without changing any service.
  */
 public interface RuleRepository {
 
-    /** The active rules, as used by the rule engine (kept in memory, refreshed after every change). */
+    /** The active rules, as used by the rule engine (kept in memory). */
     List<Rule> getActiveRules();
+
+    /** Reloads the in-memory active rules from the database (after a change). */
+    void reloadActiveRules();
 
     /** Every rule, active or not (admin dashboard). */
     List<Rule> findAllIncludingInactive();

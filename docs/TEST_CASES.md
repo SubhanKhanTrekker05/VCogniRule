@@ -1,6 +1,6 @@
 # Test Cases — VCogniRule
 
-Results of `mvn test` on 15 November 2026: **237 tests, 237 passed, 0 failed.**
+Results of `mvn test` on 15 November 2026: **253 tests, 253 passed, 0 failed.**
 
 The Pass/Fail column of the automated cases below is generated from the real JUnit result files
 (`target/surefire-reports`). A row passes only if every JUnit test listed for it ran and passed.
@@ -10,17 +10,20 @@ The Pass/Fail column of the automated cases below is generated from the real JUn
 
 | Test class | Type | What it covers | Tests |
 |---|---|---|---|
-| `OperatorStrategyTest` | Unit | the 8 operator strategies and their factory | 50 |
-| `RuleEngineTest` | Unit | rule engine, forward chaining, FindingFactory, ConflictResolver | 12 |
+| `OperatorStrategyTest` | Unit | the 8 operator strategies, Factory Method and Singleton | 52 |
+| `RuleEngineTest` | Unit | rule engine, forward chaining, FindingMapper, ConflictResolver | 12 |
 | `QuestionnaireScoringTest` | Unit | scoring of the 10 questionnaires, registry | 25 |
 | `QuestionnaireRefactorEquivalenceTest` | Unit | refactor safety net: old vs new scoring on 10,000 random answer sets | 9 |
-| `ReportPartsTest` | Unit | ScreeningReport.Builder, OverallResultResolver, FindingStyler | 26 |
+| `ReportPartsTest` | Unit | ScreeningReport (parameter objects), OverallResultResolver, FindingStyler | 25 |
 | `AssessmentServiceTest` | Unit | answer validation and section completion | 32 |
 | `FormValidationTest` | Unit | Bean Validation of the admin forms | 16 |
-| `AdminServiceTest` | Unit | admin business rules (with fake repositories) | 8 |
-| `ScreeningFlowIntegrationTest` | Integration | screening flow through the running app (MockMvc) | 16 |
-| `AdminIntegrationTest` | Integration | admin login, protected pages, create/edit/delete, bad input | 43 |
-| **Total** | | | **237** |
+| `AdminServiceTest` | Unit | admin business rules (with fake repositories), Observer | 10 |
+| `BCryptPasswordHasherTest` | Unit | Adapter: PasswordHasher over the BCrypt library | 2 |
+| `TracingOperatorStrategyTest` | Unit | Decorator: TracingOperatorStrategy and its demo switch | 2 |
+| `ScreeningFlowIntegrationTest` | Integration | screening flow through the running app (MockMvc) | 17 |
+| `AdminIntegrationTest` | Integration | admin login, protected pages, create/edit/delete, bad input | 44 |
+| `FormRecoveryAndErrorPageIntegrationTest` | Integration | typed values kept after an error, friendly error pages | 7 |
+| **Total** | | | **253** |
 
 ## Automated test cases
 
@@ -35,14 +38,14 @@ The Pass/Fail column of the automated cases below is generated from the real JUn
 | TC-06 | LTE operator | answer 5, rule `<= 5`; answer 6 | true; false | true; false | Pass (2) | `OperatorStrategyTest.singleValueOperators` |
 | TC-07 | BETWEEN includes both ends | answers 9, 10, 12, 14, 15 for rule 10-14 | false, true, true, true, false | false, true, true, true, false | Pass (6) | `OperatorStrategyTest.betweenIncludesBothEnds`, `OperatorStrategyTest.betweenWithMissingBoundIsFalse` |
 | TC-08 | IN list (incl. old bad data) | answer 2 in `1,2,3`; answer 1 in `a,b` | true; false and no crash | true; false, no exception | Pass (7) | `OperatorStrategyTest.inMatchesListedNumbers`, `OperatorStrategyTest.inIgnoresSpaces`, `OperatorStrategyTest.inWithBadEntryDoesNotCrash` |
-| TC-09 | Factory gives the right strategy for all 8 operators | each Operator value | EqualsStrategy … InStrategy, one shared object each | correct class, same object on repeat | Pass (10) | `OperatorStrategyTest.factoryCoversEveryOperator`, `OperatorStrategyTest.factoryReturnsSharedInstances`, `OperatorStrategyTest.singleValueStrategiesExtendBaseClass` |
+| TC-09 | Factory Method + Singleton give the right strategy for all 8 operators | each Operator value | EqualsStrategy … InStrategy; one shared registry | correct class, same object on repeat, private constructor | Pass (12) | `OperatorStrategyTest.factoryCoversEveryOperator`, `OperatorStrategyTest.factoryReturnsSharedInstances`, `OperatorStrategyTest.factoryMethodCreatesNewProducts`, `OperatorStrategyTest.registryIsTextbookSingleton`, `OperatorStrategyTest.singleValueStrategiesExtendBaseClass` |
 | TC-10 | Rule text under 'Rule needs' | GTE 10; BETWEEN 10-14; IN 1,2 | `>= 10`; `10 - 14`; `in [1,2]` | `>= 10`; `10 - 14`; `in [1,2]` | Pass (8) | `OperatorStrategyTest.singleValueDescribe`, `OperatorStrategyTest.betweenDescribe`, `OperatorStrategyTest.inDescribe` |
 | | **Unit tests: rule engine** | | | | | |
 | TC-11 | AND inside a group, OR between groups | a=1,b=0 for rule (a AND b); rule (a) OR (b) | AND rule does not fire; OR rule fires on group b | as expected | Pass (2) | `RuleEngineTest.andWithinGroup`, `RuleEngineTest.orBetweenGroups` |
 | TC-12 | Forward chaining across levels | phq9_total = 7; L1 sets depression_mild, L2 reads it | both rules fire | L1 and L2 fired | Pass (1) | `RuleEngineTest.forwardChaining` |
 | TC-13 | Highest-priority overall severity wins | mild (30) and severe (80) both fire | overall = severe | severe | Pass (2) | `RuleEngineTest.highestPrioritySeverityWins`, `RuleEngineTest.noSeverityRuleGivesNull` |
 | TC-14 | Missing answer → condition fails | rule on phq9_total, PHQ-9 not answered | false | false | Pass (1) | `RuleEngineTest.missingFieldFails` |
-| TC-15 | FindingFactory builds the explanation trace | PHQ9-MODERATE fired with total 12 | trace: value 12, needs `10 - 14` | 12 / `10 - 14` | Pass (1) | `RuleEngineTest.findingFactoryBuildsTrace` |
+| TC-15 | FindingMapper builds the explanation trace | PHQ9-MODERATE fired with total 12 | trace: value 12, needs `10 - 14` | 12 / `10 - 14` | Pass (1) | `RuleEngineTest.findingMapperBuildsTrace` |
 | TC-16 | Findings sorted by priority | priorities 10, 50, 100 | 100, 50, 10 | HIGH, MID, LOW | Pass (1) | `RuleEngineTest.findingsSortedByPriority` |
 | | **Unit tests: questionnaire scoring (inheritance)** | | | | | |
 | TC-17 | PHQ-9 score and cut-offs | items 2,1,0,0,0,0,0,0,1; totals 5 and 10 | total 4; ≥5 mild flag; ≥10 moderate flag | 4; flags set at 5 and 10 | Pass (3) | `QuestionnaireScoringTest.totalCoreSymptomAndCount`, `QuestionnaireScoringTest.cutOffs`, `QuestionnaireScoringTest.maximumScore` |
@@ -52,10 +55,10 @@ The Pass/Fail column of the automated cases below is generated from the real JUn
 | TC-21 | PSS-10 reverse scoring | all 'Never'; all 'Very often' | total 16; total 24 | 16; 24 | Pass (3) | `QuestionnaireScoringTest.allNever`, `QuestionnaireScoringTest.allVeryOften`, `QuestionnaireScoringTest.lowestStress` |
 | TC-22 | PSQI global score boundary | worked examples (23:00–07:00, 7 h …) and (23:00–04:00, 4 h, 90 min) | global 5 = not poor; global 6 = poor | 5 / sleep_poor 0; 6 / sleep_poor 1 | Pass (2) | `QuestionnaireScoringTest.globalFive`, `QuestionnaireScoringTest.globalSix` |
 | TC-23 | PHQ-15, WSAS, ASRS, PC-PTSD | hand examples | totals 5, 15; ASRS 4 of 6; PC-PTSD 3 | as expected | Pass (5) | `QuestionnaireScoringTest.totalSevereCountAndPanicFlag`, `QuestionnaireScoringTest.noPanic`, `QuestionnaireScoringTest.wsasTotal`, `QuestionnaireScoringTest.asrsShadedCounts`, `QuestionnaireScoringTest.pcPtsdTotal` |
-| TC-24 | Polymorphism + registry | 10 subclasses; list missing WSAS; two PHQ-9 | each scores its own section; startup error | as expected; IllegalStateException | Pass (4) | `QuestionnaireScoringTest.eachSubclassHasItsSection`, `QuestionnaireScoringTest.registryRejectsMissingSection`, `QuestionnaireScoringTest.registryRejectsDuplicate`, `QuestionnaireScoringTest.templateMethodRunsBothSteps` |
+| TC-24 | Polymorphism + registry | 10 subclasses; list missing WSAS; two PHQ-9 | each scores its own section; startup error | as expected; IllegalStateException | Pass (3) | `QuestionnaireScoringTest.eachSubclassHasItsSection`, `QuestionnaireScoringTest.registryRejectsMissingSection`, `QuestionnaireScoringTest.registryRejectsDuplicate`, `QuestionnaireScoringTest.templateMethodRunsBothSteps` |
 | TC-25 | Refactor did not change any score | 10,000 random answer sets + edge cases, old vs new code | identical results | identical | Pass (4) | `QuestionnaireRefactorEquivalenceTest.randomAnswerSets`, `QuestionnaireRefactorEquivalenceTest.allSectionsAllZero`, `QuestionnaireRefactorEquivalenceTest.allSectionsAllMaximum`, `QuestionnaireRefactorEquivalenceTest.reportScoreTextAndNotesUnchanged` |
 | | **Unit tests: report parts** | | | | | |
-| TC-26 | Builder creates the report | named steps; no overall result | report built; error without overall | as expected | Pass (4) | `ReportPartsTest.buildsReport`, `ReportPartsTest.unsetListsAreEmpty`, `ReportPartsTest.requiresOverall`, `ReportPartsTest.reportIsUnchangeable` |
+| TC-26 | Report made from parameter objects | FindingGroups + Coverage; a missing part | parts readable; error if missing; lists read-only | as expected | Pass (3) | `ReportPartsTest.accessorsReadTheGroups`, `ReportPartsTest.requiresParameterObjects`, `ReportPartsTest.reportIsUnchangeable` |
 | TC-27 | Overall banner rules | crisis + mild/minimal/moderate/none; no severity | NEEDS ATTENTION; Not determined / Not classified | as expected | Pass (7) | `ReportPartsTest.crisisOutranksLowSeverity`, `ReportPartsTest.noSeverity`, `ReportPartsTest.severeStays`, `ReportPartsTest.partialNote` |
 | TC-28 | Finding colours | MONITOR finding linked to a risk answer | shown as crisis, 'Monitor · safety-related' | as expected | Pass (11) | `ReportPartsTest.safetyLinkedIsCrisis`, `ReportPartsTest.toneByAction`, `ReportPartsTest.infoTones` |
 | | **Unit tests: answer validation (wrong input)** | | | | | |
@@ -86,6 +89,10 @@ The Pass/Fail column of the automated cases below is generated from the real JUn
 | TC-50 | Factory reset | after delete + switch off | 150 rules, all active | 150 / 150 | Pass (1) | `AdminIntegrationTest.factoryReset` |
 | TC-51 | Bad admin input | 8 bad rule forms + 6 bad conditions | message on the form, nothing saved | message shown, no change | Pass (15) | `AdminIntegrationTest.badRuleInput`, `AdminIntegrationTest.badConditionInput`, `AdminIntegrationTest.conditionOfOtherRule` |
 | TC-52 | Screening after a refused bad condition | IN `a,b` refused, then a screening | report shown (was HTTP 500 before) | report shown | Pass (1) | `AdminIntegrationTest.screeningStillWorksAfterBadInput` |
+| | **Unit tests: Adapter, Decorator, Observer** | | | | | |
+| TC-53 | Adapter: PasswordHasher over BCrypt | hash admin123, check right and wrong password | hash is not the password; true; false | true; false; two hashes differ | Pass (2) | `BCryptPasswordHasherTest.hashThenMatch`, `BCryptPasswordHasherTest.saltedHashes` |
+| TC-54 | Decorator: tracing changes no result | GTE 10 for answers 0-27, plain vs traced; switch on/off | same answers; all 8 wrapped only when on | identical; wrapped / plain | Pass (2) | `TracingOperatorStrategyTest.sameResultsAsWrapped`, `TracingOperatorStrategyTest.switchWrapsStrategies` |
+| TC-55 | Observer: admin changes notify the listeners | create, deactivate, delete, reset; one refused create | 4 messages in order, none for the refused one | 4 messages; cache reloaded once | Pass (2) | `AdminServiceTest.changesNotifyListeners`, `AdminServiceTest.cacheRefresherReloads` |
 
 The number in brackets is how many JUnit test runs the row covers (parameterized tests run once per input).
 

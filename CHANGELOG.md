@@ -382,3 +382,51 @@ every step (one new test).
 ### 37. Fix made during this work
 - A shell escape put two NUL bytes into `style.css` instead of the warning-sign code in M1; found by
   checking the file type, fixed in the next commit, and every tracked text file was checked (0 NUL bytes).
+
+---
+
+## Course patterns only (branch `syllabus-patterns`)
+
+The course taught: Refactoring, Code smells, SOLID, Singleton, Factory Method, Adapter, Decorator,
+Facade, Observer, Strategy. The code now shows each of these clearly and no other pattern.
+The app behaves and looks the same; 253 tests pass.
+
+### 39. Factory Method + Singleton
+- **Changed:** `util/Operator.java`: each enum constant overrides `createStrategy()` (Factory Method).
+- **New:** `engine/operator/OperatorStrategyRegistry.java` (Singleton: private constructor, `getInstance()`),
+  fills its map through `createStrategy()`. **Removed:** `OperatorStrategyFactory.java`.
+- `FindingFactory` renamed `FindingMapper` (a helper, not a pattern).
+- **Tests:** `factoryMethodCreatesNewProducts`, `registryIsTextbookSingleton`.
+
+### 40. Builder removed (Introduce Parameter Object)
+- **Changed:** `service/ReportService.java`: `ScreeningReport.Builder` removed; the report is made with one
+  constructor from the parameter objects `FindingGroups` and `Coverage`.
+- **Tests:** `ReportPartsTest` (accessors, missing part refused, lists read-only).
+
+### 41. Template Method removed
+- **Changed:** `Questionnaire` has one abstract `score(facts)`; each of the 10 subclasses implements it.
+  `SingleValueStrategy` keeps only two helpers; each of the 6 subclasses implements `test`/`describe`.
+  The 10,000-case equivalence test proves the scores are unchanged.
+
+### 42. Wording
+- Comments name only course patterns. MVC, Repository and Dependency Injection are called "architecture (Spring)".
+
+### 43. Adapter
+- **New:** `security/PasswordHasher.java` (target), `security/BCryptPasswordHasher.java` (adapter over jBCrypt).
+- **Changed:** `AdminService`, `DataSeeder` use `PasswordHasher`; no class but the adapter calls BCrypt.
+- **Tests:** `BCryptPasswordHasherTest` (2).
+
+### 44. Decorator with a demo switch
+- **New:** `engine/operator/TracingOperatorStrategy.java` wraps any strategy and logs each check;
+  `config/OperatorTracingSwitch.java` reads `vcognirule.trace-operators` (false by default, in `application.properties`).
+- **Demo:** set it to `true`, restart, run a screening: the console shows lines like
+  `[trace] phq9_total = 12 needs 10 - 14 -> true`. Results do not change.
+- **Tests:** `TracingOperatorStrategyTest` (2).
+
+### 45. Observer
+- **New:** `service/RuleChangeListener.java` (observer), `RuleCacheRefresher` and `AuditLogListener` (observers).
+- **Changed:** `AdminService` (subject) notifies all listeners after every rule/condition change and reset.
+  `JdbcRuleRepository` no longer reloads its cache itself; it offers `reloadActiveRules()`, called by `RuleCacheRefresher`.
+  Integration tests reset through `AdminService` so the observers run.
+- **Tests:** `changesNotifyListeners`, `cacheRefresherReloads`; `AdminIntegrationTest` still proves a switched-off
+  rule leaves the engine's rules at once.
