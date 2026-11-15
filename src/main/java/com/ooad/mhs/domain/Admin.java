@@ -7,7 +7,7 @@ package com.ooad.mhs.domain;
  * Regular users are anonymous — no account, no login, no PII.
  * 
  * Password is stored as a BCrypt hash (never plain text).
- * The AdminService verifies passwords using BCrypt.checkpw().
+ * The AdminService verifies passwords through PasswordHasher (BCrypt behind an Adapter).
  * 
  * A default admin (username="admin", password="admin123") is created
  * by DataSeeder on first startup if no admin exists.

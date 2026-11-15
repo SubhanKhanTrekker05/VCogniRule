@@ -9,7 +9,7 @@ import com.ooad.mhs.domain.RuleDetails;
 import com.ooad.mhs.repository.AdminRepository;
 import com.ooad.mhs.repository.QuestionRepository;
 import com.ooad.mhs.repository.RuleRepository;
-import org.mindrot.jbcrypt.BCrypt;
+import com.ooad.mhs.security.PasswordHasher;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,7 +20,7 @@ import java.util.Optional;
  *
  * Facade pattern: the controller talks only to this class, which hides the repositories behind it
  * (AdminRepository for login, RuleRepository for the knowledge base). Passwords are checked with
- * BCrypt, so the plain password is never stored or compared directly.
+ * a PasswordHasher (BCrypt behind an Adapter), so the plain password is never stored or compared directly.
  *
  * It also checks the business rules that need the database (form rules such as "priority 0-100"
  * are checked earlier by Bean Validation on RuleDetails / ConditionDetails):
@@ -33,18 +33,20 @@ public class AdminService {
     private final AdminRepository adminRepository;
     private final RuleRepository ruleRepository;
     private final QuestionRepository questionRepository;
+    private final PasswordHasher passwordHasher;
 
     public AdminService(AdminRepository adminRepository, RuleRepository ruleRepository,
-                        QuestionRepository questionRepository) {
+                        QuestionRepository questionRepository, PasswordHasher passwordHasher) {
         this.adminRepository = adminRepository;
         this.ruleRepository = ruleRepository;
         this.questionRepository = questionRepository;
+        this.passwordHasher = passwordHasher;
     }
 
     public boolean authenticate(String username, String password) {
         Optional<Admin> admin = adminRepository.findByUsername(username);
         if (admin.isEmpty()) return false;
-        return BCrypt.checkpw(password, admin.get().passwordHash());
+        return passwordHasher.matches(password, admin.get().passwordHash());
     }
 
     public List<Rule> getAllRules() { return ruleRepository.findAllIncludingInactive(); }
