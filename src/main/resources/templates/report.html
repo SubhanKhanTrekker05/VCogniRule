@@ -32,10 +32,10 @@
             </p>
         </div>
 
-        <!-- Crisis alert — calm ochre, NOT red -->
-        <div th:if="${report.hasCrisis}" class="crisis-alert">
-            <h3>We've identified a concern that needs attention</h3>
-            <p>You are not alone. Help is available right now.</p>
+        <!-- Get help now (crisis only): the crisis alert and the action steps in ONE box — calm ochre, NOT red -->
+        <div th:if="${report.hasCrisis}" class="crisis-alert" id="get-help">
+            <h3>Get help now</h3>
+            <p>We've identified a concern that needs attention. You are not alone. Help is available right now.</p>
             <ul>
                 <!-- Numbers are tel: links, so on a phone one tap starts the call -->
                 <li>Pakistan (Umang Helpline):
@@ -44,7 +44,9 @@
                 <li>International:
                     <a href="https://findahelpline.com" class="helpline-link" target="_blank" rel="noopener">findahelpline.com</a></li>
             </ul>
-            <p style="font-size: 0.85rem; margin-top: 0.5rem;">Please reach out to one of these resources. Speaking with someone can make a difference.</p>
+            <ol class="next-steps-list crisis-steps" th:if="${!report.actionSteps.isEmpty()}">
+                <li th:each="step : ${report.actionSteps}" th:text="${step}">Step</li>
+            </ol>
         </div>
 
         <!-- Your scores: one row per completed section (score text from each Questionnaire.summary,
@@ -66,9 +68,9 @@
             </table>
         </div>
 
-        <!-- What to do now: plain steps for the overall result (ReportService.actionSteps) -->
-        <div class="card next-steps" th:if="${!report.actionSteps.isEmpty()}"
-             th:classappend="${report.hasCrisis ? 'next-steps-urgent' : ''}">
+        <!-- What to do now: plain steps for the overall result (ReportService.actionSteps).
+             In a crisis the steps are inside "Get help now" above instead. -->
+        <div class="card next-steps" th:if="${!report.hasCrisis and !report.actionSteps.isEmpty()}">
             <h2>What to do now</h2>
             <ol class="next-steps-list">
                 <li th:each="step : ${report.actionSteps}" th:text="${step}">Step</li>

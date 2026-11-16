@@ -115,7 +115,7 @@ class ScreeningFlowIntegrationTest extends IntegrationTestBase {
             .doesNotContainAnyElementsOf(rep.safetyItems().stream().map(fv -> fv.finding().ruleId()).toList());
         assertThat(rep.safetyItems().size() + rep.otherResults().size()).isEqualTo(rep.results().size());
         String html = r.getResponse().getContentAsString();
-        assertThat(html).contains("Safety concern").contains("What to do now").contains("Call one of the helplines above now (tap a number to call).");
+        assertThat(html).contains("Safety concern").contains("Get help now").contains("Call one of these numbers now.").doesNotContain("<h2>What to do now</h2>");
     }
 
     @Test

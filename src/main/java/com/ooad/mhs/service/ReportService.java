@@ -389,7 +389,7 @@ public class ReportService {
     static List<String> actionSteps(String overallKey, boolean hasCrisis) {
         if (hasCrisis || "critical".equals(overallKey) || "attention".equals(overallKey)) {
             return List.of(
-                "Call one of the helplines above now (tap a number to call).",
+                "Call one of these numbers now.",
                 "Talk to someone you trust today: a friend, a family member or a teacher.",
                 "Do not stay alone right now. Stay with someone, or somewhere safe.",
                 "See a doctor or mental health professional urgently.");
