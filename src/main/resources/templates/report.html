@@ -28,8 +28,17 @@
             </p>
             <p th:if="${report.overallNote != null}" class="overall-note" th:text="${report.overallNote}">Note</p>
             <p class="report-jump no-print">
-                <a href="#findings">Results</a> · <a href="#your-answers">Your answers</a>
+                <a href="#your-scores" th:if="${!report.scores.isEmpty()}">Scores</a><span th:if="${!report.scores.isEmpty()}"> · </span><a href="#findings">Results</a> · <a href="#your-answers">Your answers</a>
             </p>
+        </div>
+
+        <!-- What to do now: plain steps for the overall result (ReportService.actionSteps) -->
+        <div class="card next-steps" th:if="${!report.actionSteps.isEmpty()}"
+             th:classappend="${report.hasCrisis ? 'next-steps-urgent' : ''}">
+            <h2>What to do now</h2>
+            <ol class="next-steps-list">
+                <li th:each="step : ${report.actionSteps}" th:text="${step}">Step</li>
+            </ol>
         </div>
 
         <!-- Crisis alert — calm ochre, NOT red -->
@@ -54,23 +63,23 @@
                mental health professional can make a diagnosis. Please discuss these results with one.</p>
         </div>
 
-        <!-- Depression section missing: explain why it matters -->
-        <div th:if="${report.depressionMissing}" class="card card-accent">
-            <h2 th:text="${report.overallKey == 'undetermined'}
-                    ? 'Your overall result could not be determined'
-                    : 'Complete the Depression & Mood section for a more accurate report'">Heading</h2>
-            <p>The <strong>Depression &amp; Mood</strong> section (PHQ-9) was not completed. It is the most
-               important part of this screening:</p>
-            <ul>
-                <li>The <strong>overall result</strong> is built from your depression score together with the
-                    Safety Check.</li>
-                <li><strong>Combined findings</strong>, such as low mood together with anxiety, poor sleep or
-                    low wellbeing, need it. Many of the screening rules look for these patterns.</li>
-                <li>PHQ-9 is the <strong>most widely used, validated depression questionnaire</strong>, so your
-                    report is easier to discuss with a doctor or counsellor.</li>
-                <li>It takes about <strong>2 minutes</strong> (9 questions). Your other answers are kept.</li>
-            </ul>
-            <a th:href="@{/screening(resume='PHQ-9')}" class="btn btn-primary no-print">Complete Depression section</a>
+        <!-- Your scores: one row per completed section (score text from each Questionnaire.summary,
+             band from the rule that fired for that score) -->
+        <div class="card" id="your-scores" th:if="${!report.scores.isEmpty()}">
+            <h2>Your scores</h2>
+            <table class="score-table">
+                <thead>
+                    <tr><th scope="col">Section</th><th scope="col">Score</th><th scope="col">Band</th></tr>
+                </thead>
+                <tbody>
+                    <tr th:each="row : ${report.scores}">
+                        <td><span th:text="${row.section.label}">Section</span>
+                            <small th:text="${row.section.code}">CODE</small></td>
+                        <td th:text="${row.score}">Total score 12 / 27</td>
+                        <td th:text="${row.band != null ? row.band : '—'}">Moderate depression</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
         <!-- What was assessed -->
@@ -120,7 +129,9 @@
             <p th:if="${report.results.isEmpty()}" class="empty-findings">
                 No results for the sections you completed.
             </p>
-            <th:block th:each="fv : ${report.results}"><div th:replace="~{fragments/finding :: card(${fv})}"></div></th:block>
+            <!-- All C-SSRS crisis findings as ONE card (display grouping only) -->
+            <th:block th:if="${!report.safetyItems.isEmpty()}"><div th:replace="~{fragments/finding :: safety(${report.safetyItems})}"></div></th:block>
+            <th:block th:each="fv : ${report.otherResults}"><div th:replace="~{fragments/finding :: card(${fv})}"></div></th:block>
 
             <details class="finding-group" th:if="${!report.guidance.isEmpty()}">
                 <summary>
@@ -177,6 +188,26 @@
                    th:href="@{/screening(resume=${sa.status.section.code})}"
                    class="btn btn-sm btn-outline no-print">Complete this section</a>
             </details>
+        </div>
+
+        <!-- Depression section missing: explain why it matters.
+             At the end of the report, and hidden when there is a crisis (the helplines come first). -->
+        <div th:if="${report.depressionMissing and !report.hasCrisis}" class="card card-accent" id="complete-depression">
+            <h2 th:text="${report.overallKey == 'undetermined'}
+                    ? 'Your overall result could not be determined'
+                    : 'Complete the Depression & Mood section for a more accurate report'">Heading</h2>
+            <p>The <strong>Depression &amp; Mood</strong> section (PHQ-9) was not completed. It is the most
+               important part of this screening:</p>
+            <ul>
+                <li>The <strong>overall result</strong> is built from your depression score together with the
+                    Safety Check.</li>
+                <li><strong>Combined findings</strong>, such as low mood together with anxiety, poor sleep or
+                    low wellbeing, need it. Many of the screening rules look for these patterns.</li>
+                <li>PHQ-9 is the <strong>most widely used, validated depression questionnaire</strong>, so your
+                    report is easier to discuss with a doctor or counsellor.</li>
+                <li>It takes about <strong>2 minutes</strong> (9 questions). Your other answers are kept.</li>
+            </ul>
+            <a th:href="@{/screening(resume='PHQ-9')}" class="btn btn-primary no-print">Complete Depression section</a>
         </div>
 
         <!-- Actions -->

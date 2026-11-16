@@ -562,3 +562,29 @@ mark { background: var(--amber-bg); color: var(--amber-text); padding: 0 2px; bo
     body { background: white; }
     .finding, .card { break-inside: avoid; box-shadow: none; }
 }
+
+/* ---- Report: What to do now, Your scores, grouped Safety concern card ---- */
+.next-steps { border-left: 4px solid var(--primary); }
+.next-steps-urgent { border-left-color: var(--amber); background: var(--amber-bg); }
+.next-steps h2 { margin-bottom: 0.5rem; }
+.next-steps-list { margin: 0; padding-left: 1.4rem; }
+.next-steps-list li { padding: 0.25rem 0; line-height: 1.5; }
+.next-steps-urgent .next-steps-list li { color: var(--amber-text); font-weight: 600; }
+
+.score-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.score-table th { text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); }
+.score-table td { padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.score-table td small { display: block; color: var(--text-muted); font-size: 0.75rem; }
+.score-table td:last-child { font-weight: 600; }
+
+.safety-items { list-style: none; padding: 0; margin: 0.5rem 0 0; }
+.safety-item { padding: 0.6rem 0.75rem; margin-top: 0.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+.safety-item > strong { display: block; }
+.safety-item-text { display: block; font-size: 0.9rem; color: var(--text-muted); margin-top: 0.15rem; }
+.safety-item .trace details { padding-left: 0; }
+.trace .finding-source { margin: 0.4rem 0 0; }
+
+@media (max-width: 600px) {
+    .score-table { font-size: 0.85rem; }
+    .score-table th, .score-table td { padding: 0.45rem 0.3rem; }
+}

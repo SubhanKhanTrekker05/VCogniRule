@@ -16,26 +16,51 @@
 
     <p class="finding-explanation" th:text="${finding.explanation}">Explanation</p>
 
-    <!-- Why this appears: which rule produced this result (rule ID + level, for the
-         explanation facility / viva), then the answers, scores and earlier findings it used -->
     <div class="trace">
-        <details>
-            <summary>Why this appears</summary>
-            <p class="trace-rule">Rule <span class="finding-rule-id" th:text="${finding.ruleId}">RULE</span>
-                · <span class="finding-level-badge" th:text="'Level ' + ${finding.level}">Level 1</span></p>
-            <ul class="basis-list" th:if="${!fv.basis.isEmpty()}">
-                <li th:each="b : ${fv.basis}" th:classappend="${b.fromEarlierFinding ? 'basis-chain' : ''}">
-                    <span class="basis-label" th:text="${b.label}">Question</span>
-                    <span class="basis-value">
-                        <span th:text="${b.fromEarlierFinding ? '' : 'Your result: '}"></span><strong th:text="${b.value}">value</strong>
-                    </span>
-                    <span class="basis-needed" th:if="${b.needed != null}" th:text="'Rule needs: ' + ${b.needed}">needed</span>
-                </li>
-            </ul>
-        </details>
+        <details th:replace="~{fragments/finding :: why(${fv})}"></details>
     </div>
+</div>
 
+<!--
+    "Why this appears": which rule produced this result (rule ID + level, for the
+    explanation facility / viva), the answers, scores and earlier findings it used,
+    and the clinical source of the rule.
+-->
+<details th:fragment="why(fv)" th:with="finding=${fv.finding}">
+    <summary>Why this appears</summary>
+    <p class="trace-rule">Rule <span class="finding-rule-id" th:text="${finding.ruleId}">RULE</span>
+        · <span class="finding-level-badge" th:text="'Level ' + ${finding.level}">Level 1</span></p>
+    <ul class="basis-list" th:if="${!fv.basis.isEmpty()}">
+        <li th:each="b : ${fv.basis}" th:classappend="${b.fromEarlierFinding ? 'basis-chain' : ''}">
+            <span class="basis-label" th:text="${b.label}">Question</span>
+            <span class="basis-value">
+                <span th:text="${b.fromEarlierFinding ? '' : 'Your result: '}"></span><strong th:text="${b.value}">value</strong>
+            </span>
+            <span class="basis-needed" th:if="${b.needed != null}" th:text="'Rule needs: ' + ${b.needed}">needed</span>
+        </li>
+    </ul>
     <p class="finding-source" th:if="${finding.sourceRef}" th:text="'Source: ' + ${finding.sourceRef}">Source</p>
+</details>
+
+<!--
+    All C-SSRS crisis findings shown together as ONE "Safety concern" card.
+    Each item keeps its own "Why this appears".
+-->
+<div th:fragment="safety(items)" class="finding tone-crisis safety-group">
+    <div class="finding-header">
+        <span class="finding-icon" aria-hidden="true">⚠</span>
+        <span class="finding-name">Safety concern</span>
+        <span class="finding-action">Crisis support</span>
+    </div>
+    <p class="finding-explanation">Your Safety Check answers show the following. Please use the helpline
+        numbers above.</p>
+    <ul class="safety-items">
+        <li th:each="fv : ${items}" class="safety-item">
+            <strong th:text="${fv.finding.name}">Passive suicidal ideation</strong>
+            <span class="safety-item-text" th:text="${fv.finding.explanation}">Explanation</span>
+            <div class="trace"><details th:replace="~{fragments/finding :: why(${fv})}"></details></div>
+        </li>
+    </ul>
 </div>
 </body>
 </html>

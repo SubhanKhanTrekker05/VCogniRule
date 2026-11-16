@@ -133,6 +133,28 @@ public class ReportService {
         }
     }
 
+    /** One row of "Your scores": a completed section, its score text, and the band from its rules. */
+    public record ScoreRow(Section section, String score, String band) {}
+
+    /**
+     * Display-only extras for the report page (parameter object). Nothing here changes
+     * which findings fired, the crisis box or the banner.
+     *
+     * @param actionSteps   the "What to do now" steps for the overall result
+     * @param scores        one row per completed section
+     * @param safetyItems   the C-SSRS crisis findings, shown together as one "Safety concern" card
+     * @param otherResults  the remaining "Your results" cards (results minus safetyItems)
+     */
+    public record ReportExtras(List<String> actionSteps, List<ScoreRow> scores,
+                               List<FindingView> safetyItems, List<FindingView> otherResults) {
+        public ReportExtras {
+            actionSteps = List.copyOf(actionSteps);
+            scores = List.copyOf(scores);
+            safetyItems = List.copyOf(safetyItems);
+            otherResults = List.copyOf(otherResults);
+        }
+    }
+
     /** Which sections were completed, partly answered, or not started (parameter object). */
     public record Coverage(List<SectionStatus> assessed, List<SectionStatus> partial, List<SectionStatus> notStarted) {
         public Coverage {
@@ -155,6 +177,7 @@ public class ReportService {
      * @param coverage          which sections were assessed, partly answered, not started
      * @param depressionMissing true when the PHQ-9 (Depression) section was not completed
      * @param answers           the "Your answers" list
+     * @param extras            display-only parts: action steps, scores, the grouped safety card
      */
     public record ScreeningReport(
         OverallResultResolver.OverallResult overall,
@@ -162,13 +185,24 @@ public class ReportService {
         FindingGroups findings,
         Coverage coverage,
         boolean depressionMissing,
-        List<SectionAnswers> answers
+        List<SectionAnswers> answers,
+        ReportExtras extras
     ) {
         public ScreeningReport {
             java.util.Objects.requireNonNull(overall, "overall");
+            java.util.Objects.requireNonNull(extras, "extras");
             java.util.Objects.requireNonNull(findings, "findings");
             java.util.Objects.requireNonNull(coverage, "coverage");
             answers = List.copyOf(answers);
+        }
+
+        /** A report without the display extras (no action steps, scores or grouped safety card). */
+        public ScreeningReport(OverallResultResolver.OverallResult overall, boolean hasCrisis,
+                               FindingGroups findings, Coverage coverage,
+                               boolean depressionMissing, List<SectionAnswers> answers) {
+            this(overall, hasCrisis, findings, coverage, depressionMissing, answers,
+                new ReportExtras(List.of(), List.of(), List.of(),
+                    findings == null ? List.of() : findings.results()));
         }
 
         public String overallKey() { return overall.key(); }
@@ -180,6 +214,10 @@ public class ReportService {
         public List<SectionStatus> assessed() { return coverage.assessed(); }
         public List<SectionStatus> partial() { return coverage.partial(); }
         public List<SectionStatus> notStarted() { return coverage.notStarted(); }
+        public List<String> actionSteps() { return extras.actionSteps(); }
+        public List<ScoreRow> scores() { return extras.scores(); }
+        public List<FindingView> safetyItems() { return extras.safetyItems(); }
+        public List<FindingView> otherResults() { return extras.otherResults(); }
     }
 
     // ------------------------------------------------------------------ build
@@ -263,8 +301,9 @@ public class ReportService {
         List<SectionStatus> partial = statuses.stream().filter(SectionStatus::isPartial).toList();
         List<SectionStatus> notStarted = statuses.stream().filter(SectionStatus::isNotStarted).toList();
 
-        // ---- Your answers (completed and partly answered sections) ----
+        // ---- Your answers (completed and partly answered sections) and Your scores ----
         List<SectionAnswers> sectionAnswers = new ArrayList<>();
+        List<ScoreRow> scores = new ArrayList<>();
         for (SectionView sv : sectionViews) {
             SectionStatus status = assessment.statuses().get(sv.section());
             if (status == null || status.isNotStarted()) continue;
@@ -281,15 +320,98 @@ public class ReportService {
             String score = status.isComplete() ? questionnaire.summary(facts, answers) : null;
             String scoreNote = status.isComplete() ? questionnaire.scoreNote() : null;
             sectionAnswers.add(new SectionAnswers(status, score, scoreNote, rows));
+            if (status.isComplete()) {
+                scores.add(new ScoreRow(sv.section(), score, band(sv.section(), findings, rulesById)));
+            }
+        }
+
+        // ---- Display grouping: all C-SSRS crisis cards become one "Safety concern" card ----
+        // (results itself is unchanged; this only decides how the page lays the cards out)
+        List<FindingView> safetyItems = new ArrayList<>();
+        List<FindingView> otherResults = new ArrayList<>();
+        for (FindingView fv : results) {
+            boolean cssrsCrisis = fv.finding().ruleId().startsWith(CSSRS_RULE_PREFIX)
+                && fv.tone().equals(FindingStyler.CRISIS_TONE);
+            if (cssrsCrisis) safetyItems.add(fv);
+            else otherResults.add(fv);
         }
 
         return new ScreeningReport(overall, hasCrisis,
             new FindingGroups(results, guidance, reasoning),
             new Coverage(assessed, partial, notStarted),
-            !depressionComplete, sectionAnswers);
+            !depressionComplete, sectionAnswers,
+            new ReportExtras(actionSteps(overall.key(), hasCrisis), scores, safetyItems, otherResults));
     }
 
     // ------------------------------------------------------------------ helpers
+
+    private static final String CSSRS_RULE_PREFIX = "CSSRS-";
+
+    /** The calculated score that each section's band rules check (the same facts the summaries print). */
+    private static final Map<Section, String> SCORE_KEYS = Map.of(
+        Section.PHQ9, "phq9_total", Section.GAD7, "gad7_total", Section.PHQ15, "phq15_total",
+        Section.WHO5, "who5_raw", Section.PSS10, "pss10_total", Section.PSQI, "psqi_global",
+        Section.WSAS, "wsas_total", Section.ASRS, "asrs_shaded_count", Section.PCPTSD, "pcptsd_total");
+
+    /**
+     * The band of a section, read from the rules that fired (no new scoring): the Level 1 rule of
+     * that questionnaire whose only condition is on the section's score. If two match (PSQI "poor"
+     * and "severe"), the higher-priority rule wins. C-SSRS has no score: any crisis rule gives
+     * "Safety concern", otherwise its non-crisis rule ("No suicide risk indicators").
+     * Returns null when no band rule fired.
+     */
+    private static String band(Section section, List<Finding> findings, Map<String, Rule> rulesById) {
+        String prefix = section.getCode().replace("-", "") + "-";
+        boolean cssrs = section == Section.CSSRS;
+        if (cssrs && findings.stream().anyMatch(f -> f.ruleId().startsWith(prefix)
+                && f.actionType() == ActionType.CRISIS_PROTOCOL)) {
+            return "Safety concern";
+        }
+        String scoreKey = SCORE_KEYS.get(section);
+        Finding best = null;
+        for (Finding f : findings) {
+            if (f.level() == null || f.level() != 1 || !f.ruleId().startsWith(prefix)) continue;
+            boolean bandRule = cssrs
+                ? f.actionType() != ActionType.CRISIS_PROTOCOL
+                : scoreKey != null && f.trace().size() == 1 && scoreKey.equals(f.trace().get(0).fieldKey());
+            if (bandRule && (best == null || priority(f, rulesById) > priority(best, rulesById))) best = f;
+        }
+        return best == null ? null : best.name();
+    }
+
+    private static int priority(Finding f, Map<String, Rule> rulesById) {
+        Rule r = rulesById.get(f.ruleId());
+        Integer p = r != null ? r.priority() : f.priority();
+        return p == null ? 0 : p;
+    }
+
+    /** "What to do now": plain steps for the overall result. A crisis always gets the crisis steps. */
+    static List<String> actionSteps(String overallKey, boolean hasCrisis) {
+        if (hasCrisis || "critical".equals(overallKey) || "attention".equals(overallKey)) {
+            return List.of(
+                "Call a helpline now: Umang 1166 (Pakistan), or one of the numbers below.",
+                "Talk to someone you trust today: a friend, a family member or a teacher.",
+                "Do not stay alone right now. Stay with someone, or somewhere safe.",
+                "See a doctor or mental health professional urgently.");
+        }
+        return switch (overallKey) {
+            case "severe", "moderate" -> List.of(
+                "Book a visit with a doctor or counsellor soon.",
+                "Share this report with them (use Save as PDF at the bottom).",
+                "Take healthy steps: regular sleep, meals, some movement, and time with people you trust.");
+            case "mild" -> List.of(
+                "Watch how you feel over the next few weeks.",
+                "Keep healthy habits: sleep, meals, movement, and talking to people you trust.",
+                "Do this screening again in a few weeks, or sooner if you feel worse.");
+            case "minimal" -> List.of(
+                "Keep up your healthy habits.",
+                "Do this screening again if things change.");
+            default -> List.of(
+                "Complete the missing sections so the report can give an overall result.",
+                "Read your results below.",
+                "If you are worried about how you feel, talk to a doctor or counsellor.");
+        };
+    }
 
     private BasisLine basisLine(ConditionTrace t, Map<String, Question> questionsByKey,
                                 Map<String, QuestionView> viewsByKey, Map<String, String> conclusionNames,

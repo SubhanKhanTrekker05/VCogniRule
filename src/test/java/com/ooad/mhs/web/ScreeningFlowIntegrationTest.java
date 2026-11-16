@@ -99,6 +99,49 @@ class ScreeningFlowIntegrationTest extends IntegrationTestBase {
         assertThat(rep.reasoning()).extracting(fv -> fv.finding().ruleId()).contains("GATE-CRISIS");
     }
 
+    // ------------------------------------------------------------------ report layout (display only)
+
+    @Test
+    @DisplayName("Report: C-SSRS crisis findings are grouped into ONE 'Safety concern' card; nothing is lost")
+    void safetyFindingsGrouped() throws Exception {
+        Map<String, String> a = allAnswers(false);
+        a.put("cssrs_q1", "1");
+        a.put("cssrs_q4", "1");
+        MvcResult r = post(a);
+        ScreeningReport rep = report(r);
+        assertThat(rep.safetyItems()).extracting(fv -> fv.finding().ruleId())
+            .contains("CSSRS-INTENT", "CSSRS-PASSIVE").allMatch(id -> id.startsWith("CSSRS-"));
+        assertThat(rep.otherResults()).extracting(fv -> fv.finding().ruleId())
+            .doesNotContainAnyElementsOf(rep.safetyItems().stream().map(fv -> fv.finding().ruleId()).toList());
+        assertThat(rep.safetyItems().size() + rep.otherResults().size()).isEqualTo(rep.results().size());
+        String html = r.getResponse().getContentAsString();
+        assertThat(html).contains("Safety concern").contains("What to do now").contains("Call a helpline now");
+    }
+
+    @Test
+    @DisplayName("Report: 'Your scores' has one row per completed section, with the band from the fired rule")
+    void scoresTable() throws Exception {
+        MvcResult r = post(allAnswers(false));
+        ScreeningReport rep = report(r);
+        assertThat(rep.scores()).hasSize(rep.assessed().size());
+        assertThat(rep.scores()).filteredOn(s -> s.section() == Section.PHQ9).singleElement()
+            .satisfies(s -> {
+                assertThat(s.score()).isEqualTo("Total score 0 / 27");
+                assertThat(s.band()).isEqualTo("Minimal depression");
+            });
+        assertThat(rep.actionSteps()).first().asString().contains("healthy habits");
+    }
+
+    @Test
+    @DisplayName("Report: the 'Complete the Depression section' box is hidden when there is a crisis")
+    void depressionBoxHiddenOnCrisis() throws Exception {
+        String noCrisis = post(NO_SAFETY_RISK).getResponse().getContentAsString();
+        assertThat(noCrisis).contains("Complete Depression section");
+        Map<String, String> crisis = merge(items("cssrs_q", 0, 0, 0, 1, 0, 0));
+        String html = post(crisis).getResponse().getContentAsString();
+        assertThat(html).contains("1166").doesNotContain("Complete Depression section");
+    }
+
     @Test
     @DisplayName("S4: Safety Check skipped → sent back to the Safety Check with an error")
     void safetyCheckIsMandatory() throws Exception {
