@@ -1,6 +1,6 @@
 # Test Cases — VCogniRule
 
-Results of `mvn test` on 15 November 2026: **253 tests, 253 passed, 0 failed.**
+Results of `mvn test` on 16 November 2026: **255 tests, 255 passed, 0 failed.**
 
 The Pass/Fail column of the automated cases below is generated from the real JUnit result files
 (`target/surefire-reports`). A row passes only if every JUnit test listed for it ran and passed.
@@ -23,7 +23,8 @@ The Pass/Fail column of the automated cases below is generated from the real JUn
 | `ScreeningFlowIntegrationTest` | Integration | screening flow through the running app (MockMvc) | 17 |
 | `AdminIntegrationTest` | Integration | admin login, protected pages, create/edit/delete, bad input | 44 |
 | `FormRecoveryAndErrorPageIntegrationTest` | Integration | typed values kept after an error, friendly error pages | 7 |
-| **Total** | | | **253** |
+| `BrowserLauncherTest` | Unit | desktop launcher (VCogniRule.exe): home page address, open command per OS | 2 |
+| **Total** | | | **255** |
 
 ## Automated test cases
 

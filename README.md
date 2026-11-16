@@ -16,6 +16,7 @@ Built for CT-263 Object-Oriented Analysis & Design (NED University). See [CHANGE
 - [Tech Stack](#tech-stack)
 - [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
+- [Desktop App (double-click)](#desktop-app-double-click)
 - [Default Credentials](#default-credentials)
 - [Project Structure](#project-structure)
 - [How It Works](#how-it-works)
@@ -153,6 +154,20 @@ The app starts in about 5–15 seconds. On first launch, Spring Boot creates the
 
 ---
 
+## Desktop App (double-click)
+
+`packaging/build-exe.ps1` builds a Windows app that needs no Java installation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File packaging\build-exe.ps1
+```
+
+It runs the tests, builds the jar and uses `jpackage` (part of JDK 21) to create `dist\VCogniRule\VCogniRule.exe` with its own Java runtime, plus `dist\VCogniRule-windows.zip` (about 90 MB) to copy to another PC.
+
+Double-clicking `VCogniRule.exe` opens a console window, starts the app and opens http://localhost:8080 in the default browser (`vcognirule.open-browser=true`, handled by `config/BrowserLauncher`). Closing the console window stops the app. The database `vcognirule.db` is created in `dist\VCogniRulepp`.
+
+---
+
 ## Default Credentials
 
 | | Value |
@@ -167,7 +182,7 @@ These are created automatically on first startup if no admin exists. The passwor
 
 ## Project Structure
 
-70 Java source files: 51 classes (2 of them abstract), 9 records, 4 enums and 6 interfaces.
+71 Java source files: 52 classes (2 of them abstract), 9 records, 4 enums and 6 interfaces.
 
 ```
 VCogniRule/
@@ -319,7 +334,7 @@ Severity (mild, moderate, …) is decided by the rules in the knowledge base, no
 mvn test
 ```
 
-Runs **253 JUnit 5 tests** in about 30 seconds (`Tests run: 253, Failures: 0`). No database or running app is needed: the integration tests start the app themselves with a fresh SQLite file in `target/`.
+Runs **255 JUnit 5 tests** in about 30 seconds (`Tests run: 255, Failures: 0`). No database or running app is needed: the integration tests start the app themselves with a fresh SQLite file in `target/`.
 
 | Test class | Type | What it checks |
 |---|---|---|
@@ -333,6 +348,7 @@ Runs **253 JUnit 5 tests** in about 30 seconds (`Tests run: 253, Failures: 0`). 
 | `AdminServiceTest` | Unit | admin business rules (in-memory fake repositories), Observer notifications |
 | `BCryptPasswordHasherTest` | Unit | Adapter: hash and check passwords |
 | `TracingOperatorStrategyTest` | Unit | Decorator: same results, demo switch |
+| `BrowserLauncherTest` | Unit | desktop launcher: home page address and open command per OS |
 | `ScreeningFlowIntegrationTest` | Integration | the screening flow through the running app (Spring Boot Test + MockMvc) |
 | `AdminIntegrationTest` | Integration | admin login/logout, the 13 protected URLs, create/edit/delete/reset, bad input |
 

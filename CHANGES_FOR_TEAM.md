@@ -89,7 +89,7 @@ services → repositories and `QuestionnaireRegistry` → `Questionnaire` (aggre
 
 ## f) Tests added
 
-- **Before:** 0 tests. **Now: 253 automated tests, all passing** (185 unit tests + 68 integration tests).
+- **Before:** 0 tests. **Now: 255 automated tests, all passing** (187 unit tests + 68 integration tests).
 - **Unit tests** check one class at a time: the 8 operators, the rule engine, the scoring of all
   10 questionnaires, each design pattern, wrong answers, and the admin form rules.
 - **Integration tests** start the whole app with its own test database and click through it like a user:
@@ -105,10 +105,10 @@ services → repositories and `QuestionnaireRegistry` → `Questionnaire` (aggre
 mvn test
 ```
 
-After about 30 seconds you should see `Tests run: 253, Failures: 0` and `BUILD SUCCESS`.
+After about 30 seconds you should see `Tests run: 255, Failures: 0` and `BUILD SUCCESS`.
 The tests never touch the real database.
 
-Test files: 17 files in `src/test/java` (all NEW).
+Test files: 18 files in `src/test/java` (all NEW).
 
 ---
 

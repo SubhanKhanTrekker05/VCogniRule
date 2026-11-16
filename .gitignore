@@ -22,3 +22,6 @@ database/*.db-shm
 
 # Logs
 *.log
+
+# Desktop build output (packaging/build-exe.ps1)
+dist/
