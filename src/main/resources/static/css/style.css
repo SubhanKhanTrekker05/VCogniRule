@@ -588,3 +588,18 @@ mark { background: var(--amber-bg); color: var(--amber-text); padding: 0 2px; bo
 }
 .crisis-steps { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(168, 102, 28, 0.3); padding-left: 1.4rem; }
 .crisis-steps li { color: var(--amber-text); font-weight: 600; }
+
+/* ---- Report: score bar (colours from the band rules' priority order) ---- */
+.score-bar { position: relative; display: flex; height: 10px; margin-top: 0.4rem; border-radius: 5px; overflow: visible; max-width: 220px;
+             -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.score-seg { height: 100%; }
+.score-seg:first-child { border-radius: 5px 0 0 5px; }
+.score-seg:last-of-type { border-radius: 0 5px 5px 0; }
+.sb-c0 { background: #7FA36B; }   /* green */
+.sb-c1 { background: #E3C65A; }   /* yellow */
+.sb-c2 { background: #E0904A; }   /* orange */
+.sb-c3 { background: #C0503A; }   /* red */
+.score-marker { position: absolute; top: -4px; width: 4px; height: 18px; margin-left: -2px; background: var(--text);
+                border: 1px solid var(--surface); border-radius: 2px; }
+.score-bar-scale { display: flex; justify-content: space-between; max-width: 220px; font-size: 0.7rem; color: var(--text-muted); font-weight: 400; margin-top: 0.15rem; }
+@media print { .score-bar, .score-marker { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }

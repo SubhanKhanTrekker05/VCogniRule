@@ -62,7 +62,19 @@
                         <td><span th:text="${row.section.label}">Section</span>
                             <small th:text="${row.section.code}">CODE</small></td>
                         <td th:text="${row.score}">Total score 12 / 27</td>
-                        <td th:text="${row.band != null ? row.band : '—'}">Moderate depression</td>
+                        <td><span th:text="${row.band != null ? row.band : '—'}">Moderate depression</span>
+                            <!-- Score bar: one coloured part per band rule; the marker shows the score -->
+                            <div class="score-bar" th:if="${row.bar != null}" role="img"
+                                 th:attr="aria-label=${row.band != null ? row.band : 'Score'} + ': ' + ${row.bar.value} + ' of ' + ${row.bar.max}">
+                                <span th:each="seg : ${row.bar.segments}" th:class="'score-seg sb-c' + ${seg.colour}"
+                                      th:style="'width:' + ${seg.widthPercent(row.bar.max)} + '%'"
+                                      th:title="${seg.name} + ' (' + ${seg.from} + '–' + ${seg.to} + ')'"></span>
+                                <span class="score-marker" th:style="'left:' + ${row.bar.markerPercent()} + '%'"></span>
+                            </div>
+                            <div class="score-bar-scale" th:if="${row.bar != null}">
+                                <span>0</span><span th:text="${row.bar.max}">27</span>
+                            </div>
+                        </td>
                     </tr>
                 </tbody>
             </table>

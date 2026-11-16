@@ -134,7 +134,25 @@ public class ReportService {
     }
 
     /** One row of "Your scores": a completed section, its score text, and the band from its rules. */
-    public record ScoreRow(Section section, String score, String band) {}
+    public record ScoreRow(Section section, String score, String band, ScoreBar bar) {}
+
+    /**
+     * A coloured bar for one score, built from the section's existing band rules (no new scoring).
+     *
+     * @param value    the user's score
+     * @param max      the top of the scale
+     * @param segments one part per band rule, with its range and colour step (0 = green … 3 = red)
+     */
+    public record ScoreBar(int value, int max, List<BarSegment> segments) {
+        public ScoreBar { segments = List.copyOf(segments); }
+        /** Where the marker sits, as a CSS percentage (middle of the score's slot). */
+        public double markerPercent() { return (value + 0.5) * 100.0 / (max + 1); }
+    }
+
+    /** One band on the score bar: scores from..to (inclusive), the band name, and its colour step 0–3. */
+    public record BarSegment(int from, int to, String name, int colour) {
+        public double widthPercent(int max) { return (to - from + 1) * 100.0 / (max + 1); }
+    }
 
     /**
      * Display-only extras for the report page (parameter object). Nothing here changes
@@ -321,7 +339,8 @@ public class ReportService {
             String scoreNote = status.isComplete() ? questionnaire.scoreNote() : null;
             sectionAnswers.add(new SectionAnswers(status, score, scoreNote, rows));
             if (status.isComplete()) {
-                scores.add(new ScoreRow(sv.section(), score, band(sv.section(), findings, rulesById)));
+                scores.add(new ScoreRow(sv.section(), score, band(sv.section(), findings, rulesById),
+                    scoreBar(sv.section(), facts, rulesById.values())));
             }
         }
 
@@ -360,6 +379,78 @@ public class ReportService {
      * "Safety concern", otherwise its non-crisis rule ("No suicide risk indicators").
      * Returns null when no band rule fired.
      */
+    /** Top of each score's scale (the same maximums the summaries and labels print). */
+    private static final Map<Section, Integer> SCORE_MAX = Map.of(
+        Section.PHQ9, 27, Section.GAD7, 21, Section.PHQ15, 30, Section.WHO5, 25, Section.PSS10, 40,
+        Section.PSQI, 21, Section.WSAS, 40, Section.ASRS, 6, Section.PCPTSD, 4);
+
+    /**
+     * The score bar for a section, read from its active Level 1 band rules (one condition on the
+     * section's score). Each score point belongs to the highest-priority band rule covering it;
+     * colours follow the rules' priority order (lowest priority = green, highest = red).
+     * Returns null when the section has no score or no band rules.
+     */
+    static ScoreBar scoreBar(Section section, Map<String, Integer> facts, Collection<Rule> rules) {
+        String key = SCORE_KEYS.get(section);
+        Integer max = SCORE_MAX.get(section);
+        Integer value = key == null ? null : facts.get(key);
+        if (max == null || value == null) return null;
+        String prefix = section.getCode().replace("-", "") + "-";
+
+        // band rule → its score range [lo, hi]
+        Map<Rule, int[]> ranges = new LinkedHashMap<>();
+        for (Rule r : rules) {
+            if (r.level() == null || r.level() != 1 || !r.ruleId().startsWith(prefix) || r.groups() == null
+                    || r.groups().size() != 1 || r.groups().get(0).conditions().size() != 1) continue;
+            var c = r.groups().get(0).conditions().get(0);
+            if (!key.equals(c.fieldKey())) continue;
+            int[] range = range(c, max);
+            if (range != null && range[0] <= range[1]) ranges.put(r, range);
+        }
+        if (ranges.isEmpty()) return null;
+
+        List<Rule> byPriority = new ArrayList<>(ranges.keySet());
+        byPriority.sort(Comparator.comparingInt(r -> r.priority() == null ? 0 : r.priority()));
+        int steps = byPriority.size() - 1;
+
+        List<BarSegment> segments = new ArrayList<>();
+        Rule current = null;
+        int start = 0;
+        for (int point = 0; point <= max + 1; point++) {
+            Rule owner = null;
+            if (point <= max) {
+                for (Rule r : byPriority) {               // ascending, so the last match has the highest priority
+                    int[] g = ranges.get(r);
+                    if (point >= g[0] && point <= g[1]) owner = r;
+                }
+            }
+            if (owner != current) {
+                if (current != null) {
+                    int colour = steps == 0 ? 0 : (int) Math.round(byPriority.indexOf(current) * 3.0 / steps);
+                    segments.add(new BarSegment(start, point - 1, current.name(), colour));
+                }
+                current = owner;
+                start = point;
+            }
+        }
+        return segments.isEmpty() ? null : new ScoreBar(Math.min(Math.max(value, 0), max), max, segments);
+    }
+
+    private static int[] range(com.ooad.mhs.domain.Condition c, int max) {
+        if (c.operator() == null) return null;
+        Integer v = c.valueInt();
+        return switch (c.operator()) {
+            case BETWEEN -> c.valueMin() == null || c.valueMax() == null ? null
+                : new int[] {Math.max(c.valueMin(), 0), Math.min(c.valueMax(), max)};
+            case EQ -> v == null ? null : new int[] {v, v};
+            case GTE -> v == null ? null : new int[] {v, max};
+            case GT -> v == null ? null : new int[] {v + 1, max};
+            case LTE -> v == null ? null : new int[] {0, v};
+            case LT -> v == null ? null : new int[] {0, v - 1};
+            default -> null;
+        };
+    }
+
     private static String band(Section section, List<Finding> findings, Map<String, Rule> rulesById) {
         String prefix = section.getCode().replace("-", "") + "-";
         boolean cssrs = section == Section.CSSRS;

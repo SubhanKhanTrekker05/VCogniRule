@@ -133,6 +133,19 @@ class ScreeningFlowIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    @DisplayName("Report: the score bar uses the band rules' own cut-offs (PHQ-9 0-4 … 20-27, green → red)")
+    void scoreBarFollowsBandRules() throws Exception {
+        ScreeningReport rep = report(post(merge(NO_SAFETY_RISK, items("phq9_q", 2, 2, 2, 2, 2, 2, 0, 0, 0))));
+        var bar = rep.scores().stream().filter(s -> s.section() == Section.PHQ9).findFirst().orElseThrow().bar();
+        assertThat(bar.value()).isEqualTo(12);
+        assertThat(bar.max()).isEqualTo(27);
+        assertThat(bar.segments()).extracting(s -> s.from() + "-" + s.to())
+            .containsExactly("0-4", "5-9", "10-14", "15-19", "20-27");
+        assertThat(bar.segments().get(0).colour()).isZero();
+        assertThat(bar.segments().get(4).colour()).isEqualTo(3);
+    }
+
+    @Test
     @DisplayName("Report: the 'Complete the Depression section' box is hidden when there is a crisis")
     void depressionBoxHiddenOnCrisis() throws Exception {
         String noCrisis = post(NO_SAFETY_RISK).getResponse().getContentAsString();
