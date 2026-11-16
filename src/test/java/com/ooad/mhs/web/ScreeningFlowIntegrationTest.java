@@ -159,6 +159,26 @@ class ScreeningFlowIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    @DisplayName("Report: 'At a glance' has one tile per questionnaire; PHQ-9 12/27 is orange, unfinished ones are 'Not done'")
+    void atAGlanceTiles() throws Exception {
+        ScreeningReport rep = report(post(merge(NO_SAFETY_RISK, items("phq9_q", 2, 2, 2, 2, 2, 2, 0, 0, 0))));
+        assertThat(rep.glance()).hasSize(Section.values().length);
+        var phq9 = rep.glance().stream().filter(t -> t.section() == Section.PHQ9).findFirst().orElseThrow();
+        assertThat(phq9.score()).isEqualTo("12/27");
+        assertThat(phq9.state()).isEqualTo("c2");
+        var cssrs = rep.glance().stream().filter(t -> t.section() == Section.CSSRS).findFirst().orElseThrow();
+        assertThat(cssrs.state()).isEqualTo("c0");
+        assertThat(rep.glance().stream().filter(t -> t.section() == Section.GAD7).findFirst().orElseThrow().done()).isFalse();
+
+        Map<String, String> a = allAnswers(false);
+        a.put("cssrs_q1", "1");
+        a.put("cssrs_q4", "1");
+        ScreeningReport crisis = report(post(a));
+        assertThat(crisis.glance().stream().filter(t -> t.section() == Section.CSSRS).findFirst().orElseThrow().state())
+            .isEqualTo("crisis");
+    }
+
+    @Test
     @DisplayName("Report: the 'Complete the Depression section' box is hidden when there is a crisis")
     void depressionBoxHiddenOnCrisis() throws Exception {
         String noCrisis = post(NO_SAFETY_RISK).getResponse().getContentAsString();

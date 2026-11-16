@@ -55,6 +55,19 @@
             </ol>
         </div>
 
+        <!-- At a glance: one tile per questionnaire (ReportService.glance). Colour = the band colour
+             from the score bar; the band label is always written too, so meaning never relies on colour. -->
+        <div class="card glance" id="at-a-glance" th:if="${!report.glance.isEmpty()}">
+            <h2>At a glance</h2>
+            <ul class="glance-grid">
+                <li th:each="t : ${report.glance}" th:class="'glance-tile g-' + ${t.state}">
+                    <span class="glance-name"><span class="glance-dot" aria-hidden="true"></span><span th:text="${t.section.label}">Depression</span></span>
+                    <span class="glance-score" th:if="${t.score != null}" th:text="${t.score}">12/27</span>
+                    <span class="glance-band" th:text="${!t.done ? 'Not done' : (t.band != null ? t.band : 'Done')}">Moderate</span>
+                </li>
+            </ul>
+        </div>
+
         <!-- Your scores: one row per completed section (score text from each Questionnaire.summary,
              band from the rule that fired for that score) -->
         <div class="card" id="your-scores" th:if="${!report.scores.isEmpty()}">

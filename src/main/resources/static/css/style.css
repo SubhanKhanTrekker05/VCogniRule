@@ -622,3 +622,26 @@ mark { background: var(--amber-bg); color: var(--amber-text); padding: 0 2px; bo
 .overall-progress { display: none; margin: 0 0 0.9rem; }
 .js .overall-progress { display: block; }
 .overall-progress .progress-text { font-weight: 600; font-size: 0.88rem; color: var(--text); margin-bottom: 0.3rem; }
+
+/* ---- At a glance: one tile per questionnaire (5 per row on laptop, 2 on phone) ---- */
+.glance-grid, .card .glance-grid { list-style: none; padding: 0; margin: 0; display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.6rem; }
+.glance-tile { display: flex; flex-direction: column; gap: 0.2rem; padding: 0.6rem 0.7rem;
+  border: 1px solid #ddd; border-top: 5px solid #B8B8B8; border-radius: 8px; background: #fff;
+  min-width: 0; overflow-wrap: anywhere; break-inside: avoid; }
+.glance-name { font-weight: 600; font-size: 0.9rem; display: flex; align-items: flex-start; gap: 0.35rem; }
+.glance-dot { flex: none; width: 0.7rem; height: 0.7rem; border-radius: 50%; background: #B8B8B8; margin-top: 0.3rem; }
+.glance-score { font-size: 1.15rem; font-weight: 700; }
+.glance-band { font-size: 0.82rem; color: #555; }
+.g-c0 { border-top-color: #7FA36B; } .g-c0 .glance-dot { background: #7FA36B; }
+.g-c1 { border-top-color: #E3C65A; } .g-c1 .glance-dot { background: #E3C65A; }
+.g-c2 { border-top-color: #E0904A; } .g-c2 .glance-dot { background: #E0904A; }
+.g-c3 { border-top-color: #C0503A; } .g-c3 .glance-dot { background: #C0503A; }
+.g-crisis { border-top-color: var(--amber); background: #F6E1C2; } .g-crisis .glance-dot { background: var(--amber); }
+.g-crisis .glance-band { font-weight: 600; color: var(--amber-text); }
+.g-notdone { background: #F4F4F4; color: #777; } .g-notdone .glance-band { color: #777; font-style: italic; }
+@media (max-width: 600px) { .glance-grid, .card .glance-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media print {
+  .glance-grid, .card .glance-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .glance-tile, .glance-dot { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

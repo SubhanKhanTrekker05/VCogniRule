@@ -155,6 +155,18 @@ public class ReportService {
     }
 
     /**
+     * One "At a glance" tile (display only, built from the existing scores and bands).
+     *
+     * @param section the questionnaire
+     * @param score   short score such as "12/27", or null when there is no number to show
+     * @param band    the band label, or null
+     * @param state   "c0".."c3" (band colour, green → red), "crisis", "plain" (done, no colour) or "notdone"
+     */
+    public record GlanceTile(Section section, String score, String band, String state) {
+        public boolean done() { return !"notdone".equals(state); }
+    }
+
+    /**
      * Display-only extras for the report page (parameter object). Nothing here changes
      * which findings fired, the crisis box or the banner.
      *
@@ -165,8 +177,9 @@ public class ReportService {
      */
     public record ReportExtras(List<String> actionSteps, List<ScoreRow> scores,
                                List<FindingView> safetyItems, List<FindingView> otherResults,
-                               List<TopicGroup> topics) {
+                               List<TopicGroup> topics, List<GlanceTile> glance) {
         public ReportExtras {
+            glance = List.copyOf(glance);
             actionSteps = List.copyOf(actionSteps);
             scores = List.copyOf(scores);
             safetyItems = List.copyOf(safetyItems);
@@ -236,7 +249,7 @@ public class ReportService {
                                boolean depressionMissing, List<SectionAnswers> answers) {
             this(overall, hasCrisis, findings, coverage, depressionMissing, answers,
                 new ReportExtras(List.of(), List.of(), List.of(),
-                    findings == null ? List.of() : findings.results(), List.of()));
+                    findings == null ? List.of() : findings.results(), List.of(), List.of()));
         }
 
         public String overallKey() { return overall.key(); }
@@ -253,6 +266,7 @@ public class ReportService {
         public List<FindingView> safetyItems() { return extras.safetyItems(); }
         public List<FindingView> otherResults() { return extras.otherResults(); }
         public List<TopicGroup> topics() { return extras.topics(); }
+        public List<GlanceTile> glance() { return extras.glance(); }
     }
 
     // ------------------------------------------------------------------ build
@@ -360,6 +374,7 @@ public class ReportService {
                     scoreBar(sv.section(), facts, rulesById.values())));
             }
         }
+        List<GlanceTile> glance = glance(sectionViews, scores);
 
         // ---- Display grouping: all C-SSRS crisis cards become one "Safety concern" card ----
         // (results itself is unchanged; this only decides how the page lays the cards out)
@@ -377,7 +392,34 @@ public class ReportService {
             new Coverage(assessed, partial, notStarted),
             !depressionComplete, sectionAnswers,
             new ReportExtras(actionSteps(overall.key(), hasCrisis), scores, safetyItems, otherResults,
-                topics(safetyItems, otherResults, rulesById.values())));
+                topics(safetyItems, otherResults, rulesById.values()), glance));
+    }
+
+    /**
+     * "At a glance": one tile per questionnaire, in page order. Colour = the band's colour on the
+     * score bar; C-SSRS uses the crisis colour when its band is "Safety concern", else green.
+     * Sections not completed are "notdone" (grey).
+     */
+    static List<GlanceTile> glance(List<SectionView> sectionViews, List<ScoreRow> scores) {
+        Map<Section, ScoreRow> bySection = new HashMap<>();
+        for (ScoreRow r : scores) bySection.put(r.section(), r);
+        List<GlanceTile> tiles = new ArrayList<>();
+        for (SectionView sv : sectionViews) {
+            ScoreRow row = bySection.get(sv.section());
+            if (row == null) { tiles.add(new GlanceTile(sv.section(), null, null, "notdone")); continue; }
+            String state = "plain";
+            String score = null;
+            if (row.bar() != null) {
+                score = row.bar().value() + "/" + row.bar().max();
+                for (BarSegment seg : row.bar().segments()) {
+                    if (row.bar().value() >= seg.from() && row.bar().value() <= seg.to()) state = "c" + seg.colour();
+                }
+            } else if (sv.section() == Section.CSSRS && row.band() != null) {
+                state = "Safety concern".equals(row.band()) ? "crisis" : "c0";
+            }
+            tiles.add(new GlanceTile(sv.section(), score, row.band(), state));
+        }
+        return tiles;
     }
 
     // ------------------------------------------------------------------ helpers
