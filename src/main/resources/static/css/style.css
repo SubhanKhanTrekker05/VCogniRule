@@ -640,8 +640,16 @@ mark { background: var(--amber-bg); color: var(--amber-text); padding: 0 2px; bo
 .g-crisis { border-top-color: var(--amber); background: #F6E1C2; } .g-crisis .glance-dot { background: var(--amber); }
 .g-crisis .glance-band { font-weight: 600; color: var(--amber-text); }
 .g-notdone { background: #F4F4F4; color: #777; } .g-notdone .glance-band { color: #777; font-style: italic; }
+.glance-tile .glance-band { font-size: 1.05rem; font-weight: 700; color: #333; }
+.glance-notchecked { margin: 0.8rem 0 0; font-size: 0.9rem; color: #666; }
+.glance-key { margin: 0.5rem 0 0; font-size: 0.82rem; color: #555; display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; }
+.glance-key span { display: inline-flex; align-items: center; gap: 0.3rem; }
+.glance-key .glance-dot { display: inline-block; margin-top: 0; }
+.k-c0 { background: #7FA36B !important; } .k-c1 { background: #E3C65A !important; }
+.k-c2 { background: #E0904A !important; } .k-c3 { background: #C0503A !important; }
+.k-crisis { background: var(--amber) !important; }
 @media (max-width: 600px) { .glance-grid, .card .glance-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media print {
   .glance-grid, .card .glance-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-  .glance-tile, .glance-dot { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .glance-tile, .glance-dot, .glance-key i { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }

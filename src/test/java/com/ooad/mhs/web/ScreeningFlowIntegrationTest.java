@@ -159,23 +159,26 @@ class ScreeningFlowIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    @DisplayName("Report: 'At a glance' has one tile per questionnaire; PHQ-9 12/27 is orange, unfinished ones are 'Not done'")
+    @DisplayName("Report: 'At a glance' shows plain words for done sections, lists the rest, and Safety shows any crisis")
     void atAGlanceTiles() throws Exception {
         ScreeningReport rep = report(post(merge(NO_SAFETY_RISK, items("phq9_q", 2, 2, 2, 2, 2, 2, 0, 0, 0))));
         assertThat(rep.glance()).hasSize(Section.values().length);
-        var phq9 = rep.glance().stream().filter(t -> t.section() == Section.PHQ9).findFirst().orElseThrow();
-        assertThat(phq9.score()).isEqualTo("12/27");
-        assertThat(phq9.state()).isEqualTo("c2");
-        var cssrs = rep.glance().stream().filter(t -> t.section() == Section.CSSRS).findFirst().orElseThrow();
-        assertThat(cssrs.state()).isEqualTo("c0");
-        assertThat(rep.glance().stream().filter(t -> t.section() == Section.GAD7).findFirst().orElseThrow().done()).isFalse();
+        assertThat(rep.glanceDone()).extracting(t -> t.name() + "=" + t.word())
+            .containsExactly("Safety=Good", "Mood=Moderate");
+        assertThat(rep.glanceNotChecked()).contains("Worry & anxiety").doesNotContain("Mood");
 
         Map<String, String> a = allAnswers(false);
         a.put("cssrs_q1", "1");
         a.put("cssrs_q4", "1");
-        ScreeningReport crisis = report(post(a));
-        assertThat(crisis.glance().stream().filter(t -> t.section() == Section.CSSRS).findFirst().orElseThrow().state())
-            .isEqualTo("crisis");
+        assertThat(safetyTile(report(post(a))).word()).isEqualTo("Needs attention");
+        // crisis from PHQ-9 question 9 only: the Safety tile still shows it (display only)
+        ScreeningReport q9 = report(post(allAnswers(true)));
+        assertThat(q9.hasCrisis()).isTrue();
+        assertThat(safetyTile(q9).state()).isEqualTo("crisis");
+    }
+
+    private static com.ooad.mhs.service.ReportService.GlanceTile safetyTile(ScreeningReport r) {
+        return r.glance().stream().filter(t -> t.section() == Section.CSSRS).findFirst().orElseThrow();
     }
 
     @Test

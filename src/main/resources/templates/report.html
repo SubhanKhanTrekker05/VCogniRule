@@ -57,15 +57,22 @@
 
         <!-- At a glance: one tile per questionnaire (ReportService.glance). Colour = the band colour
              from the score bar; the band label is always written too, so meaning never relies on colour. -->
-        <div class="card glance" id="at-a-glance" th:if="${!report.glance.isEmpty()}">
+        <div class="card glance" id="at-a-glance" th:if="${!report.glanceDone.isEmpty()}">
             <h2>At a glance</h2>
             <ul class="glance-grid">
-                <li th:each="t : ${report.glance}" th:class="'glance-tile g-' + ${t.state}">
-                    <span class="glance-name"><span class="glance-dot" aria-hidden="true"></span><span th:text="${t.section.label}">Depression</span></span>
-                    <span class="glance-score" th:if="${t.score != null}" th:text="${t.score}">12/27</span>
-                    <span class="glance-band" th:text="${!t.done ? 'Not done' : (t.band != null ? t.band : 'Done')}">Moderate</span>
+                <li th:each="t : ${report.glanceDone}" th:class="'glance-tile g-' + ${t.state}">
+                    <span class="glance-name"><span class="glance-dot" aria-hidden="true"></span><span th:text="${t.name}">Mood</span></span>
+                    <span class="glance-band" th:text="${t.word}">Moderate</span>
                 </li>
             </ul>
+            <p class="glance-notchecked" th:if="${!report.glanceNotChecked.isEmpty()}"
+               th:text="'Not checked: ' + ${report.glanceNotChecked}">Not checked: Sleep, Stress</p>
+            <p class="glance-key">
+                <span><i class="glance-dot k-c0"></i>Good</span>
+                <span><i class="glance-dot k-c1"></i>Mild</span>
+                <span><i class="glance-dot k-c2"></i>Moderate</span>
+                <span><i class="glance-dot k-c3"></i><i class="glance-dot k-crisis"></i>Severe / Needs attention</span>
+            </p>
         </div>
 
         <!-- Your scores: one row per completed section (score text from each Questionnaire.summary,
