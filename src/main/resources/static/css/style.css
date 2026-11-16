@@ -617,3 +617,8 @@ mark { background: var(--amber-bg); color: var(--amber-text); padding: 0 2px; bo
 /* ---- Screening page: start note ---- */
 .assessment-note { font-size: 0.88rem; color: var(--text-muted); margin-top: 0.35rem; }
 .tab-time { white-space: nowrap; }
+
+/* ---- Screening page: overall progress bar (only with JS, since the script fills it) ---- */
+.overall-progress { display: none; margin: 0 0 0.9rem; }
+.js .overall-progress { display: block; }
+.overall-progress .progress-text { font-weight: 600; font-size: 0.88rem; color: var(--text); margin-bottom: 0.3rem; }

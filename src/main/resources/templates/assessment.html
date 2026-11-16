@@ -29,6 +29,13 @@
 
         <form id="screening-form" method="post" action="/screening" novalidate>
 
+            <!-- Overall progress (filled in by screening.js; hidden without JS) -->
+            <div class="overall-progress" data-overall>
+                <div class="progress-text" data-overall-text aria-live="polite"
+                     th:text="'0 of ' + ${sections.size()} + ' sections done'">0 of 10 sections done</div>
+                <div class="progress-track"><div class="progress-fill" data-overall-fill></div></div>
+            </div>
+
             <!-- Tabs -->
             <div class="tab-bar" role="tablist" aria-label="Screening sections">
                 <button th:each="sv : ${sections}" type="button" role="tab" class="tab"

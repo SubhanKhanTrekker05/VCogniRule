@@ -159,6 +159,12 @@
                 (s.total ? (s.answered / s.total) * 100 : 0) + '%';
         });
 
+        // Overall progress bar at the top: completed sections out of all sections
+        const overallText = document.querySelector('[data-overall-text]');
+        const overallFill = document.querySelector('[data-overall-fill]');
+        if (overallText) overallText.textContent = completeCount + ' of ' + panels.length + ' sections done';
+        if (overallFill) overallFill.style.width = (panels.length ? (completeCount / panels.length) * 100 : 0) + '%';
+
         const safetyDone = stats(panelFor(SAFETY)).complete;
         summary.innerHTML = '';
         const strong = document.createElement('strong');
