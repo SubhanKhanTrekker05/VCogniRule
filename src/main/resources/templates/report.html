@@ -27,6 +27,12 @@
                 <span th:case="'critical'">Your answers show a serious concern. Please contact a helpline or emergency services now.</span>
             </p>
             <p th:if="${report.overallNote != null}" class="overall-note" th:text="${report.overallNote}">Note</p>
+            <!-- When the screening was done (the report is built right after Submit) -->
+            <p class="report-date" th:text="'Screening done on ' + ${#temporals.format(#temporals.createNow(), 'd MMMM yyyy, HH:mm')}">Screening done on 16 November 2026, 18:30</p>
+            <p class="report-howto" th:if="${report.hasCrisis}">How to read this: start with 'Get help now', then
+               'Your scores'. Open 'Why this appears' on any result to see why it appears.</p>
+            <p class="report-howto" th:unless="${report.hasCrisis}">How to read this: start with 'Your scores', then
+               'What to do now'. Open 'Why this appears' on any result to see why it appears.</p>
             <p class="report-jump no-print">
                 <a href="#your-scores" th:if="${!report.scores.isEmpty()}">Scores</a><span th:if="${!report.scores.isEmpty()}"> · </span><a href="#findings">Results</a> · <a href="#your-answers">Your answers</a>
             </p>

@@ -603,3 +603,7 @@ mark { background: var(--amber-bg); color: var(--amber-text); padding: 0 2px; bo
                 border: 1px solid var(--surface); border-radius: 2px; }
 .score-bar-scale { display: flex; justify-content: space-between; max-width: 220px; font-size: 0.7rem; color: var(--text-muted); font-weight: 400; margin-top: 0.15rem; }
 @media print { .score-bar, .score-marker { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+/* ---- Report: date and "How to read this" under the banner ---- */
+.report-date { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem; }
+.report-howto { font-size: 0.85rem; color: var(--text-muted); max-width: 34rem; margin: 0.35rem auto 0; line-height: 1.45; }
