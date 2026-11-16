@@ -164,12 +164,28 @@ public class ReportService {
      * @param otherResults  the remaining "Your results" cards (results minus safetyItems)
      */
     public record ReportExtras(List<String> actionSteps, List<ScoreRow> scores,
-                               List<FindingView> safetyItems, List<FindingView> otherResults) {
+                               List<FindingView> safetyItems, List<FindingView> otherResults,
+                               List<TopicGroup> topics) {
         public ReportExtras {
             actionSteps = List.copyOf(actionSteps);
             scores = List.copyOf(scores);
             safetyItems = List.copyOf(safetyItems);
             otherResults = List.copyOf(otherResults);
+            topics = List.copyOf(topics);
+        }
+    }
+
+    /**
+     * "Your results" cards under one topic heading (display grouping only).
+     *
+     * @param name        Safety, Mood, Anxiety, … Combined
+     * @param safetyItems the grouped "Safety concern" items (only in the Safety topic)
+     * @param cards       the other cards of this topic, in the same order as before
+     */
+    public record TopicGroup(String name, List<FindingView> safetyItems, List<FindingView> cards) {
+        public TopicGroup {
+            safetyItems = List.copyOf(safetyItems);
+            cards = List.copyOf(cards);
         }
     }
 
@@ -220,7 +236,7 @@ public class ReportService {
                                boolean depressionMissing, List<SectionAnswers> answers) {
             this(overall, hasCrisis, findings, coverage, depressionMissing, answers,
                 new ReportExtras(List.of(), List.of(), List.of(),
-                    findings == null ? List.of() : findings.results()));
+                    findings == null ? List.of() : findings.results(), List.of()));
         }
 
         public String overallKey() { return overall.key(); }
@@ -236,6 +252,7 @@ public class ReportService {
         public List<ScoreRow> scores() { return extras.scores(); }
         public List<FindingView> safetyItems() { return extras.safetyItems(); }
         public List<FindingView> otherResults() { return extras.otherResults(); }
+        public List<TopicGroup> topics() { return extras.topics(); }
     }
 
     // ------------------------------------------------------------------ build
@@ -359,7 +376,8 @@ public class ReportService {
             new FindingGroups(results, guidance, reasoning),
             new Coverage(assessed, partial, notStarted),
             !depressionComplete, sectionAnswers,
-            new ReportExtras(actionSteps(overall.key(), hasCrisis), scores, safetyItems, otherResults));
+            new ReportExtras(actionSteps(overall.key(), hasCrisis), scores, safetyItems, otherResults,
+                topics(safetyItems, otherResults, rulesById.values())));
     }
 
     // ------------------------------------------------------------------ helpers
@@ -379,6 +397,64 @@ public class ReportService {
      * "Safety concern", otherwise its non-crisis rule ("No suicide risk indicators").
      * Returns null when no band rule fired.
      */
+    /** Topic headings of "Your results", in display order. */
+    public static final List<String> TOPICS = List.of(
+        "Safety", "Mood", "Anxiety", "Stress", "Sleep", "Physical", "Trauma", "Attention", "Daily life", "Combined");
+
+    /** Field-key prefix → topic (the questionnaire the answer or score belongs to). */
+    private static final Map<String, String> KEY_TOPICS = Map.ofEntries(
+        Map.entry("cssrs_", "Safety"), Map.entry("crisis_detected", "Safety"),
+        Map.entry("phq15_", "Physical"), Map.entry("phq9_", "Mood"), Map.entry("who5_", "Mood"),
+        Map.entry("gad7_", "Anxiety"), Map.entry("pss10_", "Stress"), Map.entry("psqi_", "Sleep"),
+        Map.entry("pcptsd_", "Trauma"), Map.entry("asrs_", "Attention"), Map.entry("wsas_", "Daily life"));
+
+    /**
+     * Puts the result cards under topic headings, keeping their order inside each topic.
+     * Crisis-coloured cards → Safety. Otherwise the topic of the questionnaire(s) the rule's
+     * matched conditions use (an earlier finding counts as the questionnaire its rule used);
+     * more than one questionnaire, or unknown → Combined.
+     */
+    static List<TopicGroup> topics(List<FindingView> safetyItems, List<FindingView> cards, Collection<Rule> rules) {
+        Map<String, Rule> byConclusion = new HashMap<>();
+        for (Rule r : rules) if (r.conclusionKey() != null) byConclusion.putIfAbsent(r.conclusionKey(), r);
+
+        Map<String, List<FindingView>> byTopic = new LinkedHashMap<>();
+        for (FindingView fv : cards) {
+            String topic;
+            if (fv.tone().equals(FindingStyler.CRISIS_TONE)) {
+                topic = "Safety";
+            } else {
+                Set<String> found = new HashSet<>();
+                for (ConditionTrace t : fv.finding().trace()) {
+                    String direct = keyTopic(t.fieldKey());
+                    if (direct != null) { found.add(direct); continue; }
+                    Rule earlier = byConclusion.get(t.fieldKey());
+                    if (earlier == null || earlier.groups() == null) { found.add("Combined"); continue; }
+                    for (var g : earlier.groups()) for (var c : g.conditions()) {
+                        String t2 = keyTopic(c.fieldKey());
+                        found.add(t2 != null ? t2 : "Combined");
+                    }
+                }
+                topic = found.size() == 1 ? found.iterator().next() : "Combined";
+            }
+            byTopic.computeIfAbsent(topic, k -> new ArrayList<>()).add(fv);
+        }
+
+        List<TopicGroup> groups = new ArrayList<>();
+        for (String name : TOPICS) {
+            List<FindingView> list = byTopic.getOrDefault(name, List.of());
+            List<FindingView> safety = name.equals("Safety") ? safetyItems : List.of();
+            if (!list.isEmpty() || !safety.isEmpty()) groups.add(new TopicGroup(name, safety, list));
+        }
+        return groups;
+    }
+
+    private static String keyTopic(String key) {
+        if (key == null) return null;
+        for (var e : KEY_TOPICS.entrySet()) if (key.startsWith(e.getKey())) return e.getValue();
+        return null;
+    }
+
     /** Top of each score's scale (the same maximums the summaries and labels print). */
     private static final Map<Section, Integer> SCORE_MAX = Map.of(
         Section.PHQ9, 27, Section.GAD7, 21, Section.PHQ15, 30, Section.WHO5, 25, Section.PSS10, 40,

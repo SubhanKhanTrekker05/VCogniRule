@@ -133,6 +133,19 @@ class ScreeningFlowIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    @DisplayName("Report: result cards are grouped by topic; every card appears exactly once, Safety first")
+    void resultsGroupedByTopic() throws Exception {
+        ScreeningReport rep = report(post(allAnswers(true)));
+        List<String> grouped = rep.topics().stream()
+            .flatMap(t -> java.util.stream.Stream.concat(t.safetyItems().stream(), t.cards().stream()))
+            .map(fv -> fv.finding().ruleId()).toList();
+        assertThat(grouped).containsExactlyInAnyOrderElementsOf(
+            rep.results().stream().map(fv -> fv.finding().ruleId()).toList());
+        assertThat(rep.topics().get(0).name()).isEqualTo("Safety");
+        assertThat(rep.topics()).extracting(t -> t.name()).isSubsetOf(com.ooad.mhs.service.ReportService.TOPICS);
+    }
+
+    @Test
     @DisplayName("Report: the score bar uses the band rules' own cut-offs (PHQ-9 0-4 … 20-27, green → red)")
     void scoreBarFollowsBandRules() throws Exception {
         ScreeningReport rep = report(post(merge(NO_SAFETY_RISK, items("phq9_q", 2, 2, 2, 2, 2, 2, 0, 0, 0))));

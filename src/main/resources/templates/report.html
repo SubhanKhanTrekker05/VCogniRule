@@ -105,15 +105,19 @@
         <!-- Findings, grouped by audience (see ReportService) -->
         <div class="findings-section" id="findings">
             <h2>Your results</h2>
-            <p class="findings-intro">What your answers show, most important first. Open
+            <p class="findings-intro">What your answers show, grouped by topic, most important first. Open
                <em>Why this appears</em> on any result to see the answers it is based on.</p>
 
             <p th:if="${report.results.isEmpty()}" class="empty-findings">
                 No results for the sections you completed.
             </p>
-            <!-- All C-SSRS crisis findings as ONE card (display grouping only) -->
-            <th:block th:if="${!report.safetyItems.isEmpty()}"><div th:replace="~{fragments/finding :: safety(${report.safetyItems})}"></div></th:block>
-            <th:block th:each="fv : ${report.otherResults}"><div th:replace="~{fragments/finding :: card(${fv})}"></div></th:block>
+            <!-- Cards under small topic headings (display grouping only, same order inside each topic).
+                 All C-SSRS crisis findings are ONE "Safety concern" card under Safety. -->
+            <section th:each="tg : ${report.topics}" class="topic-group">
+                <h3 class="topic-heading" th:text="${tg.name}">Mood</h3>
+                <th:block th:if="${!tg.safetyItems.isEmpty()}"><div th:replace="~{fragments/finding :: safety(${tg.safetyItems})}"></div></th:block>
+                <th:block th:each="fv : ${tg.cards}"><div th:replace="~{fragments/finding :: card(${fv})}"></div></th:block>
+            </section>
 
             <details class="finding-group" th:if="${!report.guidance.isEmpty()}">
                 <summary>
