@@ -175,6 +175,12 @@ class ScreeningFlowIntegrationTest extends IntegrationTestBase {
         ScreeningReport q9 = report(post(allAnswers(true)));
         assertThat(q9.hasCrisis()).isTrue();
         assertThat(safetyTile(q9).state()).isEqualTo("crisis");
+        // screens (ASRS, PC-PTSD): a positive screen reads "Needs attention", not "Severe"
+        Map<String, String> s = merge(NO_SAFETY_RISK, items("pcptsd_q", 1, 1, 1, 1));
+        s.putAll(items("asrs_q", 4, 4, 4, 4, 4, 4));
+        ScreeningReport pos = report(post(s));
+        assertThat(pos.glanceDone()).extracting(t -> t.name() + "=" + t.word())
+            .contains("Stressful memories=Needs attention", "Focus=Needs attention");
     }
 
     private static com.ooad.mhs.service.ReportService.GlanceTile safetyTile(ScreeningReport r) {

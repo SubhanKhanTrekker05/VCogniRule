@@ -161,10 +161,12 @@ public class ReportService {
      * @param name    plain name, e.g. "Mood"
      * @param state   "c0".."c3" (band colour, green → red), "crisis", "plain" (done, no colour) or "notdone"
      */
-    public record GlanceTile(Section section, String name, String state) {
+    public record GlanceTile(Section section, String name, String state, boolean screen) {
+        public GlanceTile(Section section, String name, String state) { this(section, name, state, false); }
         public boolean done() { return !"notdone".equals(state); }
-        /** One plain result word for the colour. */
+        /** One plain result word for the colour (a positive ASRS / PC-PTSD screen is "Needs attention"). */
         public String word() {
+            if (screen && "c3".equals(state)) return "Needs attention";
             return switch (state) {
                 case "c0" -> "Good";
                 case "c1" -> "Mild";
@@ -442,7 +444,9 @@ public class ReportService {
                     if (row.bar().value() >= seg.from() && row.bar().value() <= seg.to()) state = "c" + seg.colour();
                 }
             }
-            tiles.add(new GlanceTile(sv.section(), name, state));
+            // ASRS and PC-PTSD are positive/negative screens, not severity scales
+            boolean screen = sv.section() == Section.ASRS || sv.section() == Section.PCPTSD;
+            tiles.add(new GlanceTile(sv.section(), name, state, screen));
         }
         return tiles;
     }
