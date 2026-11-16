@@ -75,6 +75,13 @@
             </ol>
         </div>
 
+        <!-- Disclaimer: always shown, also in the printed / PDF report -->
+        <div class="report-disclaimer" role="note">
+            <p><strong>This is a screening result, not a medical diagnosis.</strong>
+               It shows possible warning signs based on your answers. Only a qualified doctor or
+               mental health professional can make a diagnosis. Please discuss these results with one.</p>
+        </div>
+
         <!-- Findings, grouped by audience (see ReportService) -->
         <div class="findings-section" id="findings">
             <h2>Your results</h2>
@@ -107,13 +114,6 @@
                    (for example, opening extra checks once depression was found). Shown for transparency.</p>
                 <th:block th:each="fv : ${report.reasoning}"><div th:replace="~{fragments/finding :: card(${fv})}"></div></th:block>
             </details>
-        </div>
-
-        <!-- Disclaimer: always shown, also in the printed / PDF report -->
-        <div class="report-disclaimer" role="note">
-            <p><strong>This is a screening result, not a medical diagnosis.</strong>
-               It shows possible warning signs based on your answers. Only a qualified doctor or
-               mental health professional can make a diagnosis. Please discuss these results with one.</p>
         </div>
 
         <!-- What was assessed -->
