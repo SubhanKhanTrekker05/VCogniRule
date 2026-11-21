@@ -14,19 +14,56 @@
         <!-- Header + overall result -->
         <div class="report-header">
             <h1>Screening Report</h1>
-            <span class="overall-label">Overall result</span>
-            <span th:text="${#strings.toUpperCase(report.overallLabel)}"
-                  th:class="'severity-banner severity-' + ${report.overallKey}">MODERATE</span>
-            <!-- One plain sentence for each severity, so the one-word banner is understood at a glance.
-                 (Needs attention / Not determined / Not classified already have their own note below.) -->
-            <p class="overall-meaning" th:switch="${report.overallKey}">
-                <span th:case="'minimal'">Your answers show few or no signs of concern.</span>
-                <span th:case="'mild'">Your answers show some mild signs. Keep an eye on how you feel, and talk to someone you trust if it continues.</span>
-                <span th:case="'moderate'">Your answers show signs that are worth talking about with a doctor or counsellor.</span>
-                <span th:case="'severe'">Your answers show strong signs. Please speak to a doctor or mental health professional soon.</span>
-                <span th:case="'critical'">Your answers show a serious concern. Please contact a helpline or emergency services now.</span>
-            </p>
-            <p th:if="${report.overallNote != null}" class="overall-note" th:text="${report.overallNote}">Note</p>
+            <!-- Friendly summary card: a plain headline + a kind line, and a level scale.
+                 Display only: it reads report.overallKey / report.hasCrisis (same logic and colours as before). -->
+            <div th:with="lvl=${report.hasCrisis or report.overallKey == 'attention' or report.overallKey == 'critical' ? 'urgent'
+                               : (report.overallKey == 'severe' ? 'high' : (report.overallKey == 'minimal' ? 'low'
+                               : (report.overallKey == 'mild' or report.overallKey == 'moderate' ? report.overallKey : 'none')))}"
+                 th:class="'summary-card lvl-' + ${lvl}" th:attr="data-overall=${report.overallKey}">
+                <th:block th:switch="${lvl}">
+                    <th:block th:case="'urgent'">
+                        <p class="summary-headline">Your answers show you may not be safe right now.</p>
+                        <p class="summary-kind">Please reach out for help today. You don't have to go through this alone.</p>
+                    </th:block>
+                    <th:block th:case="'high'">
+                        <p class="summary-headline">Your answers show strong signs of distress.</p>
+                        <p class="summary-kind">It's important to talk to a doctor or counsellor soon.</p>
+                    </th:block>
+                    <th:block th:case="'moderate'">
+                        <p class="summary-headline">Your answers show some signs worth talking about.</p>
+                        <p class="summary-kind">A visit to a doctor or counsellor could really help.</p>
+                    </th:block>
+                    <th:block th:case="'mild'">
+                        <p class="summary-headline">Your answers show a few mild signs.</p>
+                        <p class="summary-kind">Keep an eye on how you feel, and take care of yourself.</p>
+                    </th:block>
+                    <th:block th:case="'low'">
+                        <p class="summary-headline">Your answers show few or no signs of concern.</p>
+                        <p class="summary-kind">Keep up your healthy habits.</p>
+                    </th:block>
+                    <th:block th:case="*">
+                        <th:block th:if="${report.overallKey == 'undetermined'}">
+                            <p class="summary-headline">We can't give an overall result yet.</p>
+                            <p class="summary-kind">It needs the Depression &amp; Mood section. Your other results are below.</p>
+                        </th:block>
+                        <th:block th:unless="${report.overallKey == 'undetermined'}">
+                            <p class="summary-headline">Your answers don't fit one simple overall pattern.</p>
+                            <p class="summary-kind">Please look at your individual results below.</p>
+                        </th:block>
+                    </th:block>
+                </th:block>
+                <!-- Level scale: the current level is highlighted (none for Not determined / Not classified) -->
+                <ol class="level-scale" th:attr="aria-label='Overall level: ' + ${report.overallLabel}">
+                    <li class="ls-low" th:classappend="${lvl == 'low'} ? 'is-current'">Low</li>
+                    <li class="ls-mild" th:classappend="${lvl == 'mild'} ? 'is-current'">Mild</li>
+                    <li class="ls-moderate" th:classappend="${lvl == 'moderate'} ? 'is-current'">Moderate</li>
+                    <li class="ls-high" th:classappend="${lvl == 'high'} ? 'is-current'">High</li>
+                    <li class="ls-urgent" th:classappend="${lvl == 'urgent'} ? 'is-current'">Urgent</li>
+                </ol>
+                <!-- Only the partly-answered note adds something new (the other notes repeat the headline) -->
+                <p th:if="${report.overallNote != null and !report.hasCrisis and lvl != 'none'}" class="overall-note"
+                   th:text="${report.overallNote}">Note</p>
+            </div>
             <!-- When the screening was done (the report is built right after Submit) -->
             <p class="report-date" th:text="'Screening done on ' + ${#temporals.format(#temporals.createNow(), 'd MMMM yyyy, HH:mm')}">Screening done on 16 November 2026, 18:30</p>
             <p class="report-howto" th:if="${report.hasCrisis}">How to read this: start with 'Get help now', then

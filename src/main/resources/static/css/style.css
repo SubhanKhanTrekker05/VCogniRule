@@ -653,3 +653,24 @@ mark { background: var(--amber-bg); color: var(--amber-text); padding: 0 2px; bo
   .glance-grid, .card .glance-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .glance-tile, .glance-dot, .glance-key i { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* ---- Friendly summary card at the top of the report (replaces the one-word badge) ---- */
+.summary-card { --lvl: var(--info-border); max-width: 620px; margin: 1rem auto 0; padding: 1.1rem 1.25rem 1rem;
+  background: color-mix(in srgb, var(--lvl) 9%, #fff); border: 1px solid color-mix(in srgb, var(--lvl) 35%, #fff);
+  border-left: 6px solid var(--lvl); border-radius: var(--radius); text-align: left; }
+.summary-card.lvl-low { --lvl: var(--info-border); }
+.summary-card.lvl-mild { --lvl: var(--sage); }
+.summary-card.lvl-moderate { --lvl: var(--moderate); }
+.summary-card.lvl-high { --lvl: var(--terracotta); }
+.summary-card.lvl-urgent { --lvl: var(--amber); }
+.summary-headline { font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0; line-height: 1.35; }
+.summary-kind { font-size: 1rem; color: var(--text); margin: 0.35rem 0 0; }
+.level-scale { list-style: none; padding: 0; margin: 0.9rem 0 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.level-scale li { text-align: center; font-size: 0.8rem; padding: 0.3rem 0.1rem; border-radius: 4px;
+  color: var(--text-muted); background: #EFEBE6; border-top: 4px solid color-mix(in srgb, var(--c) 35%, #fff); }
+.ls-low { --c: var(--info-border); } .ls-mild { --c: var(--sage); } .ls-moderate { --c: var(--moderate); }
+.ls-high { --c: var(--terracotta); } .ls-urgent { --c: var(--amber); }
+.level-scale li.is-current { font-weight: 700; color: var(--text); border-top-color: var(--c);
+  background: color-mix(in srgb, var(--c) 22%, #fff); box-shadow: inset 0 0 0 1px var(--c); }
+.summary-card .overall-note { margin: 0.7rem 0 0; max-width: none; }
+@media print { .summary-card, .level-scale li { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
