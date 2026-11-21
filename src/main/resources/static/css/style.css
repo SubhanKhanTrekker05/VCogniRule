@@ -562,3 +562,122 @@ mark { background: var(--amber-bg); color: var(--amber-text); padding: 0 2px; bo
     body { background: white; }
     .finding, .card { break-inside: avoid; box-shadow: none; }
 }
+
+/* ---- Report: What to do now, Your scores, grouped Safety concern card ---- */
+.next-steps { border-left: 4px solid var(--primary); }
+.next-steps h2 { margin-bottom: 0.5rem; }
+.next-steps-list { margin: 0; padding-left: 1.4rem; }
+.next-steps-list li { padding: 0.25rem 0; line-height: 1.5; }
+
+.score-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.score-table th { text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); }
+.score-table td { padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.score-table td small { display: block; color: var(--text-muted); font-size: 0.75rem; }
+.score-table td:last-child { font-weight: 600; }
+
+.safety-items { list-style: none; padding: 0; margin: 0.5rem 0 0; }
+.safety-item { padding: 0.6rem 0.75rem; margin-top: 0.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+.safety-item > strong { display: block; }
+.safety-item-text { display: block; font-size: 0.9rem; color: var(--text-muted); margin-top: 0.15rem; }
+.safety-item .trace details { padding-left: 0; }
+.trace .finding-source { margin: 0.4rem 0 0; }
+
+@media (max-width: 600px) {
+    .score-table { font-size: 0.85rem; }
+    .score-table th, .score-table td { padding: 0.45rem 0.3rem; }
+}
+.crisis-steps { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(168, 102, 28, 0.3); padding-left: 1.4rem; }
+.crisis-steps li { color: var(--amber-text); font-weight: 600; }
+
+/* ---- Report: score bar (colours from the band rules' priority order) ---- */
+.score-bar { position: relative; display: flex; height: 10px; margin-top: 0.4rem; border-radius: 5px; overflow: visible; max-width: 220px;
+             -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.score-seg { height: 100%; }
+.score-seg:first-child { border-radius: 5px 0 0 5px; }
+.score-seg:last-of-type { border-radius: 0 5px 5px 0; }
+.sb-c0 { background: #7FA36B; }   /* green */
+.sb-c1 { background: #E3C65A; }   /* yellow */
+.sb-c2 { background: #E0904A; }   /* orange */
+.sb-c3 { background: #C0503A; }   /* red */
+.score-marker { position: absolute; top: -4px; width: 4px; height: 18px; margin-left: -2px; background: var(--text);
+                border: 1px solid var(--surface); border-radius: 2px; }
+.score-bar-scale { display: flex; justify-content: space-between; max-width: 220px; font-size: 0.7rem; color: var(--text-muted); font-weight: 400; margin-top: 0.15rem; }
+@media print { .score-bar, .score-marker { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+/* ---- Report: date and "How to read this" under the banner ---- */
+.report-date { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem; }
+.report-howto { font-size: 0.85rem; color: var(--text-muted); max-width: 34rem; margin: 0.35rem auto 0; line-height: 1.45; }
+
+/* ---- Report: topic headings in Your results ---- */
+.topic-group { margin-top: 1.1rem; }
+.topic-heading { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);
+                 margin: 0 0 0.45rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--border); }
+@media print { .topic-heading { break-after: avoid; } }
+
+/* ---- Screening page: start note ---- */
+.assessment-note { font-size: 0.88rem; color: var(--text-muted); margin-top: 0.35rem; }
+.tab-time { white-space: nowrap; }
+
+/* ---- Screening page: overall progress bar (only with JS, since the script fills it) ---- */
+.overall-progress { display: none; margin: 0 0 0.9rem; }
+.js .overall-progress { display: block; }
+.overall-progress .progress-text { font-weight: 600; font-size: 0.88rem; color: var(--text); margin-bottom: 0.3rem; }
+
+/* ---- At a glance: one tile per questionnaire (5 per row on laptop, 2 on phone) ---- */
+.glance-grid, .card .glance-grid { list-style: none; padding: 0; margin: 0; display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.6rem; }
+.glance-tile { display: flex; flex-direction: column; gap: 0.2rem; padding: 0.6rem 0.7rem;
+  border: 1px solid #ddd; border-top: 5px solid #B8B8B8; border-radius: 8px; background: #fff;
+  min-width: 0; overflow-wrap: anywhere; break-inside: avoid; }
+.glance-name { font-weight: 600; font-size: 0.9rem; display: flex; align-items: flex-start; gap: 0.35rem; }
+.glance-dot { flex: none; width: 0.7rem; height: 0.7rem; border-radius: 50%; background: #B8B8B8; margin-top: 0.3rem; }
+.glance-score { font-size: 1.15rem; font-weight: 700; }
+.glance-band { font-size: 0.82rem; color: #555; }
+.g-c0 { border-top-color: #7FA36B; } .g-c0 .glance-dot { background: #7FA36B; }
+.g-c1 { border-top-color: #E3C65A; } .g-c1 .glance-dot { background: #E3C65A; }
+.g-c2 { border-top-color: #E0904A; } .g-c2 .glance-dot { background: #E0904A; }
+.g-c3 { border-top-color: #C0503A; } .g-c3 .glance-dot { background: #C0503A; }
+.g-crisis { border-top-color: var(--amber); background: #F6E1C2; } .g-crisis .glance-dot { background: var(--amber); }
+.g-crisis .glance-band { font-weight: 600; color: var(--amber-text); }
+.g-notdone { background: #F4F4F4; color: #777; } .g-notdone .glance-band { color: #777; font-style: italic; }
+.glance-tile .glance-band { font-size: 1.05rem; font-weight: 700; color: #333; }
+.glance-notchecked { margin: 0.8rem 0 0; font-size: 0.9rem; color: #666; }
+.glance-key { margin: 0.5rem 0 0; font-size: 0.82rem; color: #555; display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; }
+.glance-key span { display: inline-flex; align-items: center; gap: 0.3rem; }
+.glance-key .glance-dot { display: inline-block; margin-top: 0; }
+.k-c0 { background: #7FA36B !important; } .k-c1 { background: #E3C65A !important; }
+.k-c2 { background: #E0904A !important; } .k-c3 { background: #C0503A !important; }
+.k-crisis { background: var(--amber) !important; }
+@media (max-width: 600px) { .glance-grid, .card .glance-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media print {
+  .glance-grid, .card .glance-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .glance-tile, .glance-dot, .glance-key i { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* ---- Friendly summary card at the top of the report (replaces the one-word badge) ---- */
+.summary-card { --lvl: var(--info-border); max-width: 620px; margin: 1rem auto 0; padding: 1.1rem 1.25rem 1rem;
+  background: color-mix(in srgb, var(--lvl) 9%, #fff); border: 1px solid color-mix(in srgb, var(--lvl) 35%, #fff);
+  border-left: 6px solid var(--lvl); border-radius: var(--radius); text-align: left; }
+.summary-card.lvl-low { --lvl: var(--info-border); }
+.summary-card.lvl-mild { --lvl: var(--sage); }
+.summary-card.lvl-moderate { --lvl: var(--moderate); }
+.summary-card.lvl-high { --lvl: var(--terracotta); }
+.summary-card.lvl-urgent { --lvl: var(--amber); }
+.summary-headline { font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0; line-height: 1.35; }
+.summary-kind { font-size: 1rem; color: var(--text); margin: 0.35rem 0 0; }
+.level-scale { list-style: none; padding: 0; margin: 0.9rem 0 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.level-scale li { text-align: center; font-size: 0.8rem; padding: 0.3rem 0.1rem; border-radius: 4px;
+  color: var(--text-muted); background: #EFEBE6; border-top: 4px solid color-mix(in srgb, var(--c) 35%, #fff); }
+.ls-low { --c: var(--info-border); } .ls-mild { --c: var(--sage); } .ls-moderate { --c: var(--moderate); }
+.ls-high { --c: var(--terracotta); } .ls-urgent { --c: var(--amber); }
+.level-scale li.is-current { font-weight: 700; color: var(--text); border-top-color: var(--c);
+  background: color-mix(in srgb, var(--c) 22%, #fff); box-shadow: inset 0 0 0 1px var(--c); }
+.summary-card .overall-note { margin: 0.7rem 0 0; max-width: none; }
+@media print { .summary-card, .level-scale li { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+/* ---- Simple summary first: the full detailed report opens with one button ---- */
+.full-toggle { text-align: center; margin: 1.5rem 0; }
+.btn-full { font-size: 1.05rem; padding: 0.75rem 1.6rem; }
+.full-report-intro .report-howto { text-align: center; margin-bottom: 1rem; }
+.js .full-report:not(.is-open) { display: none; }   /* without JS everything stays visible */
+@media print { .js .full-report, .full-report { display: block !important; } }

@@ -99,6 +99,104 @@ class ScreeningFlowIntegrationTest extends IntegrationTestBase {
         assertThat(rep.reasoning()).extracting(fv -> fv.finding().ruleId()).contains("GATE-CRISIS");
     }
 
+    // ------------------------------------------------------------------ report layout (display only)
+
+    @Test
+    @DisplayName("Report: C-SSRS crisis findings are grouped into ONE 'Safety concern' card; nothing is lost")
+    void safetyFindingsGrouped() throws Exception {
+        Map<String, String> a = allAnswers(false);
+        a.put("cssrs_q1", "1");
+        a.put("cssrs_q4", "1");
+        MvcResult r = post(a);
+        ScreeningReport rep = report(r);
+        assertThat(rep.safetyItems()).extracting(fv -> fv.finding().ruleId())
+            .contains("CSSRS-INTENT", "CSSRS-PASSIVE").allMatch(id -> id.startsWith("CSSRS-"));
+        assertThat(rep.otherResults()).extracting(fv -> fv.finding().ruleId())
+            .doesNotContainAnyElementsOf(rep.safetyItems().stream().map(fv -> fv.finding().ruleId()).toList());
+        assertThat(rep.safetyItems().size() + rep.otherResults().size()).isEqualTo(rep.results().size());
+        String html = r.getResponse().getContentAsString();
+        assertThat(html).contains("Safety concern").contains("Get help now").contains("Screening done on").contains("Call one of these numbers now.").doesNotContain("<h2>What to do now</h2>");
+    }
+
+    @Test
+    @DisplayName("Report: 'Your scores' has one row per completed section, with the band from the fired rule")
+    void scoresTable() throws Exception {
+        MvcResult r = post(allAnswers(false));
+        ScreeningReport rep = report(r);
+        assertThat(rep.scores()).hasSize(rep.assessed().size());
+        assertThat(rep.scores()).filteredOn(s -> s.section() == Section.PHQ9).singleElement()
+            .satisfies(s -> {
+                assertThat(s.score()).isEqualTo("Total score 0 / 27");
+                assertThat(s.band()).isEqualTo("Minimal depression");
+            });
+        assertThat(rep.actionSteps()).first().asString().contains("healthy habits");
+    }
+
+    @Test
+    @DisplayName("Report: result cards are grouped by topic; every card appears exactly once, Safety first")
+    void resultsGroupedByTopic() throws Exception {
+        ScreeningReport rep = report(post(allAnswers(true)));
+        List<String> grouped = rep.topics().stream()
+            .flatMap(t -> java.util.stream.Stream.concat(t.safetyItems().stream(), t.cards().stream()))
+            .map(fv -> fv.finding().ruleId()).toList();
+        assertThat(grouped).containsExactlyInAnyOrderElementsOf(
+            rep.results().stream().map(fv -> fv.finding().ruleId()).toList());
+        assertThat(rep.topics().get(0).name()).isEqualTo("Safety");
+        assertThat(rep.topics()).extracting(t -> t.name()).isSubsetOf(com.ooad.mhs.service.ReportService.TOPICS);
+    }
+
+    @Test
+    @DisplayName("Report: the score bar uses the band rules' own cut-offs (PHQ-9 0-4 … 20-27, green → red)")
+    void scoreBarFollowsBandRules() throws Exception {
+        ScreeningReport rep = report(post(merge(NO_SAFETY_RISK, items("phq9_q", 2, 2, 2, 2, 2, 2, 0, 0, 0))));
+        var bar = rep.scores().stream().filter(s -> s.section() == Section.PHQ9).findFirst().orElseThrow().bar();
+        assertThat(bar.value()).isEqualTo(12);
+        assertThat(bar.max()).isEqualTo(27);
+        assertThat(bar.segments()).extracting(s -> s.from() + "-" + s.to())
+            .containsExactly("0-4", "5-9", "10-14", "15-19", "20-27");
+        assertThat(bar.segments().get(0).colour()).isZero();
+        assertThat(bar.segments().get(4).colour()).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("Report: 'At a glance' shows plain words for done sections, lists the rest, and Safety shows any crisis")
+    void atAGlanceTiles() throws Exception {
+        ScreeningReport rep = report(post(merge(NO_SAFETY_RISK, items("phq9_q", 2, 2, 2, 2, 2, 2, 0, 0, 0))));
+        assertThat(rep.glance()).hasSize(Section.values().length);
+        assertThat(rep.glanceDone()).extracting(t -> t.name() + "=" + t.word())
+            .containsExactly("Safety=Good", "Mood=Moderate");
+        assertThat(rep.glanceNotChecked()).contains("Worry & anxiety").doesNotContain("Mood");
+
+        Map<String, String> a = allAnswers(false);
+        a.put("cssrs_q1", "1");
+        a.put("cssrs_q4", "1");
+        assertThat(safetyTile(report(post(a))).word()).isEqualTo("Needs attention");
+        // crisis from PHQ-9 question 9 only: the Safety tile still shows it (display only)
+        ScreeningReport q9 = report(post(allAnswers(true)));
+        assertThat(q9.hasCrisis()).isTrue();
+        assertThat(safetyTile(q9).state()).isEqualTo("crisis");
+        // screens (ASRS, PC-PTSD): a positive screen reads "Needs attention", not "Severe"
+        Map<String, String> s = merge(NO_SAFETY_RISK, items("pcptsd_q", 1, 1, 1, 1));
+        s.putAll(items("asrs_q", 4, 4, 4, 4, 4, 4));
+        ScreeningReport pos = report(post(s));
+        assertThat(pos.glanceDone()).extracting(t -> t.name() + "=" + t.word())
+            .contains("Stressful memories=Needs attention", "Focus=Needs attention");
+    }
+
+    private static com.ooad.mhs.service.ReportService.GlanceTile safetyTile(ScreeningReport r) {
+        return r.glance().stream().filter(t -> t.section() == Section.CSSRS).findFirst().orElseThrow();
+    }
+
+    @Test
+    @DisplayName("Report: the 'Complete the Depression section' box is hidden when there is a crisis")
+    void depressionBoxHiddenOnCrisis() throws Exception {
+        String noCrisis = post(NO_SAFETY_RISK).getResponse().getContentAsString();
+        assertThat(noCrisis).contains("Complete Depression section");
+        Map<String, String> crisis = merge(items("cssrs_q", 0, 0, 0, 1, 0, 0));
+        String html = post(crisis).getResponse().getContentAsString();
+        assertThat(html).contains("1166").doesNotContain("Complete Depression section");
+    }
+
     @Test
     @DisplayName("S4: Safety Check skipped → sent back to the Safety Check with an error")
     void safetyCheckIsMandatory() throws Exception {

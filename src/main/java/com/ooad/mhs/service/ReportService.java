@@ -133,6 +133,88 @@ public class ReportService {
         }
     }
 
+    /** One row of "Your scores": a completed section, its score text, and the band from its rules. */
+    public record ScoreRow(Section section, String score, String band, ScoreBar bar) {}
+
+    /**
+     * A coloured bar for one score, built from the section's existing band rules (no new scoring).
+     *
+     * @param value    the user's score
+     * @param max      the top of the scale
+     * @param segments one part per band rule, with its range and colour step (0 = green … 3 = red)
+     */
+    public record ScoreBar(int value, int max, List<BarSegment> segments) {
+        public ScoreBar { segments = List.copyOf(segments); }
+        /** Where the marker sits, as a CSS percentage (middle of the score's slot). */
+        public double markerPercent() { return (value + 0.5) * 100.0 / (max + 1); }
+    }
+
+    /** One band on the score bar: scores from..to (inclusive), the band name, and its colour step 0–3. */
+    public record BarSegment(int from, int to, String name, int colour) {
+        public double widthPercent(int max) { return (to - from + 1) * 100.0 / (max + 1); }
+    }
+
+    /**
+     * One "At a glance" tile (display only, built from the existing scores and bands).
+     *
+     * @param section the questionnaire
+     * @param name    plain name, e.g. "Mood"
+     * @param state   "c0".."c3" (band colour, green → red), "crisis", "plain" (done, no colour) or "notdone"
+     */
+    public record GlanceTile(Section section, String name, String state, boolean screen) {
+        public GlanceTile(Section section, String name, String state) { this(section, name, state, false); }
+        public boolean done() { return !"notdone".equals(state); }
+        /** One plain result word for the colour (a positive ASRS / PC-PTSD screen is "Needs attention"). */
+        public String word() {
+            if (screen && "c3".equals(state)) return "Needs attention";
+            return switch (state) {
+                case "c0" -> "Good";
+                case "c1" -> "Mild";
+                case "c2" -> "Moderate";
+                case "c3" -> "Severe";
+                case "crisis" -> "Needs attention";
+                case "plain" -> "Done";
+                default -> "Not checked";
+            };
+        }
+    }
+
+    /**
+     * Display-only extras for the report page (parameter object). Nothing here changes
+     * which findings fired, the crisis box or the banner.
+     *
+     * @param actionSteps   the "What to do now" steps for the overall result
+     * @param scores        one row per completed section
+     * @param safetyItems   the C-SSRS crisis findings, shown together as one "Safety concern" card
+     * @param otherResults  the remaining "Your results" cards (results minus safetyItems)
+     */
+    public record ReportExtras(List<String> actionSteps, List<ScoreRow> scores,
+                               List<FindingView> safetyItems, List<FindingView> otherResults,
+                               List<TopicGroup> topics, List<GlanceTile> glance) {
+        public ReportExtras {
+            glance = List.copyOf(glance);
+            actionSteps = List.copyOf(actionSteps);
+            scores = List.copyOf(scores);
+            safetyItems = List.copyOf(safetyItems);
+            otherResults = List.copyOf(otherResults);
+            topics = List.copyOf(topics);
+        }
+    }
+
+    /**
+     * "Your results" cards under one topic heading (display grouping only).
+     *
+     * @param name        Safety, Mood, Anxiety, … Combined
+     * @param safetyItems the grouped "Safety concern" items (only in the Safety topic)
+     * @param cards       the other cards of this topic, in the same order as before
+     */
+    public record TopicGroup(String name, List<FindingView> safetyItems, List<FindingView> cards) {
+        public TopicGroup {
+            safetyItems = List.copyOf(safetyItems);
+            cards = List.copyOf(cards);
+        }
+    }
+
     /** Which sections were completed, partly answered, or not started (parameter object). */
     public record Coverage(List<SectionStatus> assessed, List<SectionStatus> partial, List<SectionStatus> notStarted) {
         public Coverage {
@@ -155,6 +237,7 @@ public class ReportService {
      * @param coverage          which sections were assessed, partly answered, not started
      * @param depressionMissing true when the PHQ-9 (Depression) section was not completed
      * @param answers           the "Your answers" list
+     * @param extras            display-only parts: action steps, scores, the grouped safety card
      */
     public record ScreeningReport(
         OverallResultResolver.OverallResult overall,
@@ -162,13 +245,24 @@ public class ReportService {
         FindingGroups findings,
         Coverage coverage,
         boolean depressionMissing,
-        List<SectionAnswers> answers
+        List<SectionAnswers> answers,
+        ReportExtras extras
     ) {
         public ScreeningReport {
             java.util.Objects.requireNonNull(overall, "overall");
+            java.util.Objects.requireNonNull(extras, "extras");
             java.util.Objects.requireNonNull(findings, "findings");
             java.util.Objects.requireNonNull(coverage, "coverage");
             answers = List.copyOf(answers);
+        }
+
+        /** A report without the display extras (no action steps, scores or grouped safety card). */
+        public ScreeningReport(OverallResultResolver.OverallResult overall, boolean hasCrisis,
+                               FindingGroups findings, Coverage coverage,
+                               boolean depressionMissing, List<SectionAnswers> answers) {
+            this(overall, hasCrisis, findings, coverage, depressionMissing, answers,
+                new ReportExtras(List.of(), List.of(), List.of(),
+                    findings == null ? List.of() : findings.results(), List.of(), List.of()));
         }
 
         public String overallKey() { return overall.key(); }
@@ -180,6 +274,16 @@ public class ReportService {
         public List<SectionStatus> assessed() { return coverage.assessed(); }
         public List<SectionStatus> partial() { return coverage.partial(); }
         public List<SectionStatus> notStarted() { return coverage.notStarted(); }
+        public List<String> actionSteps() { return extras.actionSteps(); }
+        public List<ScoreRow> scores() { return extras.scores(); }
+        public List<FindingView> safetyItems() { return extras.safetyItems(); }
+        public List<FindingView> otherResults() { return extras.otherResults(); }
+        public List<TopicGroup> topics() { return extras.topics(); }
+        public List<GlanceTile> glance() { return extras.glance(); }
+        public List<GlanceTile> glanceDone() { return extras.glance().stream().filter(GlanceTile::done).toList(); }
+        public String glanceNotChecked() {
+            return String.join(", ", extras.glance().stream().filter(t -> !t.done()).map(GlanceTile::name).toList());
+        }
     }
 
     // ------------------------------------------------------------------ build
@@ -263,8 +367,9 @@ public class ReportService {
         List<SectionStatus> partial = statuses.stream().filter(SectionStatus::isPartial).toList();
         List<SectionStatus> notStarted = statuses.stream().filter(SectionStatus::isNotStarted).toList();
 
-        // ---- Your answers (completed and partly answered sections) ----
+        // ---- Your answers (completed and partly answered sections) and Your scores ----
         List<SectionAnswers> sectionAnswers = new ArrayList<>();
+        List<ScoreRow> scores = new ArrayList<>();
         for (SectionView sv : sectionViews) {
             SectionStatus status = assessment.statuses().get(sv.section());
             if (status == null || status.isNotStarted()) continue;
@@ -281,15 +386,270 @@ public class ReportService {
             String score = status.isComplete() ? questionnaire.summary(facts, answers) : null;
             String scoreNote = status.isComplete() ? questionnaire.scoreNote() : null;
             sectionAnswers.add(new SectionAnswers(status, score, scoreNote, rows));
+            if (status.isComplete()) {
+                scores.add(new ScoreRow(sv.section(), score, band(sv.section(), findings, rulesById),
+                    scoreBar(sv.section(), facts, rulesById.values())));
+            }
+        }
+        List<GlanceTile> glance = glance(sectionViews, scores, hasCrisis);
+
+        // ---- Display grouping: all C-SSRS crisis cards become one "Safety concern" card ----
+        // (results itself is unchanged; this only decides how the page lays the cards out)
+        List<FindingView> safetyItems = new ArrayList<>();
+        List<FindingView> otherResults = new ArrayList<>();
+        for (FindingView fv : results) {
+            boolean cssrsCrisis = fv.finding().ruleId().startsWith(CSSRS_RULE_PREFIX)
+                && fv.tone().equals(FindingStyler.CRISIS_TONE);
+            if (cssrsCrisis) safetyItems.add(fv);
+            else otherResults.add(fv);
         }
 
         return new ScreeningReport(overall, hasCrisis,
             new FindingGroups(results, guidance, reasoning),
             new Coverage(assessed, partial, notStarted),
-            !depressionComplete, sectionAnswers);
+            !depressionComplete, sectionAnswers,
+            new ReportExtras(actionSteps(overall.key(), hasCrisis), scores, safetyItems, otherResults,
+                topics(safetyItems, otherResults, rulesById.values()), glance));
+    }
+
+    /**
+     * "At a glance": one tile per questionnaire, in page order. Colour = the band's colour on the
+     * score bar. The Safety tile uses the crisis colour whenever the report is a crisis (from any
+     * rule, e.g. PHQ-9 question 9), else green. Sections not completed are "notdone".
+     * Display only: hasCrisis is read, never changed.
+     */
+    static final Map<Section, String> PLAIN_NAMES = Map.of(
+        Section.CSSRS, "Safety", Section.PHQ9, "Mood", Section.GAD7, "Worry & anxiety", Section.PSQI, "Sleep",
+        Section.PSS10, "Stress", Section.WHO5, "Wellbeing", Section.PHQ15, "Body symptoms",
+        Section.PCPTSD, "Stressful memories", Section.ASRS, "Focus", Section.WSAS, "Daily life");
+
+    static List<GlanceTile> glance(List<SectionView> sectionViews, List<ScoreRow> scores, boolean hasCrisis) {
+        Map<Section, ScoreRow> bySection = new HashMap<>();
+        for (ScoreRow r : scores) bySection.put(r.section(), r);
+        List<GlanceTile> tiles = new ArrayList<>();
+        for (SectionView sv : sectionViews) {
+            ScoreRow row = bySection.get(sv.section());
+            String name = PLAIN_NAMES.getOrDefault(sv.section(), sv.section().getLabel());
+            boolean safety = sv.section() == Section.CSSRS;
+            if (row == null) {
+                // A crisis always shows on the Safety tile, even if the Safety Check was not finished
+                tiles.add(new GlanceTile(sv.section(), name, safety && hasCrisis ? "crisis" : "notdone"));
+                continue;
+            }
+            String state = "plain";
+            if (safety) {
+                state = hasCrisis || "Safety concern".equals(row.band()) ? "crisis" : "c0";
+            } else if (row.bar() != null) {
+                for (BarSegment seg : row.bar().segments()) {
+                    if (row.bar().value() >= seg.from() && row.bar().value() <= seg.to()) state = "c" + seg.colour();
+                }
+            }
+            // ASRS and PC-PTSD are positive/negative screens, not severity scales
+            boolean screen = sv.section() == Section.ASRS || sv.section() == Section.PCPTSD;
+            tiles.add(new GlanceTile(sv.section(), name, state, screen));
+        }
+        return tiles;
     }
 
     // ------------------------------------------------------------------ helpers
+
+    private static final String CSSRS_RULE_PREFIX = "CSSRS-";
+
+    /** The calculated score that each section's band rules check (the same facts the summaries print). */
+    private static final Map<Section, String> SCORE_KEYS = Map.of(
+        Section.PHQ9, "phq9_total", Section.GAD7, "gad7_total", Section.PHQ15, "phq15_total",
+        Section.WHO5, "who5_raw", Section.PSS10, "pss10_total", Section.PSQI, "psqi_global",
+        Section.WSAS, "wsas_total", Section.ASRS, "asrs_shaded_count", Section.PCPTSD, "pcptsd_total");
+
+    /**
+     * The band of a section, read from the rules that fired (no new scoring): the Level 1 rule of
+     * that questionnaire whose only condition is on the section's score. If two match (PSQI "poor"
+     * and "severe"), the higher-priority rule wins. C-SSRS has no score: any crisis rule gives
+     * "Safety concern", otherwise its non-crisis rule ("No suicide risk indicators").
+     * Returns null when no band rule fired.
+     */
+    /** Topic headings of "Your results", in display order. */
+    public static final List<String> TOPICS = List.of(
+        "Safety", "Mood", "Anxiety", "Stress", "Sleep", "Physical", "Trauma", "Attention", "Daily life", "Combined");
+
+    /** Field-key prefix → topic (the questionnaire the answer or score belongs to). */
+    private static final Map<String, String> KEY_TOPICS = Map.ofEntries(
+        Map.entry("cssrs_", "Safety"), Map.entry("crisis_detected", "Safety"),
+        Map.entry("phq15_", "Physical"), Map.entry("phq9_", "Mood"), Map.entry("who5_", "Mood"),
+        Map.entry("gad7_", "Anxiety"), Map.entry("pss10_", "Stress"), Map.entry("psqi_", "Sleep"),
+        Map.entry("pcptsd_", "Trauma"), Map.entry("asrs_", "Attention"), Map.entry("wsas_", "Daily life"));
+
+    /**
+     * Puts the result cards under topic headings, keeping their order inside each topic.
+     * Crisis-coloured cards → Safety. Otherwise the topic of the questionnaire(s) the rule's
+     * matched conditions use (an earlier finding counts as the questionnaire its rule used);
+     * more than one questionnaire, or unknown → Combined.
+     */
+    static List<TopicGroup> topics(List<FindingView> safetyItems, List<FindingView> cards, Collection<Rule> rules) {
+        Map<String, Rule> byConclusion = new HashMap<>();
+        for (Rule r : rules) if (r.conclusionKey() != null) byConclusion.putIfAbsent(r.conclusionKey(), r);
+
+        Map<String, List<FindingView>> byTopic = new LinkedHashMap<>();
+        for (FindingView fv : cards) {
+            String topic;
+            if (fv.tone().equals(FindingStyler.CRISIS_TONE)) {
+                topic = "Safety";
+            } else {
+                Set<String> found = new HashSet<>();
+                for (ConditionTrace t : fv.finding().trace()) {
+                    String direct = keyTopic(t.fieldKey());
+                    if (direct != null) { found.add(direct); continue; }
+                    Rule earlier = byConclusion.get(t.fieldKey());
+                    if (earlier == null || earlier.groups() == null) { found.add("Combined"); continue; }
+                    for (var g : earlier.groups()) for (var c : g.conditions()) {
+                        String t2 = keyTopic(c.fieldKey());
+                        found.add(t2 != null ? t2 : "Combined");
+                    }
+                }
+                topic = found.size() == 1 ? found.iterator().next() : "Combined";
+            }
+            byTopic.computeIfAbsent(topic, k -> new ArrayList<>()).add(fv);
+        }
+
+        List<TopicGroup> groups = new ArrayList<>();
+        for (String name : TOPICS) {
+            List<FindingView> list = byTopic.getOrDefault(name, List.of());
+            List<FindingView> safety = name.equals("Safety") ? safetyItems : List.of();
+            if (!list.isEmpty() || !safety.isEmpty()) groups.add(new TopicGroup(name, safety, list));
+        }
+        return groups;
+    }
+
+    private static String keyTopic(String key) {
+        if (key == null) return null;
+        for (var e : KEY_TOPICS.entrySet()) if (key.startsWith(e.getKey())) return e.getValue();
+        return null;
+    }
+
+    /** Top of each score's scale (the same maximums the summaries and labels print). */
+    private static final Map<Section, Integer> SCORE_MAX = Map.of(
+        Section.PHQ9, 27, Section.GAD7, 21, Section.PHQ15, 30, Section.WHO5, 25, Section.PSS10, 40,
+        Section.PSQI, 21, Section.WSAS, 40, Section.ASRS, 6, Section.PCPTSD, 4);
+
+    /**
+     * The score bar for a section, read from its active Level 1 band rules (one condition on the
+     * section's score). Each score point belongs to the highest-priority band rule covering it;
+     * colours follow the rules' priority order (lowest priority = green, highest = red).
+     * Returns null when the section has no score or no band rules.
+     */
+    static ScoreBar scoreBar(Section section, Map<String, Integer> facts, Collection<Rule> rules) {
+        String key = SCORE_KEYS.get(section);
+        Integer max = SCORE_MAX.get(section);
+        Integer value = key == null ? null : facts.get(key);
+        if (max == null || value == null) return null;
+        String prefix = section.getCode().replace("-", "") + "-";
+
+        // band rule → its score range [lo, hi]
+        Map<Rule, int[]> ranges = new LinkedHashMap<>();
+        for (Rule r : rules) {
+            if (r.level() == null || r.level() != 1 || !r.ruleId().startsWith(prefix) || r.groups() == null
+                    || r.groups().size() != 1 || r.groups().get(0).conditions().size() != 1) continue;
+            var c = r.groups().get(0).conditions().get(0);
+            if (!key.equals(c.fieldKey())) continue;
+            int[] range = range(c, max);
+            if (range != null && range[0] <= range[1]) ranges.put(r, range);
+        }
+        if (ranges.isEmpty()) return null;
+
+        List<Rule> byPriority = new ArrayList<>(ranges.keySet());
+        byPriority.sort(Comparator.comparingInt(r -> r.priority() == null ? 0 : r.priority()));
+        int steps = byPriority.size() - 1;
+
+        List<BarSegment> segments = new ArrayList<>();
+        Rule current = null;
+        int start = 0;
+        for (int point = 0; point <= max + 1; point++) {
+            Rule owner = null;
+            if (point <= max) {
+                for (Rule r : byPriority) {               // ascending, so the last match has the highest priority
+                    int[] g = ranges.get(r);
+                    if (point >= g[0] && point <= g[1]) owner = r;
+                }
+            }
+            if (owner != current) {
+                if (current != null) {
+                    int colour = steps == 0 ? 0 : (int) Math.round(byPriority.indexOf(current) * 3.0 / steps);
+                    segments.add(new BarSegment(start, point - 1, current.name(), colour));
+                }
+                current = owner;
+                start = point;
+            }
+        }
+        return segments.isEmpty() ? null : new ScoreBar(Math.min(Math.max(value, 0), max), max, segments);
+    }
+
+    private static int[] range(com.ooad.mhs.domain.Condition c, int max) {
+        if (c.operator() == null) return null;
+        Integer v = c.valueInt();
+        return switch (c.operator()) {
+            case BETWEEN -> c.valueMin() == null || c.valueMax() == null ? null
+                : new int[] {Math.max(c.valueMin(), 0), Math.min(c.valueMax(), max)};
+            case EQ -> v == null ? null : new int[] {v, v};
+            case GTE -> v == null ? null : new int[] {v, max};
+            case GT -> v == null ? null : new int[] {v + 1, max};
+            case LTE -> v == null ? null : new int[] {0, v};
+            case LT -> v == null ? null : new int[] {0, v - 1};
+            default -> null;
+        };
+    }
+
+    private static String band(Section section, List<Finding> findings, Map<String, Rule> rulesById) {
+        String prefix = section.getCode().replace("-", "") + "-";
+        boolean cssrs = section == Section.CSSRS;
+        if (cssrs && findings.stream().anyMatch(f -> f.ruleId().startsWith(prefix)
+                && f.actionType() == ActionType.CRISIS_PROTOCOL)) {
+            return "Safety concern";
+        }
+        String scoreKey = SCORE_KEYS.get(section);
+        Finding best = null;
+        for (Finding f : findings) {
+            if (f.level() == null || f.level() != 1 || !f.ruleId().startsWith(prefix)) continue;
+            boolean bandRule = cssrs
+                ? f.actionType() != ActionType.CRISIS_PROTOCOL
+                : scoreKey != null && f.trace().size() == 1 && scoreKey.equals(f.trace().get(0).fieldKey());
+            if (bandRule && (best == null || priority(f, rulesById) > priority(best, rulesById))) best = f;
+        }
+        return best == null ? null : best.name();
+    }
+
+    private static int priority(Finding f, Map<String, Rule> rulesById) {
+        Rule r = rulesById.get(f.ruleId());
+        Integer p = r != null ? r.priority() : f.priority();
+        return p == null ? 0 : p;
+    }
+
+    /** "What to do now": plain steps for the overall result. A crisis always gets the crisis steps. */
+    static List<String> actionSteps(String overallKey, boolean hasCrisis) {
+        if (hasCrisis || "critical".equals(overallKey) || "attention".equals(overallKey)) {
+            return List.of(
+                "Call one of these numbers now.",
+                "Talk to someone you trust today: a friend, a family member or a teacher.",
+                "Do not stay alone right now. Stay with someone, or somewhere safe.",
+                "See a doctor or mental health professional urgently.");
+        }
+        return switch (overallKey) {
+            case "severe", "moderate" -> List.of(
+                "Book a visit with a doctor or counsellor soon.",
+                "Share this report with them (use Save as PDF at the bottom).",
+                "Take healthy steps: regular sleep, meals, some movement, and time with people you trust.");
+            case "mild" -> List.of(
+                "Watch how you feel over the next few weeks.",
+                "Keep healthy habits: sleep, meals, movement, and talking to people you trust.",
+                "Do this screening again in a few weeks, or sooner if you feel worse.");
+            case "minimal" -> List.of(
+                "Keep up your healthy habits.",
+                "Do this screening again if things change.");
+            default -> List.of(
+                "Complete the missing sections so the report can give an overall result.",
+                "Read your results below.",
+                "If you are worried about how you feel, talk to a doctor or counsellor.");
+        };
+    }
 
     private BasisLine basisLine(ConditionTrace t, Map<String, Question> questionsByKey,
                                 Map<String, QuestionView> viewsByKey, Map<String, String> conclusionNames,

@@ -7,6 +7,8 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate icon" type="image/png" href="/favicon.png" />
     <link rel="stylesheet" th:href="@{/css/style.css}" />
+    <!-- With JS the full detailed report starts hidden (one button opens it); without JS all is shown -->
+    <script>document.documentElement.classList.add('js');</script>
 </head>
 <body>
     <div class="report-page">
@@ -14,28 +16,67 @@
         <!-- Header + overall result -->
         <div class="report-header">
             <h1>Screening Report</h1>
-            <span class="overall-label">Overall result</span>
-            <span th:text="${#strings.toUpperCase(report.overallLabel)}"
-                  th:class="'severity-banner severity-' + ${report.overallKey}">MODERATE</span>
-            <!-- One plain sentence for each severity, so the one-word banner is understood at a glance.
-                 (Needs attention / Not determined / Not classified already have their own note below.) -->
-            <p class="overall-meaning" th:switch="${report.overallKey}">
-                <span th:case="'minimal'">Your answers show few or no signs of concern.</span>
-                <span th:case="'mild'">Your answers show some mild signs. Keep an eye on how you feel, and talk to someone you trust if it continues.</span>
-                <span th:case="'moderate'">Your answers show signs that are worth talking about with a doctor or counsellor.</span>
-                <span th:case="'severe'">Your answers show strong signs. Please speak to a doctor or mental health professional soon.</span>
-                <span th:case="'critical'">Your answers show a serious concern. Please contact a helpline or emergency services now.</span>
-            </p>
-            <p th:if="${report.overallNote != null}" class="overall-note" th:text="${report.overallNote}">Note</p>
+            <!-- Friendly summary card: a plain headline + a kind line, and a level scale.
+                 Display only: it reads report.overallKey / report.hasCrisis (same logic and colours as before). -->
+            <div th:with="lvl=${report.hasCrisis or report.overallKey == 'attention' or report.overallKey == 'critical' ? 'urgent'
+                               : (report.overallKey == 'severe' ? 'high' : (report.overallKey == 'minimal' ? 'low'
+                               : (report.overallKey == 'mild' or report.overallKey == 'moderate' ? report.overallKey : 'none')))}"
+                 th:class="'summary-card lvl-' + ${lvl}" th:attr="data-overall=${report.overallKey}">
+                <th:block th:switch="${lvl}">
+                    <th:block th:case="'urgent'">
+                        <p class="summary-headline">Your answers show you may not be safe right now.</p>
+                        <p class="summary-kind">Please reach out for help today. You don't have to go through this alone.</p>
+                    </th:block>
+                    <th:block th:case="'high'">
+                        <p class="summary-headline">Your answers show strong signs of distress.</p>
+                        <p class="summary-kind">It's important to talk to a doctor or counsellor soon.</p>
+                    </th:block>
+                    <th:block th:case="'moderate'">
+                        <p class="summary-headline">Your answers show some signs worth talking about.</p>
+                        <p class="summary-kind">A visit to a doctor or counsellor could really help.</p>
+                    </th:block>
+                    <th:block th:case="'mild'">
+                        <p class="summary-headline">Your answers show a few mild signs.</p>
+                        <p class="summary-kind">Keep an eye on how you feel, and take care of yourself.</p>
+                    </th:block>
+                    <th:block th:case="'low'">
+                        <p class="summary-headline">Your answers show few or no signs of concern.</p>
+                        <p class="summary-kind">Keep up your healthy habits.</p>
+                    </th:block>
+                    <th:block th:case="*">
+                        <th:block th:if="${report.overallKey == 'undetermined'}">
+                            <p class="summary-headline">We can't give an overall result yet.</p>
+                            <p class="summary-kind">It needs the Depression &amp; Mood section. Your other results are below.</p>
+                        </th:block>
+                        <th:block th:unless="${report.overallKey == 'undetermined'}">
+                            <p class="summary-headline">Your answers don't fit one simple overall pattern.</p>
+                            <p class="summary-kind">Please look at your individual results below.</p>
+                        </th:block>
+                    </th:block>
+                </th:block>
+                <!-- Level scale: the current level is highlighted (none for Not determined / Not classified) -->
+                <ol class="level-scale" th:attr="aria-label='Overall level: ' + ${report.overallLabel}">
+                    <li class="ls-low" th:classappend="${lvl == 'low'} ? 'is-current'">Low</li>
+                    <li class="ls-mild" th:classappend="${lvl == 'mild'} ? 'is-current'">Mild</li>
+                    <li class="ls-moderate" th:classappend="${lvl == 'moderate'} ? 'is-current'">Moderate</li>
+                    <li class="ls-high" th:classappend="${lvl == 'high'} ? 'is-current'">High</li>
+                    <li class="ls-urgent" th:classappend="${lvl == 'urgent'} ? 'is-current'">Urgent</li>
+                </ol>
+                <!-- Only the partly-answered note adds something new (the other notes repeat the headline) -->
+                <p th:if="${report.overallNote != null and !report.hasCrisis and lvl != 'none'}" class="overall-note"
+                   th:text="${report.overallNote}">Note</p>
+            </div>
+            <!-- When the screening was done (the report is built right after Submit) -->
+            <p class="report-date" th:text="'Screening done on ' + ${#temporals.format(#temporals.createNow(), 'd MMMM yyyy, HH:mm')}">Screening done on 16 November 2026, 18:30</p>
             <p class="report-jump no-print">
-                <a href="#findings">Results</a> · <a href="#your-answers">Your answers</a>
+                <a href="#your-scores" th:if="${!report.scores.isEmpty()}">Scores</a><span th:if="${!report.scores.isEmpty()}"> · </span><a href="#findings">Results</a> · <a href="#your-answers">Your answers</a>
             </p>
         </div>
 
-        <!-- Crisis alert — calm ochre, NOT red -->
-        <div th:if="${report.hasCrisis}" class="crisis-alert">
-            <h3>We've identified a concern that needs attention</h3>
-            <p>You are not alone. Help is available right now.</p>
+        <!-- Get help now (crisis only): the crisis alert and the action steps in ONE box — calm ochre, NOT red -->
+        <div th:if="${report.hasCrisis}" class="crisis-alert" id="get-help">
+            <h3>Get help now</h3>
+            <p>We've identified a concern that needs attention. You are not alone. Help is available right now.</p>
             <ul>
                 <!-- Numbers are tel: links, so on a phone one tap starts the call -->
                 <li>Pakistan (Umang Helpline):
@@ -44,7 +85,38 @@
                 <li>International:
                     <a href="https://findahelpline.com" class="helpline-link" target="_blank" rel="noopener">findahelpline.com</a></li>
             </ul>
-            <p style="font-size: 0.85rem; margin-top: 0.5rem;">Please reach out to one of these resources. Speaking with someone can make a difference.</p>
+            <ol class="next-steps-list crisis-steps" th:if="${!report.actionSteps.isEmpty()}">
+                <li th:each="step : ${report.actionSteps}" th:text="${step}">Step</li>
+            </ol>
+        </div>
+
+        <!-- At a glance: one tile per questionnaire (ReportService.glance). Colour = the band colour
+             from the score bar; the band label is always written too, so meaning never relies on colour. -->
+        <div class="card glance" id="at-a-glance" th:if="${!report.glanceDone.isEmpty()}">
+            <h2>At a glance</h2>
+            <ul class="glance-grid">
+                <li th:each="t : ${report.glanceDone}" th:class="'glance-tile g-' + ${t.state}">
+                    <span class="glance-name"><span class="glance-dot" aria-hidden="true"></span><span th:text="${t.name}">Mood</span></span>
+                    <span class="glance-band" th:text="${t.word}">Moderate</span>
+                </li>
+            </ul>
+            <p class="glance-notchecked" th:if="${!report.glanceNotChecked.isEmpty()}"
+               th:text="'Not checked: ' + ${report.glanceNotChecked}">Not checked: Sleep, Stress</p>
+            <p class="glance-key">
+                <span><i class="glance-dot k-c0"></i>Good</span>
+                <span><i class="glance-dot k-c1"></i>Mild</span>
+                <span><i class="glance-dot k-c2"></i>Moderate</span>
+                <span><i class="glance-dot k-c3"></i><i class="glance-dot k-crisis"></i>Severe / Needs attention</span>
+            </p>
+        </div>
+
+        <!-- What to do now: plain steps for the overall result (ReportService.actionSteps).
+             In a crisis the steps are inside "Get help now" above instead. -->
+        <div class="card next-steps" th:if="${!report.hasCrisis and !report.actionSteps.isEmpty()}">
+            <h2>What to do now</h2>
+            <ol class="next-steps-list">
+                <li th:each="step : ${report.actionSteps}" th:text="${step}">Step</li>
+            </ol>
         </div>
 
         <!-- Disclaimer: always shown, also in the printed / PDF report -->
@@ -54,23 +126,88 @@
                mental health professional can make a diagnosis. Please discuss these results with one.</p>
         </div>
 
-        <!-- Depression section missing: explain why it matters -->
-        <div th:if="${report.depressionMissing}" class="card card-accent">
-            <h2 th:text="${report.overallKey == 'undetermined'}
-                    ? 'Your overall result could not be determined'
-                    : 'Complete the Depression & Mood section for a more accurate report'">Heading</h2>
-            <p>The <strong>Depression &amp; Mood</strong> section (PHQ-9) was not completed. It is the most
-               important part of this screening:</p>
-            <ul>
-                <li>The <strong>overall result</strong> is built from your depression score together with the
-                    Safety Check.</li>
-                <li><strong>Combined findings</strong>, such as low mood together with anxiety, poor sleep or
-                    low wellbeing, need it. Many of the screening rules look for these patterns.</li>
-                <li>PHQ-9 is the <strong>most widely used, validated depression questionnaire</strong>, so your
-                    report is easier to discuss with a doctor or counsellor.</li>
-                <li>It takes about <strong>2 minutes</strong> (9 questions). Your other answers are kept.</li>
-            </ul>
-            <a th:href="@{/screening(resume='PHQ-9')}" class="btn btn-primary no-print">Complete Depression section</a>
+        <!-- One button shows the full detailed report. Without JavaScript, and always when printing / saving
+             as PDF, everything is shown (see .full-report in style.css). -->
+        <div class="full-toggle no-print">
+            <button type="button" class="btn btn-primary btn-full" id="full-toggle"
+                    aria-controls="full-report" aria-expanded="false">Show full detailed report</button>
+        </div>
+
+        <div class="full-report" id="full-report">
+            <div class="full-report-intro">
+                <p class="report-howto" th:if="${report.hasCrisis}">How to read this: start with 'Get help now', then
+                   'Your scores'. Open 'Why this appears' on any result to see why it appears.</p>
+                <p class="report-howto" th:unless="${report.hasCrisis}">How to read this: start with 'Your scores', then
+                   'What to do now'. Open 'Why this appears' on any result to see why it appears.</p>
+            </div>
+
+        <!-- Your scores: one row per completed section (score text from each Questionnaire.summary,
+             band from the rule that fired for that score) -->
+        <div class="card" id="your-scores" th:if="${!report.scores.isEmpty()}">
+            <h2>Your scores</h2>
+            <table class="score-table">
+                <thead>
+                    <tr><th scope="col">Section</th><th scope="col">Score</th><th scope="col">Band</th></tr>
+                </thead>
+                <tbody>
+                    <tr th:each="row : ${report.scores}">
+                        <td><span th:text="${row.section.label}">Section</span>
+                            <small th:text="${row.section.code}">CODE</small></td>
+                        <td th:text="${row.score}">Total score 12 / 27</td>
+                        <td><span th:text="${row.band != null ? row.band : '—'}">Moderate depression</span>
+                            <!-- Score bar: one coloured part per band rule; the marker shows the score -->
+                            <div class="score-bar" th:if="${row.bar != null}" role="img"
+                                 th:attr="aria-label=${row.band != null ? row.band : 'Score'} + ': ' + ${row.bar.value} + ' of ' + ${row.bar.max}">
+                                <span th:each="seg : ${row.bar.segments}" th:class="'score-seg sb-c' + ${seg.colour}"
+                                      th:style="'width:' + ${seg.widthPercent(row.bar.max)} + '%'"
+                                      th:title="${seg.name} + ' (' + ${seg.from} + '–' + ${seg.to} + ')'"></span>
+                                <span class="score-marker" th:style="'left:' + ${row.bar.markerPercent()} + '%'"></span>
+                            </div>
+                            <div class="score-bar-scale" th:if="${row.bar != null}">
+                                <span>0</span><span th:text="${row.bar.max}">27</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Findings, grouped by audience (see ReportService) -->
+        <div class="findings-section" id="findings">
+            <h2>Your results</h2>
+            <p class="findings-intro">What your answers show, grouped by topic, most important first. Open
+               <em>Why this appears</em> on any result to see the answers it is based on.</p>
+
+            <p th:if="${report.results.isEmpty()}" class="empty-findings">
+                No results for the sections you completed.
+            </p>
+            <!-- Cards under small topic headings (display grouping only, same order inside each topic).
+                 All C-SSRS crisis findings are ONE "Safety concern" card under Safety. -->
+            <section th:each="tg : ${report.topics}" class="topic-group">
+                <h3 class="topic-heading" th:text="${tg.name}">Mood</h3>
+                <th:block th:if="${!tg.safetyItems.isEmpty()}"><div th:replace="~{fragments/finding :: safety(${tg.safetyItems})}"></div></th:block>
+                <th:block th:each="fv : ${tg.cards}"><div th:replace="~{fragments/finding :: card(${fv})}"></div></th:block>
+            </section>
+
+            <details class="finding-group" th:if="${!report.guidance.isEmpty()}">
+                <summary>
+                    <span>Guidance for professionals</span>
+                    <span class="group-count" th:text="${report.guidance.size()}">9</span>
+                </summary>
+                <p class="findings-intro">Recommendations from the NICE depression guideline (NG222) that match
+                   your answers. They are written for doctors and counsellors, so share this report with them.</p>
+                <th:block th:each="fv : ${report.guidance}"><div th:replace="~{fragments/finding :: card(${fv})}"></div></th:block>
+            </details>
+
+            <details class="finding-group" th:if="${!report.reasoning.isEmpty()}">
+                <summary>
+                    <span>How the system reasoned</span>
+                    <span class="group-count" th:text="${report.reasoning.size()}">3</span>
+                </summary>
+                <p class="findings-intro">Intermediate steps the rule engine took to connect your answers
+                   (for example, opening extra checks once depression was found). Shown for transparency.</p>
+                <th:block th:each="fv : ${report.reasoning}"><div th:replace="~{fragments/finding :: card(${fv})}"></div></th:block>
+            </details>
         </div>
 
         <!-- What was assessed -->
@@ -111,38 +248,6 @@
             </div>
         </div>
 
-        <!-- Findings, grouped by audience (see ReportService) -->
-        <div class="findings-section" id="findings">
-            <h2>Your results</h2>
-            <p class="findings-intro">What your answers show, most important first. Open
-               <em>Why this appears</em> on any result to see the answers it is based on.</p>
-
-            <p th:if="${report.results.isEmpty()}" class="empty-findings">
-                No results for the sections you completed.
-            </p>
-            <th:block th:each="fv : ${report.results}"><div th:replace="~{fragments/finding :: card(${fv})}"></div></th:block>
-
-            <details class="finding-group" th:if="${!report.guidance.isEmpty()}">
-                <summary>
-                    <span>Guidance for professionals</span>
-                    <span class="group-count" th:text="${report.guidance.size()}">9</span>
-                </summary>
-                <p class="findings-intro">Recommendations from the NICE depression guideline (NG222) that match
-                   your answers. They are written for doctors and counsellors, so share this report with them.</p>
-                <th:block th:each="fv : ${report.guidance}"><div th:replace="~{fragments/finding :: card(${fv})}"></div></th:block>
-            </details>
-
-            <details class="finding-group" th:if="${!report.reasoning.isEmpty()}">
-                <summary>
-                    <span>How the system reasoned</span>
-                    <span class="group-count" th:text="${report.reasoning.size()}">3</span>
-                </summary>
-                <p class="findings-intro">Intermediate steps the rule engine took to connect your answers
-                   (for example, opening extra checks once depression was found). Shown for transparency.</p>
-                <th:block th:each="fv : ${report.reasoning}"><div th:replace="~{fragments/finding :: card(${fv})}"></div></th:block>
-            </details>
-        </div>
-
         <!-- Your answers -->
         <div class="answers-section" id="your-answers" th:if="${!report.answers.isEmpty()}">
             <h2>Your answers</h2>
@@ -179,6 +284,28 @@
             </details>
         </div>
 
+        <!-- Depression section missing: explain why it matters.
+             At the end of the report, and hidden when there is a crisis (the helplines come first). -->
+        <div th:if="${report.depressionMissing and !report.hasCrisis}" class="card card-accent" id="complete-depression">
+            <h2 th:text="${report.overallKey == 'undetermined'}
+                    ? 'Your overall result could not be determined'
+                    : 'Complete the Depression & Mood section for a more accurate report'">Heading</h2>
+            <p>The <strong>Depression &amp; Mood</strong> section (PHQ-9) was not completed. It is the most
+               important part of this screening:</p>
+            <ul>
+                <li>The <strong>overall result</strong> is built from your depression score together with the
+                    Safety Check.</li>
+                <li><strong>Combined findings</strong>, such as low mood together with anxiety, poor sleep or
+                    low wellbeing, need it. Many of the screening rules look for these patterns.</li>
+                <li>PHQ-9 is the <strong>most widely used, validated depression questionnaire</strong>, so your
+                    report is easier to discuss with a doctor or counsellor.</li>
+                <li>It takes about <strong>2 minutes</strong> (9 questions). Your other answers are kept.</li>
+            </ul>
+            <a th:href="@{/screening(resume='PHQ-9')}" class="btn btn-primary no-print">Complete Depression section</a>
+        </div>
+
+        </div>
+
         <!-- Actions -->
         <div class="report-actions no-print">
             <button class="btn btn-outline" onclick="window.print()">Save as PDF</button>
@@ -194,9 +321,39 @@
 
     <!-- Expand every collapsible part when printing / saving as PDF -->
     <script>
+        // Expand every collapsible part when printing / saving as PDF
         window.addEventListener('beforeprint', function () {
             document.querySelectorAll('details').forEach(function (d) { d.open = true; });
         });
+
+        // "Show full detailed report": the details are hidden on screen until the button is clicked
+        (function () {
+            var box = document.getElementById('full-report');
+            var btn = document.getElementById('full-toggle');
+            if (!box || !btn) return;
+            document.documentElement.classList.add('js');
+            function setOpen(open) {
+                box.classList.toggle('is-open', open);
+                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                btn.textContent = open ? 'Hide detailed report' : 'Show full detailed report';
+            }
+            btn.addEventListener('click', function () {
+                var open = !box.classList.contains('is-open');
+                setOpen(open);
+                if (open) box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+            // Links to a part inside the details (Scores · Results · Your answers) open them first, then jump
+            function openFor(hash) {
+                var target = hash && hash.length > 1 ? document.getElementById(hash.slice(1)) : null;
+                if (target && box.contains(target)) { setOpen(true); target.scrollIntoView({ block: 'start' }); return true; }
+                return false;
+            }
+            document.addEventListener('click', function (e) {
+                var a = e.target.closest && e.target.closest('a[href^="#"]');
+                if (a && openFor(a.getAttribute('href'))) { e.preventDefault(); history.replaceState(null, '', a.getAttribute('href')); }
+            });
+            openFor(location.hash);
+        })();
     </script>
 </body>
 </html>

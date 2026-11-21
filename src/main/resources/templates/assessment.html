@@ -20,6 +20,7 @@
             <h1>Mental Health Screening</h1>
             <p>Pick a section and answer one question at a time. Only sections you fully complete are
                included in your report. The <strong>Safety Check</strong> is required.</p>
+            <p class="assessment-note">Your answers are not saved. This takes about 15 minutes.</p>
         </div>
 
         <div th:if="${safetyRequired}" class="notice notice-warn" role="alert">
@@ -28,6 +29,13 @@
 
         <form id="screening-form" method="post" action="/screening" novalidate>
 
+            <!-- Overall progress (filled in by screening.js; hidden without JS) -->
+            <div class="overall-progress" data-overall>
+                <div class="progress-text" data-overall-text aria-live="polite"
+                     th:text="'0 of ' + ${sections.size()} + ' sections done'">0 of 10 sections done</div>
+                <div class="progress-track"><div class="progress-fill" data-overall-fill></div></div>
+            </div>
+
             <!-- Tabs -->
             <div class="tab-bar" role="tablist" aria-label="Screening sections">
                 <button th:each="sv : ${sections}" type="button" role="tab" class="tab"
@@ -35,7 +43,9 @@
                         th:attr="data-tab=${sv.section.code},aria-controls='panel-' + ${sv.section.code},data-mandatory=${sv.section.mandatory}"
                         aria-selected="false">
                     <span class="tab-label" th:text="${sv.section.label}">Label</span>
-                    <span class="tab-code" th:text="${sv.section.code}">CODE</span>
+                    <!-- Estimated time: about 11 seconds per question, at least 1 minute (display only) -->
+                    <span class="tab-code" th:with="mins=${(sv.questions.size() * 11 + 30) / 60}"><span th:text="${sv.section.code}">CODE</span>
+                        · <span class="tab-time" th:text="${mins < 1 ? 1 : mins} + ' min'">2 min</span></span>
                     <span class="tab-status" data-status></span>
                 </button>
             </div>
