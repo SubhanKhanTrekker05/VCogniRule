@@ -674,3 +674,10 @@ mark { background: var(--amber-bg); color: var(--amber-text); padding: 0 2px; bo
   background: color-mix(in srgb, var(--c) 22%, #fff); box-shadow: inset 0 0 0 1px var(--c); }
 .summary-card .overall-note { margin: 0.7rem 0 0; max-width: none; }
 @media print { .summary-card, .level-scale li { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+/* ---- Simple summary first: the full detailed report opens with one button ---- */
+.full-toggle { text-align: center; margin: 1.5rem 0; }
+.btn-full { font-size: 1.05rem; padding: 0.75rem 1.6rem; }
+.full-report-intro .report-howto { text-align: center; margin-bottom: 1rem; }
+.js .full-report:not(.is-open) { display: none; }   /* without JS everything stays visible */
+@media print { .js .full-report, .full-report { display: block !important; } }

@@ -7,6 +7,8 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate icon" type="image/png" href="/favicon.png" />
     <link rel="stylesheet" th:href="@{/css/style.css}" />
+    <!-- With JS the full detailed report starts hidden (one button opens it); without JS all is shown -->
+    <script>document.documentElement.classList.add('js');</script>
 </head>
 <body>
     <div class="report-page">
@@ -66,10 +68,6 @@
             </div>
             <!-- When the screening was done (the report is built right after Submit) -->
             <p class="report-date" th:text="'Screening done on ' + ${#temporals.format(#temporals.createNow(), 'd MMMM yyyy, HH:mm')}">Screening done on 16 November 2026, 18:30</p>
-            <p class="report-howto" th:if="${report.hasCrisis}">How to read this: start with 'Get help now', then
-               'Your scores'. Open 'Why this appears' on any result to see why it appears.</p>
-            <p class="report-howto" th:unless="${report.hasCrisis}">How to read this: start with 'Your scores', then
-               'What to do now'. Open 'Why this appears' on any result to see why it appears.</p>
             <p class="report-jump no-print">
                 <a href="#your-scores" th:if="${!report.scores.isEmpty()}">Scores</a><span th:if="${!report.scores.isEmpty()}"> · </span><a href="#findings">Results</a> · <a href="#your-answers">Your answers</a>
             </p>
@@ -112,6 +110,37 @@
             </p>
         </div>
 
+        <!-- What to do now: plain steps for the overall result (ReportService.actionSteps).
+             In a crisis the steps are inside "Get help now" above instead. -->
+        <div class="card next-steps" th:if="${!report.hasCrisis and !report.actionSteps.isEmpty()}">
+            <h2>What to do now</h2>
+            <ol class="next-steps-list">
+                <li th:each="step : ${report.actionSteps}" th:text="${step}">Step</li>
+            </ol>
+        </div>
+
+        <!-- Disclaimer: always shown, also in the printed / PDF report -->
+        <div class="report-disclaimer" role="note">
+            <p><strong>This is a screening result, not a medical diagnosis.</strong>
+               It shows possible warning signs based on your answers. Only a qualified doctor or
+               mental health professional can make a diagnosis. Please discuss these results with one.</p>
+        </div>
+
+        <!-- One button shows the full detailed report. Without JavaScript, and always when printing / saving
+             as PDF, everything is shown (see .full-report in style.css). -->
+        <div class="full-toggle no-print">
+            <button type="button" class="btn btn-primary btn-full" id="full-toggle"
+                    aria-controls="full-report" aria-expanded="false">Show full detailed report</button>
+        </div>
+
+        <div class="full-report" id="full-report">
+            <div class="full-report-intro">
+                <p class="report-howto" th:if="${report.hasCrisis}">How to read this: start with 'Get help now', then
+                   'Your scores'. Open 'Why this appears' on any result to see why it appears.</p>
+                <p class="report-howto" th:unless="${report.hasCrisis}">How to read this: start with 'Your scores', then
+                   'What to do now'. Open 'Why this appears' on any result to see why it appears.</p>
+            </div>
+
         <!-- Your scores: one row per completed section (score text from each Questionnaire.summary,
              band from the rule that fired for that score) -->
         <div class="card" id="your-scores" th:if="${!report.scores.isEmpty()}">
@@ -141,22 +170,6 @@
                     </tr>
                 </tbody>
             </table>
-        </div>
-
-        <!-- What to do now: plain steps for the overall result (ReportService.actionSteps).
-             In a crisis the steps are inside "Get help now" above instead. -->
-        <div class="card next-steps" th:if="${!report.hasCrisis and !report.actionSteps.isEmpty()}">
-            <h2>What to do now</h2>
-            <ol class="next-steps-list">
-                <li th:each="step : ${report.actionSteps}" th:text="${step}">Step</li>
-            </ol>
-        </div>
-
-        <!-- Disclaimer: always shown, also in the printed / PDF report -->
-        <div class="report-disclaimer" role="note">
-            <p><strong>This is a screening result, not a medical diagnosis.</strong>
-               It shows possible warning signs based on your answers. Only a qualified doctor or
-               mental health professional can make a diagnosis. Please discuss these results with one.</p>
         </div>
 
         <!-- Findings, grouped by audience (see ReportService) -->
@@ -291,6 +304,8 @@
             <a th:href="@{/screening(resume='PHQ-9')}" class="btn btn-primary no-print">Complete Depression section</a>
         </div>
 
+        </div>
+
         <!-- Actions -->
         <div class="report-actions no-print">
             <button class="btn btn-outline" onclick="window.print()">Save as PDF</button>
@@ -306,9 +321,39 @@
 
     <!-- Expand every collapsible part when printing / saving as PDF -->
     <script>
+        // Expand every collapsible part when printing / saving as PDF
         window.addEventListener('beforeprint', function () {
             document.querySelectorAll('details').forEach(function (d) { d.open = true; });
         });
+
+        // "Show full detailed report": the details are hidden on screen until the button is clicked
+        (function () {
+            var box = document.getElementById('full-report');
+            var btn = document.getElementById('full-toggle');
+            if (!box || !btn) return;
+            document.documentElement.classList.add('js');
+            function setOpen(open) {
+                box.classList.toggle('is-open', open);
+                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                btn.textContent = open ? 'Hide detailed report' : 'Show full detailed report';
+            }
+            btn.addEventListener('click', function () {
+                var open = !box.classList.contains('is-open');
+                setOpen(open);
+                if (open) box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+            // Links to a part inside the details (Scores · Results · Your answers) open them first, then jump
+            function openFor(hash) {
+                var target = hash && hash.length > 1 ? document.getElementById(hash.slice(1)) : null;
+                if (target && box.contains(target)) { setOpen(true); target.scrollIntoView({ block: 'start' }); return true; }
+                return false;
+            }
+            document.addEventListener('click', function (e) {
+                var a = e.target.closest && e.target.closest('a[href^="#"]');
+                if (a && openFor(a.getAttribute('href'))) { e.preventDefault(); history.replaceState(null, '', a.getAttribute('href')); }
+            });
+            openFor(location.hash);
+        })();
     </script>
 </body>
 </html>
