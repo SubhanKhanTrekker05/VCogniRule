@@ -25,3 +25,6 @@ database/*.db-shm
 
 # Desktop build output (packaging/build-exe.ps1)
 dist/
+
+# Reference reports from another group (not ours to publish)
+docs/references/

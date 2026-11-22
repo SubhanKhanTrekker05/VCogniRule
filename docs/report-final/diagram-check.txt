@@ -1,0 +1,3 @@
+Diagram check against the code: 78 classes, 212 fields, 170 methods, 10 objects, 26 messages, 179 names
+Java types indexed: 94
+Problems: 0

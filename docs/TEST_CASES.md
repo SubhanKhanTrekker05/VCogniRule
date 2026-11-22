@@ -1,6 +1,6 @@
 # Test Cases — VCogniRule
 
-Results of `mvn test` on 16 November 2026: **255 tests, 255 passed, 0 failed.**
+Results of `mvn test` on 22 November 2026: **261 tests, 261 passed, 0 failed.**
 
 The Pass/Fail column of the automated cases below is generated from the real JUnit result files
 (`target/surefire-reports`). A row passes only if every JUnit test listed for it ran and passed.
@@ -20,11 +20,11 @@ The Pass/Fail column of the automated cases below is generated from the real JUn
 | `AdminServiceTest` | Unit | admin business rules (with fake repositories), Observer | 10 |
 | `BCryptPasswordHasherTest` | Unit | Adapter: PasswordHasher over the BCrypt library | 2 |
 | `TracingOperatorStrategyTest` | Unit | Decorator: TracingOperatorStrategy and its demo switch | 2 |
-| `ScreeningFlowIntegrationTest` | Integration | screening flow through the running app (MockMvc) | 17 |
+| `ScreeningFlowIntegrationTest` | Integration | screening flow through the running app (MockMvc), incl. the redesigned report | 23 |
 | `AdminIntegrationTest` | Integration | admin login, protected pages, create/edit/delete, bad input | 44 |
 | `FormRecoveryAndErrorPageIntegrationTest` | Integration | typed values kept after an error, friendly error pages | 7 |
 | `BrowserLauncherTest` | Unit | desktop launcher (VCogniRule.exe): home page address, open command per OS | 2 |
-| **Total** | | | **255** |
+| **Total** | | | **261** |
 
 ## Automated test cases
 
@@ -94,6 +94,12 @@ The Pass/Fail column of the automated cases below is generated from the real JUn
 | TC-53 | Adapter: PasswordHasher over BCrypt | hash admin123, check right and wrong password | hash is not the password; true; false | true; false; two hashes differ | Pass (2) | `BCryptPasswordHasherTest.hashThenMatch`, `BCryptPasswordHasherTest.saltedHashes` |
 | TC-54 | Decorator: tracing changes no result | GTE 10 for answers 0-27, plain vs traced; switch on/off | same answers; all 8 wrapped only when on | identical; wrapped / plain | Pass (2) | `TracingOperatorStrategyTest.sameResultsAsWrapped`, `TracingOperatorStrategyTest.switchWrapsStrategies` |
 | TC-55 | Observer: admin changes notify the listeners | create, deactivate, delete, reset; one refused create | 4 messages in order, none for the refused one | 4 messages; cache reloaded once | Pass (2) | `AdminServiceTest.changesNotifyListeners`, `AdminServiceTest.cacheRefresherReloads` |
+| | **Integration tests: redesigned report** | | | | | |
+| TC-56 | Crisis findings grouped into one card | Safety Check items 1 and 4 = Yes | one 'Safety concern' card; 'Get help now'; no finding lost | as expected | Pass (1) | `ScreeningFlowIntegrationTest.safetyFindingsGrouped` |
+| TC-57 | Your scores and score bars | PHQ-9 total 12 | band from the fired rule; bar parts 0-4, 5-9, 10-14, 15-19, 20-27, green to red | as expected | Pass (2) | `ScreeningFlowIntegrationTest.scoresTable`, `ScreeningFlowIntegrationTest.scoreBarFollowsBandRules` |
+| TC-58 | Results grouped by topic | all answers at the worst value | every result appears once; Safety first | as expected | Pass (1) | `ScreeningFlowIntegrationTest.resultsGroupedByTopic` |
+| TC-59 | At a glance tiles | PHQ-9 12; crisis from PHQ-9 item 9; positive PC-PTSD and ASRS | Mood = Moderate; Safety = Needs attention; both screens = Needs attention | as expected | Pass (1) | `ScreeningFlowIntegrationTest.atAGlanceTiles` |
+| TC-60 | Complete-section box hidden in a crisis | crisis without PHQ-9 | box not shown | not shown | Pass (1) | `ScreeningFlowIntegrationTest.depressionBoxHiddenOnCrisis` |
 
 The number in brackets is how many JUnit test runs the row covers (parameterized tests run once per input).
 
